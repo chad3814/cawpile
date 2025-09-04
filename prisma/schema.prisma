@@ -10,15 +10,16 @@ datasource db {
 
 // User model for authentication
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String     @id @default(cuid())
+  email         String     @unique
   emailVerified DateTime?
   name          String?
   image         String?
   accounts      Account[]
   sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  userBooks     UserBook[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 // NextAuth Account model
@@ -48,4 +49,86 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Book models for tracking reading
+model Book {
+  id        String    @id @default(cuid())
+  title     String
+  authors   String[]
+  language  String    @default("en")
+  editions  Edition[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([title, authors])
+  @@index([title])
+}
+
+model Edition {
+  id            String      @id @default(cuid())
+  bookId        String
+  isbn10        String?
+  isbn13        String?
+  title         String?     // Edition-specific title if different
+  authors       String[]    // Edition-specific authors if different
+  format        BookFormat?
+  googleBooksId String?     @unique
+  book          Book        @relation(fields: [bookId], references: [id])
+  userBooks     UserBook[]
+  googleBook    GoogleBook?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([isbn10])
+  @@unique([isbn13])
+  @@index([bookId])
+}
+
+model GoogleBook {
+  id             String   @id @default(cuid())
+  googleId       String   @unique
+  editionId      String   @unique
+  title          String
+  subtitle       String?
+  authors        String[]
+  description    String?
+  publishedDate  String?
+  pageCount      Int?
+  imageUrl       String?
+  categories     String[]
+  edition        Edition  @relation(fields: [editionId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model UserBook {
+  id         String      @id @default(cuid())
+  userId     String
+  editionId  String
+  status     BookStatus
+  format     BookFormat
+  startDate  DateTime?
+  finishDate DateTime?
+  progress   Float       @default(0) // Percentage 0-100
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  edition    Edition     @relation(fields: [editionId], references: [id])
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([userId, editionId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+}
+
+enum BookStatus {
+  WANT_TO_READ
+  READING
+  COMPLETED
+}
+
+enum BookFormat {
+  HARDCOVER
+  PAPERBACK
+  EBOOK
+  AUDIOBOOK
 }

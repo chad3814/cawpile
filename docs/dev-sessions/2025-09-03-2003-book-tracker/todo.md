@@ -19,13 +19,13 @@
 - [ ] Test auth flow end-to-end
 
 ## 📚 Data Layer (Steps 5-6)
-- [ ] Extend Prisma schema with Book models
-- [ ] Add Edition and GoogleBook tables
-- [ ] Create UserBook relationship model
-- [ ] Add status and format enums
+- [x] Extend Prisma schema with Book models
+- [x] Add Edition and GoogleBook tables
+- [x] Create UserBook relationship model
+- [x] Add status and format enums
 - [ ] Set up Google Books API key
-- [ ] Create googleBooks service layer
-- [ ] Build /api/books/search endpoint
+- [x] Create googleBooks service layer
+- [x] Build /api/books/search endpoint
 - [ ] Test book search functionality
 
 ## 🔍 Book Search (Steps 7-8)
