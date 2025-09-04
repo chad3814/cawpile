@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   
@@ -16,6 +16,7 @@ export async function PATCH(
   }
 
   try {
+    const { id } = await params
     const body = await request.json()
     const { progress } = body
 
@@ -30,7 +31,7 @@ export async function PATCH(
     // Check if user owns this book
     const userBook = await prisma.userBook.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     })
@@ -45,7 +46,7 @@ export async function PATCH(
     // Update progress
     const updatedBook = await prisma.userBook.update({
       where: {
-        id: params.id
+        id: id
       },
       data: {
         progress,

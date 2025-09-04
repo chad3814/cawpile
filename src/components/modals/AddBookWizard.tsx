@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { BookSearchResult } from '@/types/book'
@@ -33,6 +33,15 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     format: 'PAPERBACK',
   })
 
+  const handleClose = useCallback(() => {
+    setCurrentStep(1)
+    setFormData({
+      status: 'WANT_TO_READ',
+      format: 'PAPERBACK',
+    })
+    onClose()
+  }, [onClose])
+
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -43,7 +52,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
 
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isOpen])
+  }, [isOpen, handleClose])
 
   const getTotalSteps = () => {
     if (formData.status === 'WANT_TO_READ') return 1
@@ -107,15 +116,6 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleClose = () => {
-    setCurrentStep(1)
-    setFormData({
-      status: 'WANT_TO_READ',
-      format: 'PAPERBACK',
-    })
-    onClose()
   }
 
   if (!book) return null
