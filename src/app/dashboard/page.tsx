@@ -62,10 +62,10 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-foreground">
           Welcome back, {session.user?.name?.split(" ")[0] || "Reader"}!
         </h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-muted-foreground mt-2">
           Your reading dashboard
         </p>
       </div>
@@ -76,22 +76,22 @@ export default async function DashboardPage() {
       {/* Statistics */}
       {userBooks.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="font-semibold text-gray-900 mb-2">Reading Stats</h3>
-            <p className="text-3xl font-bold text-blue-600">{booksThisYear}</p>
-            <p className="text-gray-600">Books this year</p>
+          <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <h3 className="font-semibold text-card-foreground mb-2">Reading Stats</h3>
+            <p className="text-3xl font-bold text-primary">{booksThisYear}</p>
+            <p className="text-muted-foreground">Books this year</p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="font-semibold text-gray-900 mb-2">Reading Goal</h3>
-            <p className="text-3xl font-bold text-blue-600">{completedBooks}/12</p>
-            <p className="text-gray-600">Books completed</p>
+          <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <h3 className="font-semibold text-card-foreground mb-2">Reading Goal</h3>
+            <p className="text-3xl font-bold text-primary">{completedBooks}/12</p>
+            <p className="text-muted-foreground">Books completed</p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="font-semibold text-gray-900 mb-2">Total Library</h3>
-            <p className="text-3xl font-bold text-blue-600">{totalBooks}</p>
-            <p className="text-gray-600">Books tracked</p>
+          <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+            <h3 className="font-semibold text-card-foreground mb-2">Total Library</h3>
+            <p className="text-3xl font-bold text-primary">{totalBooks}</p>
+            <p className="text-muted-foreground">Books tracked</p>
           </div>
         </div>
       )}

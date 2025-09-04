@@ -132,7 +132,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
+          <div className="fixed inset-0 modal-backdrop" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -146,16 +146,16 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card p-6 text-left align-middle shadow-xl transition-all border border-border">
                 <Dialog.Title as="div" className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
+                  <h3 className="text-lg font-semibold leading-6 text-card-foreground">
                     Add to Library
                   </h3>
                   <button
                     onClick={handleClose}
-                    className="rounded-md p-1 hover:bg-gray-100"
+                    className="rounded-md p-1 hover:bg-muted transition-colors focus-ring"
                   >
-                    <XMarkIcon className="h-5 w-5 text-gray-500" />
+                    <XMarkIcon className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </Dialog.Title>
 
@@ -166,7 +166,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                       <div
                         key={i}
                         className={`h-2 flex-1 ${i > 0 ? 'ml-2' : ''} rounded-full ${
-                          i < currentStep ? 'bg-blue-600' : 'bg-gray-200'
+                          i < currentStep ? 'bg-primary' : 'bg-border'
                         }`}
                       />
                     ))}
@@ -174,7 +174,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                 </div>
 
                 {/* Book Info */}
-                <div className="flex space-x-3 mb-4 pb-4 border-b">
+                <div className="flex space-x-3 mb-4 pb-4 border-b border-border">
                   {book.imageUrl && (
                     <Image
                       src={book.imageUrl}
@@ -185,10 +185,10 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-card-foreground truncate">
                       {book.title}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {book.authors.join(', ')}
                     </p>
                   </div>
@@ -200,7 +200,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   {currentStep === 1 && (
                     <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-700">Reading Status</label>
+                        <label className="text-sm font-semibold text-card-foreground">Reading Status</label>
                         <div className="mt-2 space-y-2">
                           {[
                             { value: 'WANT_TO_READ', label: 'Want to Read' },
@@ -215,14 +215,14 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                                 onChange={(e) => setFormData({ ...formData, status: e.target.value as BookStatus })}
                                 className="mr-2"
                               />
-                              <span className="text-sm">{option.label}</span>
+                              <span className="text-sm text-card-foreground">{option.label}</span>
                             </label>
                           ))}
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium text-gray-700">Format</label>
+                        <label className="text-sm font-semibold text-card-foreground">Format</label>
                         <div className="mt-2 space-y-2">
                           {[
                             { value: 'HARDCOVER', label: 'Hardcover' },
@@ -238,7 +238,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                                 onChange={(e) => setFormData({ ...formData, format: e.target.value as BookFormat })}
                                 className="mr-2"
                               />
-                              <span className="text-sm">{option.label}</span>
+                              <span className="text-sm text-card-foreground">{option.label}</span>
                             </label>
                           ))}
                         </div>
@@ -249,7 +249,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   {/* Step 2: Start Date (Reading/Completed) */}
                   {currentStep === 2 && (formData.status === 'READING' || formData.status === 'COMPLETED') && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-sm font-semibold text-card-foreground">
                         When did you start reading?
                       </label>
                       <input
@@ -257,7 +257,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                         value={formData.startDate || ''}
                         onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                         max={new Date().toISOString().split('T')[0]}
-                        className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
                     </div>
                   )}
@@ -265,7 +265,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   {/* Step 3: Progress (Reading) or Completion (Completed) */}
                   {currentStep === 3 && formData.status === 'READING' && (
                     <div>
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-sm font-semibold text-card-foreground">
                         Current Progress (%)
                       </label>
                       <input
@@ -274,9 +274,9 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                         max="99"
                         value={formData.progress || 0}
                         onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
-                        className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Enter your progress as a percentage (0-99)
                       </p>
                     </div>
@@ -285,7 +285,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   {currentStep === 3 && formData.status === 'COMPLETED' && (
                     <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-700">
+                        <label className="text-sm font-semibold text-card-foreground">
                           Did you finish the book?
                         </label>
                         <div className="mt-2 space-y-2">
@@ -297,7 +297,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                               onChange={() => setFormData({ ...formData, didFinish: true })}
                               className="mr-2"
                             />
-                            <span className="text-sm">Yes</span>
+                            <span className="text-sm text-card-foreground">Yes</span>
                           </label>
                           <label className="flex items-center">
                             <input
@@ -307,14 +307,14 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                               onChange={() => setFormData({ ...formData, didFinish: false })}
                               className="mr-2"
                             />
-                            <span className="text-sm">No (DNF)</span>
+                            <span className="text-sm text-card-foreground">No (DNF)</span>
                           </label>
                         </div>
                       </div>
 
                       {formData.didFinish && (
                         <div>
-                          <label className="text-sm font-medium text-gray-700">
+                          <label className="text-sm font-semibold text-card-foreground">
                             Finish Date
                           </label>
                           <input
@@ -323,7 +323,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                             onChange={(e) => setFormData({ ...formData, finishDate: e.target.value })}
                             min={formData.startDate}
                             max={new Date().toISOString().split('T')[0]}
-                            className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                           />
                         </div>
                       )}
@@ -336,14 +336,14 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 1}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-secondary border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
                   >
                     Back
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors focus-ring"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center">

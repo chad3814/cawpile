@@ -32,9 +32,9 @@ interface BookCardProps {
 }
 
 const statusColors = {
-  WANT_TO_READ: 'bg-gray-100 text-gray-800',
-  READING: 'bg-blue-100 text-blue-800',
-  COMPLETED: 'bg-green-100 text-green-800'
+  WANT_TO_READ: 'status-badge status-want-to-read',
+  READING: 'status-badge status-reading',
+  COMPLETED: 'status-badge status-completed'
 }
 
 const statusLabels = {
@@ -79,9 +79,9 @@ export default function BookCard({ book }: BookCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm hover:shadow-md card-hover overflow-hidden border border-border">
       {/* Book Cover */}
-      <div className="aspect-[3/4] relative bg-gray-100">
+      <div className="aspect-[3/4] relative bg-muted">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -93,7 +93,7 @@ export default function BookCard({ book }: BookCardProps) {
         ) : (
           <div className="flex items-center justify-center h-full">
             <svg
-              className="w-16 h-20 text-gray-300"
+              className="w-16 h-20 text-muted-foreground/60"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -112,16 +112,16 @@ export default function BookCard({ book }: BookCardProps) {
       {/* Book Details */}
       <div className="p-4">
         {/* Title and Author */}
-        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1">
+        <h3 className="font-semibold text-card-foreground line-clamp-2 mb-1">
           {displayTitle}
         </h3>
-        <p className="text-sm text-gray-600 line-clamp-1 mb-3">
+        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
           {authors.join(', ')}
         </p>
 
         {/* Status Badge and Format */}
         <div className="flex items-center justify-between mb-3">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[book.status]}`}>
+          <span className={statusColors[book.status]}>
             {statusLabels[book.status]}
           </span>
           <span className="text-lg" title={book.format}>
@@ -132,19 +132,19 @@ export default function BookCard({ book }: BookCardProps) {
         {/* Progress Bar (for reading books) */}
         {book.status === 'READING' && (
           <div>
-            <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
               <span>Progress</span>
               <span>{Math.round(book.progress)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div className="w-full bg-border rounded-full h-2 mb-2">
               <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
+                className="bg-primary h-2 rounded-full transition-all"
                 style={{ width: `${book.progress}%` }}
               />
             </div>
             <button
               onClick={() => setIsProgressModalOpen(true)}
-              className="w-full text-xs text-blue-600 hover:text-blue-700 font-medium"
+              className="w-full text-xs text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Update Progress
             </button>
@@ -153,7 +153,7 @@ export default function BookCard({ book }: BookCardProps) {
 
         {/* Completion Date (for completed books) */}
         {book.status === 'COMPLETED' && book.finishDate && (
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-muted-foreground">
             Finished {new Date(book.finishDate).toLocaleDateString()}
           </p>
         )}

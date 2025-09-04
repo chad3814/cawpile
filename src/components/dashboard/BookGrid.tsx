@@ -45,7 +45,7 @@ export default function BookGrid({ books }: BookGridProps) {
       {/* Currently Reading Section */}
       {readingBooks.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Currently Reading
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -60,7 +60,7 @@ export default function BookGrid({ books }: BookGridProps) {
       {otherBooks.length > 0 && (
         <div>
           {readingBooks.length > 0 && (
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
               Library
             </h2>
           )}

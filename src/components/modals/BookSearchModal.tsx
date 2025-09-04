@@ -39,7 +39,7 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
+          <div className="fixed inset-0 modal-backdrop" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -53,29 +53,29 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-2xl bg-card p-6 text-left align-middle shadow-xl transition-all border border-border">
                 <Dialog.Title as="div" className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
+                  <h3 className="text-lg font-semibold leading-6 text-card-foreground">
                     Search for a book
                   </h3>
                   <button
                     onClick={handleClose}
-                    className="rounded-md p-1 hover:bg-gray-100"
+                    className="rounded-md p-1 hover:bg-muted transition-colors focus-ring"
                   >
-                    <XMarkIcon className="h-5 w-5 text-gray-500" />
+                    <XMarkIcon className="h-5 w-5 text-muted-foreground" />
                   </button>
                 </Dialog.Title>
 
                 {/* Search Input */}
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    <MagnifyingGlassIcon className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="block w-full rounded-md border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="block w-full rounded-md border border-border bg-input py-2 pl-10 pr-3 text-sm text-card-foreground placeholder-muted-foreground focus-ring"
                     placeholder="Search by title, author, or ISBN..."
                     autoFocus
                   />
@@ -85,19 +85,19 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
                 <div className="mt-4 max-h-96 overflow-y-auto">
                   {isLoading && (
                     <div className="flex justify-center py-8">
-                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
                     </div>
                   )}
 
                   {error && (
-                    <div className="rounded-md bg-red-50 p-4">
-                      <p className="text-sm text-red-800">{error}</p>
+                    <div className="rounded-md bg-destructive/10 p-4 border border-destructive/20">
+                      <p className="text-sm text-destructive font-medium">{error}</p>
                     </div>
                   )}
 
                   {!isLoading && !error && query && results.length === 0 && (
                     <div className="py-8 text-center">
-                      <p className="text-gray-500">No books found for &ldquo;{query}&rdquo;</p>
+                      <p className="text-muted-foreground">No books found for &ldquo;{query}&rdquo;</p>
                     </div>
                   )}
 
@@ -107,7 +107,7 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
                         <button
                           key={`${book.id}-${index}`}
                           onClick={() => handleSelectBook(book)}
-                          className="w-full rounded-lg border border-gray-200 p-3 text-left hover:bg-gray-50 transition-colors"
+                          className="w-full rounded-lg border border-border p-3 text-left hover:bg-muted transition-colors focus-ring"
                         >
                           <div className="flex space-x-3">
                             {/* Book Cover */}
@@ -121,9 +121,9 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
                                   className="rounded object-cover"
                                 />
                               ) : (
-                                <div className="w-12 h-18 bg-gray-200 rounded flex items-center justify-center">
+                                <div className="w-12 h-18 bg-muted rounded flex items-center justify-center">
                                   <svg
-                                    className="w-6 h-8 text-gray-400"
+                                    className="w-6 h-8 text-muted-foreground"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -141,19 +141,19 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
 
                             {/* Book Details */}
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 truncate">
+                              <p className="text-sm font-semibold text-card-foreground truncate">
                                 {book.title}
                               </p>
                               {book.subtitle && (
-                                <p className="text-xs text-gray-600 truncate">
+                                <p className="text-xs text-muted-foreground truncate">
                                   {book.subtitle}
                                 </p>
                               )}
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 {book.authors.join(', ')} {book.publishedDate && `• ${book.publishedDate.split('-')[0]}`}
                               </p>
                               {book.description && (
-                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                   {book.description.substring(0, 150)}...
                                 </p>
                               )}
