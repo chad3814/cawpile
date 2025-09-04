@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     const maxResults = limit ? parseInt(limit, 10) : 10
     const books = await searchBooks(query, maxResults)
-    
+
     return NextResponse.json({ books })
   } catch (error) {
     console.error("Search error:", error)
