@@ -2,7 +2,20 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns:[new URL('https://*.googleusercontent.com/**')]
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.googleusercontent.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'books.google.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'books.google.com',
+      }
+    ]
   }
 };
 
