@@ -3,10 +3,11 @@ import { auth } from '@/lib/auth'
 import { getBookById } from '@/lib/googleBooks'
 import { findOrCreateBook, findOrCreateEdition } from '@/lib/db/books'
 import prisma from '@/lib/prisma'
+import { BookStatus, Prisma } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   const session = await auth()
-  
+
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch book data from Google Books
     const bookData = await getBookById(googleBooksId)
-    
+
     if (!bookData) {
       return NextResponse.json(
         { error: 'Book not found' },
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const session = await auth()
-  
+
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -102,12 +103,12 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
 
-    const where: any = {
+    const where: Prisma.UserBookScalarWhereInput = {
       userId: session.user.id
     }
 
     if (status) {
-      where.status = status
+      where.status = status as BookStatus
     }
 
     const userBooks = await prisma.userBook.findMany({
