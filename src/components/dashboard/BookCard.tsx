@@ -1,5 +1,10 @@
+"use client"
+
+import { useState } from 'react'
 import Image from 'next/image'
 import { BookStatus, BookFormat } from '@prisma/client'
+import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
+import { useRouter } from 'next/navigation'
 
 interface BookCardProps {
   book: {
@@ -46,12 +51,35 @@ const formatIcons = {
 }
 
 export default function BookCard({ book }: BookCardProps) {
+  const router = useRouter()
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
   const imageUrl = book.edition.googleBook?.imageUrl
 
+  const handleUpdateProgress = async (bookId: string, progress: number) => {
+    try {
+      const response = await fetch(`/api/user/books/${bookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ progress }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update progress')
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error updating progress:', error)
+    }
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
+    <>
+      <div className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden">
       {/* Book Cover */}
       <div className="aspect-[3/4] relative bg-gray-100">
         {imageUrl ? (
@@ -108,12 +136,18 @@ export default function BookCard({ book }: BookCardProps) {
               <span>Progress</span>
               <span>{Math.round(book.progress)}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
               <div
                 className="bg-blue-600 h-2 rounded-full transition-all"
                 style={{ width: `${book.progress}%` }}
               />
             </div>
+            <button
+              onClick={() => setIsProgressModalOpen(true)}
+              className="w-full text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Update Progress
+            </button>
           </div>
         )}
 
@@ -125,5 +159,21 @@ export default function BookCard({ book }: BookCardProps) {
         )}
       </div>
     </div>
+
+    {/* Update Progress Modal */}
+    {book.status === 'READING' && (
+      <UpdateProgressModal
+        isOpen={isProgressModalOpen}
+        onClose={() => setIsProgressModalOpen(false)}
+        book={{
+          id: book.id,
+          title: displayTitle,
+          currentProgress: book.progress,
+          pageCount: book.edition.googleBook?.pageCount,
+        }}
+        onUpdate={handleUpdateProgress}
+      />
+    )}
+    </>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { BookSearchResult } from '@/types/book'
@@ -32,6 +32,18 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     status: 'WANT_TO_READ',
     format: 'PAPERBACK',
   })
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        handleClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen])
 
   const getTotalSteps = () => {
     if (formData.status === 'WANT_TO_READ') return 1
