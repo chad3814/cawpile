@@ -22,11 +22,11 @@ export default function SignInPage() {
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
       <div className="w-full max-w-md p-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-card rounded-lg shadow-lg p-8 border border-border">
           {/* Logo */}
           <div className="flex justify-center mb-8">
             <svg 
-              className="w-16 h-16 text-blue-600" 
+              className="w-16 h-16 text-primary" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -40,11 +40,11 @@ export default function SignInPage() {
             </svg>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
-            Welcome to BookShelf
+          <h1 className="text-2xl font-bold text-card-foreground text-center mb-2">
+            Welcome to CAWPILE
           </h1>
           
-          <p className="text-gray-600 text-center mb-8">
+          <p className="text-muted-foreground text-center mb-8">
             Sign in to start tracking your reading journey
           </p>
 
@@ -52,10 +52,10 @@ export default function SignInPage() {
           <button
             onClick={handleSignIn}
             disabled={isLoading}
-            className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center space-x-3 px-4 py-3 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-muted-foreground border-t-primary rounded-full animate-spin" />
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -76,14 +76,14 @@ export default function SignInPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="text-gray-700 font-medium">
+                <span className="text-card-foreground font-medium">
                   Sign in with Google
                 </span>
               </>
             )}
           </button>
 
-          <p className="text-xs text-gray-500 text-center mt-8">
+          <p className="text-xs text-muted-foreground text-center mt-8">
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>

@@ -7,7 +7,7 @@ export default function Home() {
       <section className="text-center px-6 py-16 max-w-4xl mx-auto">
         <div className="flex justify-center mb-8">
           <svg
-            className="w-20 h-20 text-blue-600"
+            className="w-20 h-20 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -21,17 +21,17 @@ export default function Home() {
           </svg>
         </div>
 
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
+        <h1 className="text-5xl font-bold text-foreground mb-6">
           Track Your Reading Journey
         </h1>
 
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Organize your library, monitor reading progress, set goals, and discover your next favorite book with BookShelf.
+        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+          Organize your library, monitor reading progress, set goals, and discover your next favorite book with CAWPILE.
         </p>
 
         <Link
           href="/auth/signin"
-          className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-lg"
+          className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors text-lg"
         >
           Start Tracking
           <svg
@@ -55,9 +55,9 @@ export default function Home() {
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
           <div className="text-center p-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
-                className="w-8 h-8 text-blue-600"
+                className="w-8 h-8 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -70,19 +70,19 @@ export default function Home() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               Track Reading
             </h3>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Keep track of what you&apos;re reading, want to read, and have completed. Monitor your progress page by page.
             </p>
           </div>
 
           {/* Feature 2 */}
           <div className="text-center p-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
-                className="w-8 h-8 text-blue-600"
+                className="w-8 h-8 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -95,19 +95,19 @@ export default function Home() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               Set Goals
             </h3>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Challenge yourself with reading goals. Track your progress throughout the year and celebrate your achievements.
             </p>
           </div>
 
           {/* Feature 3 */}
           <div className="text-center p-6">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
-                className="w-8 h-8 text-blue-600"
+                className="w-8 h-8 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -120,10 +120,10 @@ export default function Home() {
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               Discover Books
             </h3>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Search millions of books, get recommendations, and find your next great read from our comprehensive database.
             </p>
           </div>

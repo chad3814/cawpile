@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BookShelf - Track Your Reading Journey",
+  title: "CAWPILE - Track Your Reading Journey",
   description: "Track books you read, monitor progress, and discover new reads",
 };
 
