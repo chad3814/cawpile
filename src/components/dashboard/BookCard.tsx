@@ -34,13 +34,15 @@ interface BookCardProps {
 const statusColors = {
   WANT_TO_READ: 'status-badge status-want-to-read',
   READING: 'status-badge status-reading',
-  COMPLETED: 'status-badge status-completed'
+  COMPLETED: 'status-badge status-completed',
+  DNF: 'status-badge status-dnf'
 }
 
 const statusLabels = {
   WANT_TO_READ: 'Want to Read',
   READING: 'Reading',
-  COMPLETED: 'Completed'
+  COMPLETED: 'Completed',
+  DNF: 'Did Not Finish'
 }
 
 const formatIcons = {

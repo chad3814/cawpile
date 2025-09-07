@@ -1,0 +1,102 @@
+import { BookType } from '@prisma/client'
+
+// Non-fiction categories from Google Books
+const NON_FICTION_CATEGORIES = [
+  'Biography & Autobiography',
+  'Business & Economics',
+  'Computers & Technology',
+  'Cooking & Food',
+  'Health & Fitness',
+  'History',
+  'Law',
+  'Medical',
+  'Philosophy',
+  'Psychology',
+  'Religion & Spirituality',
+  'Science & Mathematics',
+  'Self-Help',
+  'Social Science',
+  'Sports & Recreation',
+  'Travel',
+  'True Crime',
+  'Reference & Study Aids',
+  'Politics & Government',
+  'Essays & Literary Criticism',
+  'Education',
+  'Architecture',
+  'Art',
+  'Music',
+  'Photography',
+  'Gardening',
+  'Crafts & Hobbies',
+  'Nature',
+  'Pets',
+  'Transportation',
+  'Language Arts & Disciplines',
+  'Performing Arts',
+  'Design',
+  'Technology & Engineering',
+  'Computers',
+  'Mathematics',
+  'Science',
+  'Biography',
+  'Autobiography',
+  'Memoir',
+  'Business',
+  'Economics',
+  'Finance',
+  'Cooking',
+  'Health',
+  'Fitness',
+  'Diet',
+  'Psychology & Counseling',
+  'Religion',
+  'Spirituality',
+  'Social Sciences',
+  'Political Science',
+  'Current Events',
+  'Study Aids',
+  'Test Preparation',
+  'Reference'
+]
+
+/**
+ * Detects whether a book is fiction or non-fiction based on its categories
+ * @param categories Array of category strings from Google Books or other sources
+ * @returns BookType.FICTION or BookType.NONFICTION
+ */
+export function detectBookType(categories: string[] | null | undefined): BookType {
+  // Default to fiction if no categories provided
+  if (!categories || categories.length === 0) {
+    return BookType.FICTION
+  }
+
+  // Check if any category matches non-fiction categories (case-insensitive partial matching)
+  const isNonFiction = categories.some(category => {
+    const categoryLower = category.toLowerCase()
+    return NON_FICTION_CATEGORIES.some(nonFictionCategory => {
+      const nonFictionLower = nonFictionCategory.toLowerCase()
+      // Check if either contains the other (partial matching)
+      return categoryLower.includes(nonFictionLower) ||
+             nonFictionLower.includes(categoryLower) ||
+             // Also check individual words for better matching
+             nonFictionLower.split(/[&\s]+/).some(word =>
+               word.length > 3 && categoryLower.includes(word)
+             )
+    })
+  })
+
+  return isNonFiction ? BookType.NONFICTION : BookType.FICTION
+}
+
+/**
+ * Helper to determine if a specific category string indicates non-fiction
+ */
+export function isNonFictionCategory(category: string): boolean {
+  const categoryLower = category.toLowerCase()
+  return NON_FICTION_CATEGORIES.some(nonFictionCategory => {
+    const nonFictionLower = nonFictionCategory.toLowerCase()
+    return categoryLower.includes(nonFictionLower) ||
+           nonFictionLower.includes(categoryLower)
+  })
+}

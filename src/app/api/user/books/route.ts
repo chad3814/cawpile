@@ -29,11 +29,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Find or create book
+    // Find or create book (now with book type detection)
     const book = await findOrCreateBook(
       bookData.title,
       bookData.authors,
-      'en' // Default to English, can be enhanced later
+      'en', // Default to English, can be enhanced later
+      bookData.categories // Pass categories for book type detection
     )
 
     // Find or create edition

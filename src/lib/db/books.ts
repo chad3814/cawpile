@@ -1,11 +1,13 @@
 import prisma from '@/lib/prisma'
 import { BookSearchResult } from '@/types/book'
 import { Prisma } from '@prisma/client'
+import { detectBookType } from '@/lib/bookTypeDetection'
 
 export async function findOrCreateBook(
   title: string,
   authors: string[],
-  language: string = 'en'
+  language: string = 'en',
+  categories?: string[]
 ) {
   // First try to find existing book
   const existingBook = await prisma.book.findFirst({
@@ -21,12 +23,16 @@ export async function findOrCreateBook(
     return existingBook
   }
 
+  // Detect book type based on categories
+  const bookType = detectBookType(categories)
+
   // Create new book
   return await prisma.book.create({
     data: {
       title,
       authors,
-      language
+      language,
+      bookType
     }
   })
 }
