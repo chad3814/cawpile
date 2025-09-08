@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth/admin'
+import { getCurrentUser } from '@/lib/auth/admin'
 
 export async function GET() {
   try {
-    await requireAdmin()
+    const user = await getCurrentUser()
+    
+    if (!user || !user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
 
     const [totalBooks, totalUsers, totalEditions, fictionCount] = await Promise.all([
       prisma.book.count(),

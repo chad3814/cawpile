@@ -1,17 +1,27 @@
 import { requireAdmin } from '@/lib/auth/admin'
+import { prisma } from '@/lib/prisma'
 import StatsCard from '@/components/admin/StatsCard'
 import { getRecentAdminActivity } from '@/lib/audit/logger'
 
 async function getAdminStats() {
-  const response = await fetch(`${process.env.NEXTAUTH_URL}/api/admin/stats`, {
-    cache: 'no-store',
-  })
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch stats')
+  const [totalBooks, totalUsers, totalEditions, fictionCount] = await Promise.all([
+    prisma.book.count(),
+    prisma.user.count(),
+    prisma.edition.count(),
+    prisma.book.count({
+      where: { bookType: 'FICTION' }
+    }),
+  ])
+
+  return {
+    totalBooks,
+    totalUsers,
+    totalEditions,
+    booksByType: {
+      fiction: fictionCount,
+      nonFiction: totalBooks - fictionCount,
+    },
   }
-  
-  return response.json()
 }
 
 export default async function AdminDashboard() {
