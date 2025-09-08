@@ -120,7 +120,8 @@ export async function GET(request: NextRequest) {
             book: true,
             googleBook: true
           }
-        }
+        },
+        cawpileRating: true
       },
       orderBy: [
         {

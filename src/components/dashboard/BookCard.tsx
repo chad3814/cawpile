@@ -4,6 +4,10 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { BookStatus, BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
+import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
+import StarRating from '@/components/rating/StarRating'
+import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
+import { BookType } from '@/types/cawpile'
 import { useRouter } from 'next/navigation'
 
 interface BookCardProps {
@@ -21,6 +25,7 @@ interface BookCardProps {
       book: {
         title: string
         authors: string[]
+        bookType?: 'FICTION' | 'NONFICTION'
       }
       googleBook: {
         imageUrl: string | null
@@ -28,6 +33,17 @@ interface BookCardProps {
         pageCount: number | null
       } | null
     }
+    cawpileRating?: {
+      id: string
+      average: number
+      characters: number | null
+      atmosphere: number | null
+      writing: number | null
+      plot: number | null
+      intrigue: number | null
+      logic: number | null
+      enjoyment: number | null
+    } | null
   }
 }
 
@@ -55,9 +71,12 @@ const formatIcons = {
 export default function BookCard({ book }: BookCardProps) {
   const router = useRouter()
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
+  const [showRatingPreview, setShowRatingPreview] = useState(false)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
   const imageUrl = book.edition.googleBook?.imageUrl
+  const bookType = (book.edition.book.bookType || 'FICTION') as BookType
 
   const handleUpdateProgress = async (bookId: string, progress: number) => {
     try {
@@ -71,6 +90,11 @@ export default function BookCard({ book }: BookCardProps) {
 
       if (!response.ok) {
         throw new Error('Failed to update progress')
+      }
+
+      // If progress is 100% and book doesn't have a rating, prompt for rating
+      if (progress === 100 && !book.cawpileRating) {
+        setIsRatingModalOpen(true)
       }
 
       router.refresh()
@@ -121,6 +145,32 @@ export default function BookCard({ book }: BookCardProps) {
           {authors.join(', ')}
         </p>
 
+        {/* Rating Display */}
+        {book.cawpileRating && (
+          <div 
+            className="mb-3 relative"
+            onMouseEnter={() => setShowRatingPreview(true)}
+            onMouseLeave={() => setShowRatingPreview(false)}
+          >
+            <StarRating 
+              rating={book.cawpileRating.average} 
+              showAverage={true}
+              size="sm"
+            />
+            
+            {/* Rating Preview on Hover */}
+            {showRatingPreview && (
+              <div className="absolute z-10 left-0 right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <CawpileFacetDisplay
+                  rating={book.cawpileRating}
+                  bookType={bookType}
+                  compact={true}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Status Badge and Format */}
         <div className="flex items-center justify-between mb-3">
           <span className={statusColors[book.status]}>
@@ -159,6 +209,16 @@ export default function BookCard({ book }: BookCardProps) {
             Finished {new Date(book.finishDate).toLocaleDateString()}
           </p>
         )}
+
+        {/* Rating Action */}
+        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={() => setIsRatingModalOpen(true)}
+            className="w-full text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            {book.cawpileRating ? 'Edit Rating' : 'Rate Book'}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -176,6 +236,16 @@ export default function BookCard({ book }: BookCardProps) {
         onUpdate={handleUpdateProgress}
       />
     )}
+
+    {/* CAWPILE Rating Modal */}
+    <CawpileRatingModal
+      isOpen={isRatingModalOpen}
+      onClose={() => setIsRatingModalOpen(false)}
+      bookId={book.id}
+      bookType={bookType}
+      bookTitle={displayTitle}
+      initialRating={book.cawpileRating}
+    />
     </>
   )
 }
