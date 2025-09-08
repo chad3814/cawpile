@@ -34,11 +34,12 @@ async function getAuditLogs(page: number = 1, limit: number = 50) {
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: { page?: string }
+  searchParams: Promise<{ page?: string }>
 }) {
   await requireAdmin()
   
-  const page = parseInt(searchParams.page || '1')
+  const params = await searchParams
+  const page = parseInt(params.page || '1')
   const { logs, total, totalPages } = await getAuditLogs(page)
 
   const getActionColor = (action: string) => {
