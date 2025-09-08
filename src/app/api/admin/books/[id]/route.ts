@@ -6,9 +6,10 @@ import { Prisma } from '@prisma/client'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user || !user.isAdmin) {
@@ -19,7 +20,7 @@ export async function GET(
     }
 
     const book = await prisma.book.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         editions: {
           include: {
@@ -62,9 +63,10 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     
     if (!user || !user.isAdmin) {
@@ -89,7 +91,7 @@ export async function PATCH(
     
     // Get current book data for audit logging
     const currentBook = await prisma.book.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
     
     if (!currentBook) {
@@ -113,7 +115,7 @@ export async function PATCH(
     // Only update if there are changes
     if (Object.keys(updates).length > 0) {
       const updatedBook = await prisma.book.update({
-        where: { id: params.id },
+        where: { id },
         data: updates,
         include: {
           editions: {
@@ -133,7 +135,7 @@ export async function PATCH(
       await logFieldChanges(
         user.id,
         'Book',
-        params.id,
+        id,
         changes
       )
       

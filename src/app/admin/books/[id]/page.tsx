@@ -41,10 +41,11 @@ async function getBook(id: string) {
 export default async function BookEditPage({ 
   params 
 }: { 
-  params: { id: string } 
+  params: Promise<{ id: string }> 
 }) {
   await requireAdmin()
-  const book = await getBook(params.id)
+  const { id } = await params
+  const book = await getBook(id)
 
   return (
     <div className="space-y-6">
