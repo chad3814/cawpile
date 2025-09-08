@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
-import { logAdminAction } from '@/lib/audit/logger'
 
 export async function POST(request: Request) {
   try {

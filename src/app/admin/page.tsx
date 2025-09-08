@@ -1,6 +1,7 @@
 import { requireAdmin } from '@/lib/auth/admin'
 import { prisma } from '@/lib/prisma'
 import StatsCard from '@/components/admin/StatsCard'
+import DataQualityWidget from '@/components/admin/DataQualityWidget'
 import { getRecentAdminActivity } from '@/lib/audit/logger'
 
 async function getAdminStats() {
@@ -64,35 +65,43 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Admin Activity</h3>
-        {recentActivity.length > 0 ? (
-          <div className="space-y-3">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3 py-2 border-b last:border-0">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">
-                    <span className="font-medium">{activity.admin?.name || activity.admin?.email}</span>
-                    {' '}
-                    <span className="text-gray-600">
-                      {activity.actionType.toLowerCase()}d {activity.entityType}
-                    </span>
-                  </p>
-                  {activity.fieldName && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Changed {activity.fieldName}: {activity.oldValue} → {activity.newValue}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </p>
-                </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Admin Activity</h3>
+            {recentActivity.length > 0 ? (
+              <div className="space-y-3">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3 py-2 border-b last:border-0">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">
+                        <span className="font-medium">{activity.admin?.name || activity.admin?.email}</span>
+                        {' '}
+                        <span className="text-gray-600">
+                          {activity.actionType.toLowerCase()}d {activity.entityType}
+                        </span>
+                      </p>
+                      {activity.fieldName && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Changed {activity.fieldName}: {activity.oldValue} → {activity.newValue}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <p className="text-gray-500">No recent activity</p>
+            )}
           </div>
-        ) : (
-          <p className="text-gray-500">No recent activity</p>
-        )}
+        </div>
+        
+        <div className="lg:col-span-1">
+          <DataQualityWidget />
+        </div>
       </div>
     </div>
   )
