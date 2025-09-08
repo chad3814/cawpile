@@ -62,7 +62,7 @@ export default async function AdminDashboard() {
               <div key={activity.id} className="flex items-start space-x-3 py-2 border-b last:border-0">
                 <div className="flex-1">
                   <p className="text-sm text-gray-900">
-                    <span className="font-medium">{activity.admin.name || activity.admin.email}</span>
+                    <span className="font-medium">{activity.admin?.name || activity.admin?.email}</span>
                     {' '}
                     <span className="text-gray-600">
                       {activity.actionType.toLowerCase()}d {activity.entityType}

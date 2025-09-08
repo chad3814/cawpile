@@ -26,7 +26,7 @@ export async function logFieldChanges(
   adminId: string,
   entityType: string,
   entityId: string,
-  changes: Record<string, { old: any; new: any }>
+  changes: Record<string, { old: unknown; new: unknown }>
 ) {
   const entries = Object.entries(changes).map(([fieldName, values]) => ({
     adminId,
@@ -47,7 +47,23 @@ export async function logFieldChanges(
   }
 }
 
-export function formatAuditEntry(entry: any) {
+interface RawAuditEntry {
+  id: string
+  adminId: string
+  entityType: string
+  entityId: string
+  fieldName: string | null
+  oldValue: string | null
+  newValue: string | null
+  actionType: string
+  timestamp: Date
+  admin?: {
+    name: string | null
+    email: string
+  }
+}
+
+export function formatAuditEntry(entry: RawAuditEntry) {
   return {
     ...entry,
     oldValue: entry.oldValue ? JSON.parse(entry.oldValue) : null,

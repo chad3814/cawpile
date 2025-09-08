@@ -12,8 +12,8 @@ export interface AuditLogEntry {
   entityType: string
   entityId: string
   fieldName?: string
-  oldValue?: any
-  newValue?: any
+  oldValue?: unknown
+  newValue?: unknown
   actionType: AuditActionType
 }
 

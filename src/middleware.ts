@@ -7,7 +7,6 @@ export default auth(async (req) => {
   const isOnAuth = req.nextUrl.pathname.startsWith("/auth")
   const isOnHome = req.nextUrl.pathname === "/"
   const isOnAdmin = req.nextUrl.pathname.startsWith("/admin")
-  const isOnAdminUsers = req.nextUrl.pathname.startsWith("/admin/users")
 
   // Admin route protection
   if (isOnAdmin) {
