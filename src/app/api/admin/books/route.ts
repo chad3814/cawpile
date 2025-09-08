@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
+import { Prisma } from '@prisma/client'
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
     }
 
     // Build where clause
-    const where: any = {}
+    const where: Prisma.BookWhereInput = {}
 
     // Search
     if (search) {
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
 
     // Filters
     if (bookType) {
-      where.bookType = bookType
+      where.bookType = bookType as 'FICTION' | 'NONFICTION'
     }
     if (language) {
       where.language = language

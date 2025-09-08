@@ -7,6 +7,7 @@ import BookSearch from '@/components/admin/BookSearch'
 import BookFilters from '@/components/admin/BookFilters'
 import Pagination from '@/components/admin/Pagination'
 import BulkActionBar from '@/components/admin/BulkActionBar'
+import { BookWithEditions } from '@/types/book'
 
 export default function AdminBooksPage() {
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function AdminBooksPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc')
   
   // Local state
-  const [books, setBooks] = useState<any[]>([])
+  const [books, setBooks] = useState<BookWithEditions[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)

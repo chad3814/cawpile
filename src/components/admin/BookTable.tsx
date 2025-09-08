@@ -3,19 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { PencilIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-
-interface Book {
-  id: string
-  title: string
-  authors: string[]
-  bookType: string
-  language: string
-  userCount: number
-  editions: any[]
-}
+import { BookWithEditions } from '@/types/book'
 
 interface BookTableProps {
-  books: Book[]
+  books: BookWithEditions[]
   onSort: (field: string) => void
   sortBy: string
   sortOrder: 'asc' | 'desc'

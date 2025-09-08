@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
 import { logFieldChanges } from '@/lib/audit/logger'
+import { Prisma } from '@prisma/client'
 
 export async function GET(
   request: Request,
@@ -83,7 +84,7 @@ export async function PATCH(
       'language'
     ]
     
-    const updates: any = {}
+    const updates: Prisma.BookUpdateInput = {}
     const changes: Record<string, { old: unknown; new: unknown }> = {}
     
     // Get current book data for audit logging
@@ -101,7 +102,7 @@ export async function PATCH(
     // Process updates and track changes
     for (const field of editableFields) {
       if (field in body && body[field] !== currentBook[field as keyof typeof currentBook]) {
-        updates[field] = body[field]
+        (updates as Record<string, unknown>)[field] = body[field]
         changes[field] = {
           old: currentBook[field as keyof typeof currentBook],
           new: body[field]

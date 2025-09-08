@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { BookWithEditions } from '@/types/book'
 
 interface BookEditFormProps {
-  book: any
+  book: BookWithEditions
   onSave?: () => void
 }
 
@@ -19,7 +20,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
   // Form fields
   const [title, setTitle] = useState(book.title)
   const [authors, setAuthors] = useState<string[]>(book.authors || [])
-  const [bookType, setBookType] = useState(book.bookType)
+  const [bookType, setBookType] = useState<'FICTION' | 'NONFICTION'>(book.bookType)
   const [language, setLanguage] = useState(book.language)
   
   // Track changes
@@ -93,7 +94,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
         const data = await response.json()
         setError(data.error || 'Failed to save changes')
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred while saving')
     } finally {
       setSaving(false)
@@ -170,7 +171,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
           <select
             id="bookType"
             value={bookType}
-            onChange={(e) => setBookType(e.target.value)}
+            onChange={(e) => setBookType(e.target.value as 'FICTION' | 'NONFICTION')}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
           >
             <option value="FICTION">Fiction</option>
@@ -226,7 +227,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
               <div>
                 <span className="text-sm font-medium text-gray-500">ISBNs:</span>
                 <ul className="mt-1 text-sm text-gray-900">
-                  {book.editions.map((edition: any) => (
+                  {book.editions.map((edition) => (
                     <li key={edition.id} className="ml-2">
                       {edition.isbn13 || edition.isbn10 || 'No ISBN'}
                     </li>
