@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { 
   BookOpenIcon, 
   UsersIcon, 
@@ -12,7 +13,7 @@ interface StatsCardProps {
   icon: 'book' | 'users' | 'editions' | 'fiction'
 }
 
-export default function StatsCard({ title, value, subtitle, icon }: StatsCardProps) {
+function StatsCard({ title, value, subtitle, icon }: StatsCardProps) {
   const icons = {
     book: BookOpenIcon,
     users: UsersIcon,
@@ -41,3 +42,5 @@ export default function StatsCard({ title, value, subtitle, icon }: StatsCardPro
     </div>
   )
 }
+
+export default memo(StatsCard)
