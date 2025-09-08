@@ -5,29 +5,12 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting seed...')
 
-  // Create or update admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'chad@chad-cat-lore-eddie.com' },
-    update: {
-      name: 'Chad Walker',
-      isAdmin: true,
-      isSuperAdmin: true,
-    },
-    create: {
-      email: 'chad@chad-cat-lore-eddie.com',
-      name: 'Chad Walker',
-      isAdmin: true,
-      isSuperAdmin: true,
-    },
-  })
+  // NOTE: Users should be created through OAuth providers (Google, etc.)
+  // To make a user an admin, sign in first, then run:
+  // npm run make-admin
 
-  console.log('✅ Created/updated admin user:', {
-    id: adminUser.id,
-    email: adminUser.email,
-    name: adminUser.name,
-    isAdmin: adminUser.isAdmin,
-    isSuperAdmin: adminUser.isSuperAdmin,
-  })
+  // You can add other seed data here if needed
+  // For example, sample books, categories, etc.
 
   console.log('🌱 Seed completed!')
 }
