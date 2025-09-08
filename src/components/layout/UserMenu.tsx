@@ -3,10 +3,12 @@
 import { useState, useRef, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
+import Link from "next/link"
 
 export default function UserMenu() {
   const { data: session } = useSession()
   const [isOpen, setIsOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -19,6 +21,16 @@ export default function UserMenu() {
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    // Check if user is admin
+    if (session?.user) {
+      fetch('/api/admin/check-access')
+        .then(res => res.json())
+        .then(data => setIsAdmin(data.isAdmin))
+        .catch(() => setIsAdmin(false))
+    }
+  }, [session])
 
   if (!session?.user) return null
 
@@ -67,6 +79,16 @@ export default function UserMenu() {
           >
             Settings
           </button>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setIsOpen(false)}
+              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              Admin Panel
+            </Link>
+          )}
           
           <hr className="my-1" />
           
