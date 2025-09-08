@@ -7,6 +7,7 @@ import BookSearch from '@/components/admin/BookSearch'
 import BookFilters from '@/components/admin/BookFilters'
 import Pagination from '@/components/admin/Pagination'
 import BulkActionBar from '@/components/admin/BulkActionBar'
+import BulkUpdateModal from '@/components/admin/BulkUpdateModal'
 import { BookWithEditions } from '@/types/book'
 
 export default function AdminBooksPage() {
@@ -29,6 +30,7 @@ export default function AdminBooksPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set())
+  const [showBulkModal, setShowBulkModal] = useState(false)
 
   // Build URL params
   const buildQueryString = useCallback(() => {
@@ -137,8 +139,35 @@ export default function AdminBooksPage() {
   }
 
   const handleChangeType = () => {
-    // This will be implemented in Phase 5
-    console.log('Change type for:', Array.from(selectedBooks))
+    setShowBulkModal(true)
+  }
+
+  const handleBulkUpdate = async (bookType: 'FICTION' | 'NONFICTION') => {
+    try {
+      const response = await fetch('/api/admin/books/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookIds: Array.from(selectedBooks),
+          bookType,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log(`Updated ${result.updated} books`)
+        
+        // Clear selection and refresh the list
+        setSelectedBooks(new Set())
+        await fetchBooks()
+      } else {
+        console.error('Failed to update books')
+      }
+    } catch (error) {
+      console.error('Error updating books:', error)
+    }
   }
 
   return (
@@ -206,6 +235,13 @@ export default function AdminBooksPage() {
           )}
         </>
       )}
+
+      <BulkUpdateModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        selectedCount={selectedBooks.size}
+        onConfirm={handleBulkUpdate}
+      />
     </div>
   )
 }
