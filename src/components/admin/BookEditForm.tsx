@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
 import { BookWithEditions } from '@/types/book'
+import { detectBookType } from '@/lib/bookTypeDetection'
 
 interface BookEditFormProps {
   book: BookWithEditions
@@ -22,6 +23,19 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
   const [authors, setAuthors] = useState<string[]>(book.authors || [])
   const [bookType, setBookType] = useState<'FICTION' | 'NONFICTION'>(book.bookType)
   const [language, setLanguage] = useState(book.language)
+  
+  // Get categories from GoogleBook data if available
+  const categories = book.editions?.flatMap(edition => 
+    edition.googleBook?.categories || []
+  ).filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
+  
+  const suggestedBookType = categories && categories.length > 0 
+    ? detectBookType(categories) 
+    : null
+  
+  const [showSuggestion, setShowSuggestion] = useState(
+    suggestedBookType && suggestedBookType !== book.bookType
+  )
   
   // Track changes
   useEffect(() => {
@@ -126,7 +140,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
           />
         </div>
 
@@ -143,7 +157,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
                   value={author}
                   onChange={(e) => handleAuthorChange(index, e.target.value)}
                   placeholder="Author name"
-                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                  className="flex-1 rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
                 />
                 <button
                   onClick={() => handleRemoveAuthor(index)}
@@ -168,15 +182,56 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
           <label htmlFor="bookType" className="block text-sm font-medium text-gray-700">
             Book Type
           </label>
+          
+          {showSuggestion && suggestedBookType && (
+            <div className="mt-1 mb-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-start">
+                <InformationCircleIcon className="h-5 w-5 text-blue-400 mt-0.5" />
+                <div className="ml-2 flex-1">
+                  <p className="text-sm text-blue-700">
+                    Based on categories ({categories?.slice(0, 3).join(', ')}{categories && categories.length > 3 ? '...' : ''}), 
+                    this book should be <strong>{suggestedBookType === 'FICTION' ? 'Fiction' : 'Non-Fiction'}</strong>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBookType(suggestedBookType)
+                      setShowSuggestion(false)
+                    }}
+                    className="mt-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
+                    Apply suggestion
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSuggestion(false)}
+                  className="ml-2 text-blue-400 hover:text-blue-600"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+          
           <select
             id="bookType"
             value={bookType}
-            onChange={(e) => setBookType(e.target.value as 'FICTION' | 'NONFICTION')}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+            onChange={(e) => {
+              setBookType(e.target.value as 'FICTION' | 'NONFICTION')
+              setShowSuggestion(false)
+            }}
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
           >
             <option value="FICTION">Fiction</option>
             <option value="NONFICTION">Non-Fiction</option>
           </select>
+          
+          {categories && categories.length > 0 && (
+            <p className="mt-1 text-xs text-gray-500">
+              Categories: {categories.join(', ')}
+            </p>
+          )}
         </div>
 
         {/* Language */}
@@ -188,7 +243,7 @@ export default function BookEditForm({ book, onSave }: BookEditFormProps) {
             id="language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>

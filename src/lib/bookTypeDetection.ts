@@ -71,7 +71,34 @@ export function detectBookType(categories: string[] | null | undefined): BookTyp
     return BookType.FICTION
   }
 
-  // Check if any category matches non-fiction categories (case-insensitive partial matching)
+  // First, check for explicit "fiction" or "non-fiction" categories
+  // These take priority over all other categorization
+  const hasFictionCategory = categories.some(category => {
+    const categoryLower = category.toLowerCase()
+    return categoryLower === 'fiction' || 
+           categoryLower.includes('fiction') && !categoryLower.includes('non-fiction') && !categoryLower.includes('nonfiction')
+  })
+
+  const hasNonFictionCategory = categories.some(category => {
+    const categoryLower = category.toLowerCase()
+    return categoryLower === 'non-fiction' || 
+           categoryLower === 'nonfiction' ||
+           categoryLower.includes('non-fiction') || 
+           categoryLower.includes('nonfiction')
+  })
+
+  // Priority rules:
+  // 1. If explicitly marked as "non-fiction", it's NONFICTION regardless of other categories
+  if (hasNonFictionCategory) {
+    return BookType.NONFICTION
+  }
+
+  // 2. If explicitly marked as "fiction", it's FICTION regardless of other categories
+  if (hasFictionCategory) {
+    return BookType.FICTION
+  }
+
+  // 3. Otherwise, check against known non-fiction categories
   const isNonFiction = categories.some(category => {
     const categoryLower = category.toLowerCase()
     return NON_FICTION_CATEGORIES.some(nonFictionCategory => {
