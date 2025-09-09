@@ -79,7 +79,7 @@ export default function ChangeFormatModal({
                 </div>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Select the format you're reading "{bookTitle}" in:
+                  Select the format you&rsquo;re reading &ldquo;{bookTitle}&rdquo; in:
                 </p>
 
                 <RadioGroup value={selected} onChange={setSelected}>

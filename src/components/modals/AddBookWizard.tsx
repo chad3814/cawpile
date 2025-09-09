@@ -50,13 +50,13 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
         
         // If the default date is in the future, use today
         if (defaultDate > today) {
-          setFormData({ ...formData, finishDate: today.toISOString().split('T')[0] })
+          setFormData(prev => ({ ...prev, finishDate: today.toISOString().split('T')[0] }))
         } else {
-          setFormData({ ...formData, finishDate: defaultDate.toISOString().split('T')[0] })
+          setFormData(prev => ({ ...prev, finishDate: defaultDate.toISOString().split('T')[0] }))
         }
       } else {
         // No start date, default to today
-        setFormData({ ...formData, finishDate: new Date().toISOString().split('T')[0] })
+        setFormData(prev => ({ ...prev, finishDate: new Date().toISOString().split('T')[0] }))
       }
     }
   }, [currentStep, formData.status, formData.didFinish, formData.startDate])

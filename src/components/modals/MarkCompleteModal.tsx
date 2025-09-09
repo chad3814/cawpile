@@ -117,7 +117,7 @@ export default function MarkCompleteModal({
 
                 <div className="mt-2">
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Congratulations on finishing "{book.title}"!
+                    Congratulations on finishing &ldquo;{book.title}&rdquo;!
                   </p>
 
                   <div className="space-y-4">
@@ -148,7 +148,7 @@ export default function MarkCompleteModal({
                       <div className="flex items-center">
                         <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
                         <p className="text-sm text-green-800 dark:text-green-200">
-                          After marking as complete, you'll be prompted to rate this book.
+                          After marking as complete, you&rsquo;ll be prompted to rate this book.
                         </p>
                       </div>
                     </div>
