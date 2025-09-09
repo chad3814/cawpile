@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
@@ -8,9 +8,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
+  const user = await getCurrentUser()
   
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -23,6 +23,7 @@ export async function PATCH(
     const { 
       progress, 
       status,
+      format,
       review,
       notes,
       isFavorite,
@@ -44,7 +45,7 @@ export async function PATCH(
     const userBook = await prisma.userBook.findFirst({
       where: {
         id: id,
-        userId: session.user.id
+        userId: user.id
       },
       include: {
         cawpileRating: true
@@ -63,6 +64,7 @@ export async function PATCH(
     
     if (progress !== undefined) updateData.progress = progress
     if (status !== undefined) updateData.status = status
+    if (format !== undefined) updateData.format = format
     if (review !== undefined) updateData.review = review
     if (notes !== undefined) updateData.notes = notes
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite
@@ -153,6 +155,52 @@ export async function PATCH(
     console.error('Error updating book:', error)
     return NextResponse.json(
       { error: 'Failed to update book' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getCurrentUser()
+  
+  if (!user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const { id } = await params
+
+    // Check if user owns this book
+    const userBook = await prisma.userBook.findFirst({
+      where: {
+        id: id,
+        userId: user.id
+      }
+    })
+
+    if (!userBook) {
+      return NextResponse.json(
+        { error: 'Book not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete the userBook record (this will cascade delete related records)
+    await prisma.userBook.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ success: true, message: 'Book removed from library' })
+  } catch (error) {
+    console.error('Error removing book:', error)
+    return NextResponse.json(
+      { error: 'Failed to remove book' },
       { status: 500 }
     )
   }

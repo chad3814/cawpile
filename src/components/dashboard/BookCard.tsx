@@ -5,10 +5,15 @@ import Image from 'next/image'
 import { BookStatus, BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
 import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
+import ChangeFormatModal from '@/components/modals/ChangeFormatModal'
+import MarkCompleteModal from '@/components/modals/MarkCompleteModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
-import { BookType } from '@/types/cawpile'
+import { BookType, convertToStars } from '@/types/cawpile'
 import { useRouter } from 'next/navigation'
+import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { Menu, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
 
 interface BookCardProps {
   book: {
@@ -73,6 +78,9 @@ export default function BookCard({ book }: BookCardProps) {
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
   const [showRatingPreview, setShowRatingPreview] = useState(false)
+  const [isChangingFormat, setIsChangingFormat] = useState(false)
+  const [isMarkCompleteModalOpen, setIsMarkCompleteModalOpen] = useState(false)
+  const [selectedFormat, setSelectedFormat] = useState(book.format)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
   const imageUrl = book.edition.googleBook?.imageUrl
@@ -103,11 +111,161 @@ export default function BookCard({ book }: BookCardProps) {
     }
   }
 
+  const handleMarkComplete = async (bookId: string, finishDate: string) => {
+    try {
+      const response = await fetch(`/api/user/books/${bookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          status: 'COMPLETED',
+          finishDate,
+          progress: 100
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark book as complete')
+      }
+
+      // If book doesn't have a rating, prompt for rating
+      if (!book.cawpileRating) {
+        setIsRatingModalOpen(true)
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error marking book as complete:', error)
+    }
+  }
+
+  const handleRemoveBook = async () => {
+    if (!confirm(`Are you sure you want to remove "${displayTitle}" from your library?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/user/books/${book.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to remove book')
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error removing book:', error)
+    }
+  }
+
+  const handleFormatChange = async (newFormat: BookFormat) => {
+    try {
+      const response = await fetch(`/api/user/books/${book.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ format: newFormat }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update format')
+      }
+
+      setSelectedFormat(newFormat)
+      setIsChangingFormat(false)
+      router.refresh()
+    } catch (error) {
+      console.error('Error updating format:', error)
+      setSelectedFormat(book.format)
+    }
+  }
+
   return (
     <>
-      <div className="bg-card rounded-lg shadow-sm hover:shadow-md card-hover overflow-hidden border border-border">
+      <div className="bg-card rounded-lg shadow-sm hover:shadow-md card-hover border border-border relative">
+      {/* Options Menu */}
+      <div className="absolute top-2 right-2 z-10">
+        <Menu as="div" className="relative inline-block text-left">
+          <Menu.Button className="p-1.5 rounded-md bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 shadow-sm">
+            <EllipsisVerticalIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          </Menu.Button>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="px-1 py-1">
+                {book.status === 'READING' && (
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => setIsMarkCompleteModalOpen(true)}
+                        className={`${
+                          active ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'
+                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                      >
+                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Mark as Complete
+                      </button>
+                    )}
+                  </Menu.Item>
+                )}
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => setIsChangingFormat(true)}
+                      className={`${
+                        active ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-gray-100'
+                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                    >
+                      <ArrowPathIcon className="mr-2 h-4 w-4" />
+                      Change Format
+                    </button>
+                  )}
+                </Menu.Item>
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={handleRemoveBook}
+                      className={`${
+                        active ? 'bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-100' : 'text-gray-900 dark:text-gray-100'
+                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                    >
+                      <TrashIcon className="mr-2 h-4 w-4" />
+                      Remove from Library
+                    </button>
+                  )}
+                </Menu.Item>
+              </div>
+            </Menu.Items>
+          </Transition>
+        </Menu>
+      </div>
+
       {/* Book Cover */}
-      <div className="aspect-[3/4] relative bg-muted">
+      <div className="aspect-[3/4] relative bg-muted overflow-hidden">
+        {/* Star Rating Badge */}
+        {book.cawpileRating && (
+          <div className="absolute top-2 left-2 z-20 bg-black/75 backdrop-blur-sm rounded px-2 py-1 shadow-lg">
+            <span className="text-sm">
+              {convertToStars(book.cawpileRating.average) > 0 
+                ? '⭐'.repeat(convertToStars(book.cawpileRating.average))
+                : '☆☆☆☆☆'
+              }
+            </span>
+          </div>
+        )}
+        
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -246,6 +404,29 @@ export default function BookCard({ book }: BookCardProps) {
       bookTitle={displayTitle}
       initialRating={book.cawpileRating}
     />
+
+    {/* Change Format Modal */}
+    <ChangeFormatModal
+      isOpen={isChangingFormat}
+      onClose={() => setIsChangingFormat(false)}
+      currentFormat={selectedFormat}
+      bookTitle={displayTitle}
+      onFormatChange={handleFormatChange}
+    />
+
+    {/* Mark Complete Modal */}
+    {book.status === 'READING' && (
+      <MarkCompleteModal
+        isOpen={isMarkCompleteModalOpen}
+        onClose={() => setIsMarkCompleteModalOpen(false)}
+        book={{
+          id: book.id,
+          title: displayTitle,
+          startDate: book.startDate,
+        }}
+        onComplete={handleMarkComplete}
+      />
+    )}
     </>
   )
 }

@@ -1,19 +1,19 @@
-import { auth } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-helpers"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import BookGrid from "@/components/dashboard/BookGrid"
 
 export default async function DashboardPage() {
-  const session = await auth()
+  const user = await getCurrentUser()
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     redirect("/auth/signin")
   }
 
   // Fetch user's books
   const userBooks = await prisma.userBook.findMany({
     where: {
-      userId: session.user.id
+      userId: user.id
     },
     include: {
       edition: {
@@ -21,7 +21,8 @@ export default async function DashboardPage() {
           book: true,
           googleBook: true
         }
-      }
+      },
+      cawpileRating: true
     },
     orderBy: [
       {
@@ -37,7 +38,7 @@ export default async function DashboardPage() {
   const currentYear = new Date().getFullYear()
   const booksThisYear = await prisma.userBook.count({
     where: {
-      userId: session.user.id,
+      userId: user.id,
       status: 'COMPLETED',
       finishDate: {
         gte: new Date(`${currentYear}-01-01`),
@@ -48,13 +49,13 @@ export default async function DashboardPage() {
 
   const totalBooks = await prisma.userBook.count({
     where: {
-      userId: session.user.id
+      userId: user.id
     }
   })
 
   const completedBooks = await prisma.userBook.count({
     where: {
-      userId: session.user.id,
+      userId: user.id,
       status: 'COMPLETED'
     }
   })
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">
-          Welcome back, {session.user?.name?.split(" ")[0] || "Reader"}!
+          Welcome back, {user?.name?.split(" ")[0] || "Reader"}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Your reading dashboard

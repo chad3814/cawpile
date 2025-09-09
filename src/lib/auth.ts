@@ -24,11 +24,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session?.user && token?.sub) {
         session.user.id = token.sub
       }
+      if (token?.email) {
+        session.user.email = token.email as string
+      }
       return session
     },
     jwt: async ({ user, token }) => {
       if (user) {
         token.uid = user.id
+        token.email = user.email
       }
       return token
     },

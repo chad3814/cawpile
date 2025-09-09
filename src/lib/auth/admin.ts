@@ -1,23 +1,18 @@
-import { auth } from '@/lib/auth'
+import { getCurrentUser as getAuthUser } from '@/lib/auth-helpers'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
 export async function getCurrentUser() {
-  const session = await auth()
-  if (!session?.user?.email) return null
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      isAdmin: true,
-      isSuperAdmin: true,
-    },
-  })
-
-  return user
+  const user = await getAuthUser()
+  if (!user) return null
+  
+  return {
+    id: user.id,
+    email: user.email!,
+    name: user.name,
+    isAdmin: user.isAdmin || false,
+    isSuperAdmin: user.isSuperAdmin || false,
+  }
 }
 
 export async function isUserAdmin(userId: string): Promise<boolean> {

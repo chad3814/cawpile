@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-helpers'
 import { getBookById } from '@/lib/googleBooks'
 import { findOrCreateBook, findOrCreateEdition } from '@/lib/db/books'
 import prisma from '@/lib/prisma'
 import { BookStatus, Prisma } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
-  const session = await auth()
+  const user = await getCurrentUser()
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const existingUserBook = await prisma.userBook.findUnique({
       where: {
         userId_editionId: {
-          userId: session.user.id,
+          userId: user.id,
           editionId: edition.id
         }
       }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Create user book entry
     const userBook = await prisma.userBook.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         editionId: edition.id,
         status,
         format,
@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth()
+  const user = await getCurrentUser()
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     const offset = searchParams.get('offset')
 
     const where: Prisma.UserBookScalarWhereInput = {
-      userId: session.user.id
+      userId: user.id
     }
 
     if (status) {
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
     const stats = await prisma.userBook.groupBy({
       by: ['status'],
       where: {
-        userId: session.user.id
+        userId: user.id
       },
       _count: true
     })

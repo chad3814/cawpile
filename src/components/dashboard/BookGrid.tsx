@@ -18,6 +18,7 @@ interface BookData {
     book: {
       title: string
       authors: string[]
+      bookType?: 'FICTION' | 'NONFICTION'
     }
     googleBook: {
       imageUrl: string | null
@@ -25,6 +26,17 @@ interface BookData {
       pageCount: number | null
     } | null
   }
+  cawpileRating?: {
+    id: string
+    average: number
+    characters: number | null
+    atmosphere: number | null
+    writing: number | null
+    plot: number | null
+    intrigue: number | null
+    logic: number | null
+    enjoyment: number | null
+  } | null
 }
 
 interface BookGridProps {

@@ -26,10 +26,12 @@ export default function RatingCard({
   isLast
 }: RatingCardProps) {
   const [localValue, setLocalValue] = useState(value || 5)
+  const [hasInteracted, setHasInteracted] = useState(value !== null)
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value)
     setLocalValue(newValue)
+    setHasInteracted(true)
     onChange(newValue)
   }
 
@@ -109,7 +111,13 @@ export default function RatingCard({
         </button>
 
         <button
-          onClick={onNext}
+          onClick={() => {
+            // If user hasn't interacted with slider, use the default value
+            if (!hasInteracted && value === null) {
+              onChange(localValue)
+            }
+            onNext()
+          }}
           className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
         >
           {isLast ? 'View Summary' : 'Next'}

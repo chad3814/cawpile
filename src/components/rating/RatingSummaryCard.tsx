@@ -5,7 +5,6 @@ import {
   CawpileRating,
   getFacetConfig,
   calculateCawpileAverage,
-  getCawpileGrade,
   getCawpileColor
 } from '@/types/cawpile'
 import StarRating from './StarRating'
@@ -25,7 +24,6 @@ export default function RatingSummaryCard({
 }: RatingSummaryCardProps) {
   const facets = getFacetConfig(bookType)
   const average = calculateCawpileAverage(rating as CawpileRating)
-  const grade = getCawpileGrade(average)
 
   return (
     <div className="p-6 space-y-6">
@@ -40,12 +38,9 @@ export default function RatingSummaryCard({
 
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-center">
         <StarRating rating={average} size="lg" />
-        <div className="mt-2 flex items-center justify-center gap-4">
+        <div className="mt-2">
           <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
             {average.toFixed(1)}
-          </span>
-          <span className={`text-2xl font-bold ${getCawpileColor(average)}`}>
-            {grade}
           </span>
         </div>
       </div>

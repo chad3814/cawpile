@@ -33,6 +33,34 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     format: 'PAPERBACK',
   })
 
+  // Set default finish date when reaching completion step
+  useEffect(() => {
+    if (currentStep === 3 && formData.status === 'COMPLETED' && formData.didFinish === true && !formData.finishDate) {
+      if (formData.startDate) {
+        const startDate = new Date(formData.startDate)
+        const today = new Date()
+        
+        // Use the start date's month and year, but today's day
+        // Unless today is earlier in the month than the start date
+        const defaultDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          Math.max(startDate.getDate(), Math.min(today.getDate(), new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate()))
+        )
+        
+        // If the default date is in the future, use today
+        if (defaultDate > today) {
+          setFormData({ ...formData, finishDate: today.toISOString().split('T')[0] })
+        } else {
+          setFormData({ ...formData, finishDate: defaultDate.toISOString().split('T')[0] })
+        }
+      } else {
+        // No start date, default to today
+        setFormData({ ...formData, finishDate: new Date().toISOString().split('T')[0] })
+      }
+    }
+  }, [currentStep, formData.status, formData.didFinish, formData.startDate])
+
   const handleClose = useCallback(() => {
     setCurrentStep(1)
     setFormData({
