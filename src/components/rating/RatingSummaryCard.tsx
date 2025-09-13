@@ -14,13 +14,15 @@ interface RatingSummaryCardProps {
   bookType: BookType
   onDone: () => void
   onEdit: (facetIndex: number) => void
+  onAdditionalDetails?: () => void
 }
 
 export default function RatingSummaryCard({
   rating,
   bookType,
   onDone,
-  onEdit
+  onEdit,
+  onAdditionalDetails
 }: RatingSummaryCardProps) {
   const facets = getFacetConfig(bookType)
   const average = calculateCawpileAverage(rating as CawpileRating)
@@ -78,7 +80,15 @@ export default function RatingSummaryCard({
         })}
       </div>
 
-      <div className="flex justify-center pt-4">
+      <div className="flex justify-center gap-3 pt-4">
+        {onAdditionalDetails && (
+          <button
+            onClick={onAdditionalDetails}
+            className="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
+          >
+            Additional Details
+          </button>
+        )}
         <button
           onClick={onDone}
           className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"

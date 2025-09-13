@@ -10,6 +10,8 @@ import {
 } from '@/types/cawpile'
 import RatingCard from '../rating/RatingCard'
 import RatingSummaryCard from '../rating/RatingSummaryCard'
+import AdditionalDetailsWizard from './AdditionalDetailsWizard'
+import { AdditionalDetailsData } from '@/types/book'
 import { useRouter } from 'next/navigation'
 
 interface CawpileRatingModalProps {
@@ -46,6 +48,7 @@ export default function CawpileRatingModal({
   })
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false)
 
   // Auto-save when ratings change
   const saveRatings = useCallback(async () => {
@@ -110,19 +113,43 @@ export default function CawpileRatingModal({
     setCurrentIndex(facetIndex)
   }
 
-  const handleDone = async () => {
-    await saveRatings()
-    onClose()
+
+  const handleAdditionalDetails = () => {
+    setShowAdditionalDetails(true)
+  }
+
+  const handleSaveAdditionalDetails = async (data: AdditionalDetailsData) => {
+    try {
+      const response = await fetch(`/api/user/books/${bookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save additional details')
+      }
+
+      router.refresh()
+      setShowAdditionalDetails(false)
+      onClose()
+    } catch (error) {
+      console.error('Error saving additional details:', error)
+      setSaveError('Failed to save additional details. Please try again.')
+    }
   }
 
   const isShowingSummary = currentIndex === facets.length
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+    <>
+      <Dialog open={isOpen} onClose={onClose} className="relative z-50">
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-2xl w-full bg-white dark:bg-gray-900 rounded-xl shadow-xl">
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="mx-auto max-w-2xl w-full bg-white dark:bg-gray-900 rounded-xl shadow-xl">
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <div>
               <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -171,8 +198,9 @@ export default function CawpileRatingModal({
               <RatingSummaryCard
                 rating={ratings}
                 bookType={bookType}
-                onDone={handleDone}
+                onDone={() => onClose()}
                 onEdit={handleEdit}
+                onAdditionalDetails={handleAdditionalDetails}
               />
             ) : (
               <RatingCard
@@ -198,5 +226,13 @@ export default function CawpileRatingModal({
         </Dialog.Panel>
       </div>
     </Dialog>
+
+    <AdditionalDetailsWizard
+      isOpen={showAdditionalDetails}
+      onClose={() => setShowAdditionalDetails(false)}
+      bookTitle={bookTitle}
+      onSave={handleSaveAdditionalDetails}
+    />
+    </>
   )
 }
