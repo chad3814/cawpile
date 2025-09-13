@@ -69,7 +69,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
         setFormData(prev => ({ ...prev, finishDate: new Date().toISOString().split('T')[0] }))
       }
     }
-  }, [currentStep, formData.status, formData.didFinish, formData.startDate])
+  }, [currentStep, formData.status, formData.didFinish, formData.startDate, formData.finishDate])
 
   const handleClose = useCallback(() => {
     setCurrentStep(1)

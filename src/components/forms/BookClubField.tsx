@@ -23,7 +23,7 @@ export default function BookClubField({ value, onChange, disabled = false }: Boo
         .then(res => res.json())
         .then(data => {
           if (data.bookClubs) {
-            setSuggestions(data.bookClubs.map((club: any) => club.name))
+            setSuggestions(data.bookClubs.map((club: { name: string }) => club.name))
           }
         })
         .catch(console.error)
@@ -33,7 +33,7 @@ export default function BookClubField({ value, onChange, disabled = false }: Boo
         .then(res => res.json())
         .then(data => {
           if (data.bookClubs) {
-            setSuggestions(data.bookClubs.map((club: any) => club.name))
+            setSuggestions(data.bookClubs.map((club: { name: string }) => club.name))
           }
         })
         .catch(console.error)
@@ -101,7 +101,7 @@ export default function BookClubField({ value, onChange, disabled = false }: Boo
               <Combobox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white dark:bg-gray-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
                 {filteredSuggestions.length === 0 && query !== '' ? (
                   <div className="relative cursor-default select-none py-2 px-4 text-gray-700 dark:text-gray-300">
-                    Type to create "{query}"
+                    Type to create &quot;{query}&quot;
                   </div>
                 ) : (
                   filteredSuggestions.map((suggestion) => (
