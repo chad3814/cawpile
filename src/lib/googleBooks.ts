@@ -16,7 +16,7 @@ export async function searchBooks(
     const response = await fetch(`${GOOGLE_BOOKS_API_URL}?${params}`)
     
     if (!response.ok) {
-      console.error("Google Books API error:", response.status)
+      console.error("Google Books API error:", response.status, await response.text())
       return []
     }
 

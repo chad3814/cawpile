@@ -35,6 +35,7 @@ interface EditBookModalProps {
     isNewAuthor?: boolean | null
     authorPoc?: string | null
     authorPocDetails?: string | null
+    notes?: string | null
   }
 }
 
@@ -51,6 +52,7 @@ export default function EditBookModal({
   const [status, setStatus] = useState(book.status)
   const [format, setFormat] = useState(book.format)
   const [dnfReason, setDnfReason] = useState(book.dnfReason || '')
+  const [notes, setNotes] = useState(book.notes || '')
 
   // Tracking fields
   const [acquisitionMethod, setAcquisitionMethod] = useState<AcquisitionMethod | ''>(
@@ -113,6 +115,7 @@ export default function EditBookModal({
           status,
           format,
           dnfReason: status === BookStatus.DNF ? dnfReason : undefined,
+          notes: notes || undefined,
           ...trackingData,
           ...additionalData
         }),
@@ -255,6 +258,24 @@ export default function EditBookModal({
                           </p>
                         </div>
                       )}
+
+                      <div>
+                        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Notes
+                        </label>
+                        <textarea
+                          id="notes"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          maxLength={2000}
+                          rows={5}
+                          placeholder="Add any personal notes about this book..."
+                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {notes.length}/2000 characters
+                        </p>
+                      </div>
 
                       <div>
                         <label htmlFor="format" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

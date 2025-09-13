@@ -35,6 +35,7 @@ interface BookDetailsModalProps {
     isNewAuthor?: boolean | null
     authorPoc?: string | null
     authorPocDetails?: string | null
+    notes?: string | null
     cawpileRating?: {
       average: number
     } | null
@@ -199,6 +200,18 @@ export default function BookDetailsModal({
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-4">
                           {book.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Notes */}
+                    {book.notes && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                          Personal Notes
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                          {book.notes}
                         </p>
                       </div>
                     )}

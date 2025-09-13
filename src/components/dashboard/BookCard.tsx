@@ -41,6 +41,7 @@ interface BookCardProps {
     isNewAuthor?: boolean | null
     authorPoc?: string | null
     authorPocDetails?: string | null
+    notes?: string | null
     edition: {
       id: string
       title: string | null
@@ -564,6 +565,7 @@ export default function BookCard({ book }: BookCardProps) {
         isNewAuthor: book.isNewAuthor,
         authorPoc: book.authorPoc,
         authorPocDetails: book.authorPocDetails,
+        notes: book.notes,
       }}
     />
 
@@ -595,6 +597,7 @@ export default function BookCard({ book }: BookCardProps) {
         isNewAuthor: book.isNewAuthor,
         authorPoc: book.authorPoc,
         authorPocDetails: book.authorPocDetails,
+        notes: book.notes,
         cawpileRating: book.cawpileRating,
       }}
     />
