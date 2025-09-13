@@ -8,6 +8,7 @@ import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
 import ChangeFormatModal from '@/components/modals/ChangeFormatModal'
 import MarkCompleteModal from '@/components/modals/MarkCompleteModal'
 import MarkDNFModal from '@/components/modals/MarkDNFModal'
+import EditBookModal from '@/components/modals/EditBookModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import { BookType, convertToStars } from '@/types/cawpile'
@@ -25,6 +26,19 @@ interface BookCardProps {
     startDate: Date | null
     finishDate: Date | null
     createdAt: Date
+    acquisitionMethod?: string | null
+    acquisitionOther?: string | null
+    bookClubName?: string | null
+    readathonName?: string | null
+    isReread?: boolean | null
+    dnfReason?: string | null
+    lgbtqRepresentation?: string | null
+    lgbtqDetails?: string | null
+    disabilityRepresentation?: string | null
+    disabilityDetails?: string | null
+    isNewAuthor?: boolean | null
+    authorPoc?: string | null
+    authorPocDetails?: string | null
     edition: {
       id: string
       title: string | null
@@ -82,6 +96,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [isChangingFormat, setIsChangingFormat] = useState(false)
   const [isMarkCompleteModalOpen, setIsMarkCompleteModalOpen] = useState(false)
   const [isMarkDNFModalOpen, setIsMarkDNFModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState(book.format)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
@@ -262,6 +277,21 @@ export default function BookCard({ book }: BookCardProps) {
                     </Menu.Item>
                   </>
                 )}
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className={`${
+                        active ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                    >
+                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit Details
+                    </button>
+                  )}
+                </Menu.Item>
                 <Menu.Item>
                   {({ active }) => (
                     <button
@@ -482,6 +512,31 @@ export default function BookCard({ book }: BookCardProps) {
         onDNF={handleMarkDNF}
       />
     )}
+
+    {/* Edit Book Modal */}
+    <EditBookModal
+      isOpen={isEditModalOpen}
+      onClose={() => setIsEditModalOpen(false)}
+      book={{
+        id: book.id,
+        title: displayTitle,
+        status: book.status,
+        format: book.format,
+        acquisitionMethod: book.acquisitionMethod,
+        acquisitionOther: book.acquisitionOther,
+        bookClubName: book.bookClubName,
+        readathonName: book.readathonName,
+        isReread: book.isReread,
+        dnfReason: book.dnfReason,
+        lgbtqRepresentation: book.lgbtqRepresentation,
+        lgbtqDetails: book.lgbtqDetails,
+        disabilityRepresentation: book.disabilityRepresentation,
+        disabilityDetails: book.disabilityDetails,
+        isNewAuthor: book.isNewAuthor,
+        authorPoc: book.authorPoc,
+        authorPocDetails: book.authorPocDetails,
+      }}
+    />
     </>
   )
 }
