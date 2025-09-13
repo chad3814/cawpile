@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build --turbopack",
-    "start": "prisma migrate deploy && next start",
+    "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
+    "prestart": "prisma migrate deploy",
+    "prevercel-start": "prisma migrate deploy",
     "make-admin": "tsx scripts/fix-admin-user.ts"
   },
   "dependencies": {
