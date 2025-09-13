@@ -12,6 +12,7 @@ import EditBookModal from '@/components/modals/EditBookModal'
 import BookDetailsModal from '@/components/modals/BookDetailsModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
+import TrackingBadges from '@/components/book/TrackingBadges'
 import { BookType, convertToStars } from '@/types/cawpile'
 import { useRouter } from 'next/navigation'
 import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
@@ -427,6 +428,17 @@ export default function BookCard({ book }: BookCardProps) {
             {formatIcons[book.format]}
           </span>
         </div>
+
+        {/* Tracking Badges */}
+        <TrackingBadges
+          isReread={book.isReread}
+          bookClubName={book.bookClubName}
+          readathonName={book.readathonName}
+          isNewAuthor={book.isNewAuthor}
+          lgbtqRepresentation={book.lgbtqRepresentation}
+          disabilityRepresentation={book.disabilityRepresentation}
+          authorPoc={book.authorPoc}
+        />
 
         {/* Progress Bar (for reading books) */}
         {book.status === 'READING' && (

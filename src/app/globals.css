@@ -172,3 +172,8 @@ body {
     border-color: #22c55e;
   }
 }
+
+/* Rainbow gradient for LGBTQ+ badge */
+.bg-rainbow-gradient {
+  background: linear-gradient(90deg, #e40303, #ff8c00, #ffed00, #008026, #24408e, #732982);
+}
