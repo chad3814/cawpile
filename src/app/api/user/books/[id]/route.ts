@@ -20,8 +20,8 @@ export async function PATCH(
   try {
     const { id } = await params
     const body = await request.json()
-    const { 
-      progress, 
+    const {
+      progress,
       status,
       format,
       review,
@@ -30,7 +30,21 @@ export async function PATCH(
       currentPage,
       startDate,
       finishDate,
-      cawpileRating 
+      cawpileRating,
+      // New tracking fields
+      acquisitionMethod,
+      acquisitionOther,
+      bookClubName,
+      readathonName,
+      isReread,
+      dnfReason,
+      lgbtqRepresentation,
+      lgbtqDetails,
+      disabilityRepresentation,
+      disabilityDetails,
+      isNewAuthor,
+      authorPoc,
+      authorPocDetails
     } = body
 
     // Validate progress if provided
@@ -61,7 +75,7 @@ export async function PATCH(
 
     // Prepare update data
     const updateData: Prisma.UserBookUpdateInput = {}
-    
+
     if (progress !== undefined) updateData.progress = progress
     if (status !== undefined) updateData.status = status
     if (format !== undefined) updateData.format = format
@@ -72,12 +86,31 @@ export async function PATCH(
     if (startDate !== undefined) updateData.startDate = new Date(startDate)
     if (finishDate !== undefined) updateData.finishDate = new Date(finishDate)
 
+    // New tracking fields
+    if (acquisitionMethod !== undefined) updateData.acquisitionMethod = acquisitionMethod
+    if (acquisitionOther !== undefined) updateData.acquisitionOther = acquisitionOther
+    if (bookClubName !== undefined) updateData.bookClubName = bookClubName
+    if (readathonName !== undefined) updateData.readathonName = readathonName
+    if (isReread !== undefined) updateData.isReread = isReread
+    if (dnfReason !== undefined) updateData.dnfReason = dnfReason
+    if (lgbtqRepresentation !== undefined) updateData.lgbtqRepresentation = lgbtqRepresentation
+    if (lgbtqDetails !== undefined) updateData.lgbtqDetails = lgbtqDetails
+    if (disabilityRepresentation !== undefined) updateData.disabilityRepresentation = disabilityRepresentation
+    if (disabilityDetails !== undefined) updateData.disabilityDetails = disabilityDetails
+    if (isNewAuthor !== undefined) updateData.isNewAuthor = isNewAuthor
+    if (authorPoc !== undefined) updateData.authorPoc = authorPoc
+    if (authorPocDetails !== undefined) updateData.authorPocDetails = authorPocDetails
+
     // Handle status changes
     if (status === 'COMPLETED' && !userBook.finishDate && !finishDate) {
       updateData.finishDate = new Date()
     }
     if (status === 'READING' && !userBook.startDate && !startDate) {
       updateData.startDate = new Date()
+    }
+    // Clear DNF reason if status changes from DNF to something else
+    if (status && status !== 'DNF' && userBook.status === 'DNF') {
+      updateData.dnfReason = null
     }
 
     // If progress reaches 100%, mark as completed
@@ -86,6 +119,45 @@ export async function PATCH(
       if (!userBook.finishDate) {
         updateData.finishDate = new Date()
       }
+    }
+
+    // Update autocomplete tables if book club/readathon names are provided
+    if (bookClubName && bookClubName !== userBook.bookClubName) {
+      await prisma.userBookClub.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: bookClubName
+          }
+        },
+        update: {
+          lastUsed: new Date(),
+          usageCount: { increment: 1 }
+        },
+        create: {
+          userId: user.id,
+          name: bookClubName
+        }
+      })
+    }
+
+    if (readathonName && readathonName !== userBook.readathonName) {
+      await prisma.userReadathon.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: readathonName
+          }
+        },
+        update: {
+          lastUsed: new Date(),
+          usageCount: { increment: 1 }
+        },
+        create: {
+          userId: user.id,
+          name: readathonName
+        }
+      })
     }
 
     // Update the main book record

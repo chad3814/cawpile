@@ -82,3 +82,65 @@ export interface BookWithEditions extends Book {
   editions: Edition[]
   userCount?: number
 }
+
+// New tracking field enums and types
+export enum AcquisitionMethod {
+  Purchased = 'Purchased',
+  Library = 'Library',
+  FriendBorrowed = 'FriendBorrowed',
+  Gift = 'Gift',
+  Other = 'Other'
+}
+
+export enum RepresentationValue {
+  Yes = 'Yes',
+  No = 'No',
+  Unknown = 'Unknown'
+}
+
+export interface BookTrackingData {
+  // When adding a book
+  acquisitionMethod?: AcquisitionMethod | null
+  acquisitionOther?: string | null
+  bookClubName?: string | null
+  readathonName?: string | null
+  isReread?: boolean | null
+
+  // When marking as DNF
+  dnfReason?: string | null
+
+  // After rating completion
+  lgbtqRepresentation?: RepresentationValue | null
+  lgbtqDetails?: string | null
+  disabilityRepresentation?: RepresentationValue | null
+  disabilityDetails?: string | null
+  isNewAuthor?: boolean | null
+  authorPoc?: RepresentationValue | null
+  authorPocDetails?: string | null
+}
+
+export interface AdditionalDetailsData {
+  lgbtqRepresentation?: RepresentationValue | null
+  lgbtqDetails?: string | null
+  disabilityRepresentation?: RepresentationValue | null
+  disabilityDetails?: string | null
+  isNewAuthor?: boolean | null
+  authorPoc?: RepresentationValue | null
+  authorPocDetails?: string | null
+}
+
+export interface UserBookClub {
+  id: string
+  userId: string
+  name: string
+  lastUsed: Date
+  usageCount: number
+}
+
+export interface UserReadathon {
+  id: string
+  userId: string
+  name: string
+  lastUsed: Date
+  usageCount: number
+}

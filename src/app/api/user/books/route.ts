@@ -17,7 +17,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { googleBooksId, status, format, startDate, finishDate, progress } = body
+    const {
+      googleBooksId,
+      status,
+      format,
+      startDate,
+      finishDate,
+      progress,
+      // New tracking fields
+      acquisitionMethod,
+      acquisitionOther,
+      bookClubName,
+      readathonName,
+      isReread
+    } = body
 
     // Fetch book data from Google Books
     const bookData = await getBookById(googleBooksId)
@@ -57,7 +70,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create user book entry
+    // Store book club/readathon names in autocomplete tables if provided
+    if (bookClubName) {
+      await prisma.userBookClub.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: bookClubName
+          }
+        },
+        update: {
+          lastUsed: new Date(),
+          usageCount: { increment: 1 }
+        },
+        create: {
+          userId: user.id,
+          name: bookClubName
+        }
+      })
+    }
+
+    if (readathonName) {
+      await prisma.userReadathon.upsert({
+        where: {
+          userId_name: {
+            userId: user.id,
+            name: readathonName
+          }
+        },
+        update: {
+          lastUsed: new Date(),
+          usageCount: { increment: 1 }
+        },
+        create: {
+          userId: user.id,
+          name: readathonName
+        }
+      })
+    }
+
+    // Create user book entry with new tracking fields
     const userBook = await prisma.userBook.create({
       data: {
         userId: user.id,
@@ -66,7 +118,13 @@ export async function POST(request: NextRequest) {
         format,
         startDate: startDate ? new Date(startDate) : null,
         finishDate: finishDate ? new Date(finishDate) : null,
-        progress: progress || 0
+        progress: progress || 0,
+        // New tracking fields
+        acquisitionMethod,
+        acquisitionOther: acquisitionMethod === 'Other' ? acquisitionOther : null,
+        bookClubName,
+        readathonName,
+        isReread: isReread || false
       },
       include: {
         edition: {

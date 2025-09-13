@@ -23,6 +23,8 @@ model User {
   accounts      Account[]
   sessions      Session[]
   userBooks     UserBook[]
+  bookClubs     UserBookClub[]
+  readathons    UserReadathon[]
   adminActions  AdminAuditLog[]  @relation("AdminUser")
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
@@ -121,6 +123,22 @@ model UserBook {
   review         String?          @db.Text
   notes          String?          @db.Text
   isFavorite     Boolean          @default(false)
+
+  // New tracking fields
+  acquisitionMethod        String?          // Purchased, Library, FriendBorrowed, Gift
+  acquisitionOther         String?          @db.VarChar(100)
+  bookClubName            String?          @db.VarChar(100)
+  readathonName           String?          @db.VarChar(100)
+  isReread                Boolean?         @default(false)
+  dnfReason               String?          @db.VarChar(500)
+  lgbtqRepresentation     String?          // Yes, No, Unknown
+  lgbtqDetails            String?          @db.VarChar(500)
+  disabilityRepresentation String?          // Yes, No, Unknown
+  disabilityDetails       String?          @db.VarChar(500)
+  isNewAuthor             Boolean?
+  authorPoc               String?          // Yes, No, Unknown
+  authorPocDetails        String?          @db.VarChar(200)
+
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   edition        Edition          @relation(fields: [editionId], references: [id])
   cawpileRating  CawpileRating?
@@ -203,4 +221,34 @@ model AdminAuditLog {
   @@index([adminId])
   @@index([entityType, entityId])
   @@index([timestamp])
+}
+
+// User-specific book clubs for autocomplete
+model UserBookClub {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String   @db.VarChar(100)
+  lastUsed   DateTime @default(now())
+  usageCount Int      @default(1)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, lastUsed])
+}
+
+// User-specific readathons for autocomplete
+model UserReadathon {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String   @db.VarChar(100)
+  lastUsed   DateTime @default(now())
+  usageCount Int      @default(1)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, lastUsed])
 }
