@@ -7,6 +7,7 @@ import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
 import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
 import ChangeFormatModal from '@/components/modals/ChangeFormatModal'
 import MarkCompleteModal from '@/components/modals/MarkCompleteModal'
+import MarkDNFModal from '@/components/modals/MarkDNFModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import { BookType, convertToStars } from '@/types/cawpile'
@@ -80,6 +81,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [showRatingPreview, setShowRatingPreview] = useState(false)
   const [isChangingFormat, setIsChangingFormat] = useState(false)
   const [isMarkCompleteModalOpen, setIsMarkCompleteModalOpen] = useState(false)
+  const [isMarkDNFModalOpen, setIsMarkDNFModalOpen] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState(book.format)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
@@ -137,6 +139,29 @@ export default function BookCard({ book }: BookCardProps) {
       router.refresh()
     } catch (error) {
       console.error('Error marking book as complete:', error)
+    }
+  }
+
+  const handleMarkDNF = async (bookId: string, reason?: string) => {
+    try {
+      const response = await fetch(`/api/user/books/${bookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'DNF',
+          dnfReason: reason
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark book as DNF')
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error marking book as DNF:', error)
     }
   }
 
@@ -204,21 +229,38 @@ export default function BookCard({ book }: BookCardProps) {
             <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
               <div className="px-1 py-1">
                 {book.status === 'READING' && (
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={() => setIsMarkCompleteModalOpen(true)}
-                        className={`${
-                          active ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'
-                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                      >
-                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Mark as Complete
-                      </button>
-                    )}
-                  </Menu.Item>
+                  <>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={() => setIsMarkCompleteModalOpen(true)}
+                          className={`${
+                            active ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                        >
+                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Mark as Complete
+                        </button>
+                      )}
+                    </Menu.Item>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={() => setIsMarkDNFModalOpen(true)}
+                          className={`${
+                            active ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'
+                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                        >
+                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Mark as DNF
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </>
                 )}
                 <Menu.Item>
                   {({ active }) => (
@@ -425,6 +467,19 @@ export default function BookCard({ book }: BookCardProps) {
           startDate: book.startDate,
         }}
         onComplete={handleMarkComplete}
+      />
+    )}
+
+    {/* Mark DNF Modal */}
+    {book.status === 'READING' && (
+      <MarkDNFModal
+        isOpen={isMarkDNFModalOpen}
+        onClose={() => setIsMarkDNFModalOpen(false)}
+        book={{
+          id: book.id,
+          title: displayTitle,
+        }}
+        onDNF={handleMarkDNF}
       />
     )}
     </>
