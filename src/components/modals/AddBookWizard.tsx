@@ -3,8 +3,12 @@
 import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { BookSearchResult } from '@/types/book'
+import { BookSearchResult, AcquisitionMethod } from '@/types/book'
 import Image from 'next/image'
+import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
+import BookClubField from '@/components/forms/BookClubField'
+import ReadathonField from '@/components/forms/ReadathonField'
+import RereadField from '@/components/forms/RereadField'
 
 interface AddBookWizardProps {
   isOpen: boolean
@@ -23,6 +27,12 @@ interface BookFormData {
   finishDate?: string
   progress?: number
   didFinish?: boolean
+  // New tracking fields
+  acquisitionMethod?: AcquisitionMethod | null
+  acquisitionOther?: string
+  bookClubName?: string | null
+  readathonName?: string | null
+  isReread?: boolean
 }
 
 export default function AddBookWizard({ isOpen, onClose, book, onComplete }: AddBookWizardProps) {
@@ -35,7 +45,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
 
   // Set default finish date when reaching completion step
   useEffect(() => {
-    if (currentStep === 3 && formData.status === 'COMPLETED' && formData.didFinish === true && !formData.finishDate) {
+    if (currentStep === 4 && formData.status === 'COMPLETED' && formData.didFinish === true && !formData.finishDate) {
       if (formData.startDate) {
         const startDate = new Date(formData.startDate)
         const today = new Date()
@@ -83,10 +93,11 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
   }, [isOpen, handleClose])
 
   const getTotalSteps = () => {
-    if (formData.status === 'WANT_TO_READ') return 1
-    if (formData.status === 'READING') return 3
-    if (formData.status === 'COMPLETED') return 3
-    return 1
+    // Always have 2 steps now - basic info and tracking fields
+    if (formData.status === 'WANT_TO_READ') return 2
+    if (formData.status === 'READING') return 4  // Status, tracking, start date, progress
+    if (formData.status === 'COMPLETED') return 4  // Status, tracking, start date, completion
+    return 2
   }
 
   const handleNext = () => {
@@ -129,6 +140,12 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
           startDate: formData.startDate,
           finishDate: formData.finishDate,
           progress,
+          // New tracking fields
+          acquisitionMethod: formData.acquisitionMethod,
+          acquisitionOther: formData.acquisitionOther,
+          bookClubName: formData.bookClubName,
+          readathonName: formData.readathonName,
+          isReread: formData.isReread,
         }),
       })
 
@@ -274,8 +291,40 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                     </div>
                   )}
 
-                  {/* Step 2: Start Date (Reading/Completed) */}
-                  {currentStep === 2 && (formData.status === 'READING' || formData.status === 'COMPLETED') && (
+                  {/* Step 2: Tracking Fields (All statuses) */}
+                  {currentStep === 2 && (
+                    <div className="space-y-4">
+                      <AcquisitionMethodField
+                        value={formData.acquisitionMethod}
+                        otherValue={formData.acquisitionOther}
+                        onChange={(method, other) =>
+                          setFormData({
+                            ...formData,
+                            acquisitionMethod: method,
+                            acquisitionOther: other
+                          })
+                        }
+                      />
+
+                      <BookClubField
+                        value={formData.bookClubName}
+                        onChange={(name) => setFormData({ ...formData, bookClubName: name })}
+                      />
+
+                      <ReadathonField
+                        value={formData.readathonName}
+                        onChange={(name) => setFormData({ ...formData, readathonName: name })}
+                      />
+
+                      <RereadField
+                        value={formData.isReread}
+                        onChange={(value) => setFormData({ ...formData, isReread: value })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Step 3: Start Date (Reading/Completed) */}
+                  {currentStep === 3 && (formData.status === 'READING' || formData.status === 'COMPLETED') && (
                     <div>
                       <label className="text-sm font-semibold text-card-foreground">
                         When did you start reading?
@@ -290,8 +339,8 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                     </div>
                   )}
 
-                  {/* Step 3: Progress (Reading) or Completion (Completed) */}
-                  {currentStep === 3 && formData.status === 'READING' && (
+                  {/* Step 4: Progress (Reading) or Completion (Completed) */}
+                  {currentStep === 4 && formData.status === 'READING' && (
                     <div>
                       <label className="text-sm font-semibold text-card-foreground">
                         Current Progress (%)
@@ -310,7 +359,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                     </div>
                   )}
 
-                  {currentStep === 3 && formData.status === 'COMPLETED' && (
+                  {currentStep === 4 && formData.status === 'COMPLETED' && (
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-semibold text-card-foreground">
