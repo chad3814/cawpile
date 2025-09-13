@@ -9,6 +9,7 @@ import ChangeFormatModal from '@/components/modals/ChangeFormatModal'
 import MarkCompleteModal from '@/components/modals/MarkCompleteModal'
 import MarkDNFModal from '@/components/modals/MarkDNFModal'
 import EditBookModal from '@/components/modals/EditBookModal'
+import BookDetailsModal from '@/components/modals/BookDetailsModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import { BookType, convertToStars } from '@/types/cawpile'
@@ -97,6 +98,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [isMarkCompleteModalOpen, setIsMarkCompleteModalOpen] = useState(false)
   const [isMarkDNFModalOpen, setIsMarkDNFModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState(book.format)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
@@ -277,6 +279,21 @@ export default function BookCard({ book }: BookCardProps) {
                     </Menu.Item>
                   </>
                 )}
+                <Menu.Item>
+                  {({ active }) => (
+                    <button
+                      onClick={() => setIsDetailsModalOpen(true)}
+                      className={`${
+                        active ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'
+                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                    >
+                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      View Details
+                    </button>
+                  )}
+                </Menu.Item>
                 <Menu.Item>
                   {({ active }) => (
                     <button
@@ -535,6 +552,38 @@ export default function BookCard({ book }: BookCardProps) {
         isNewAuthor: book.isNewAuthor,
         authorPoc: book.authorPoc,
         authorPocDetails: book.authorPocDetails,
+      }}
+    />
+
+    {/* Book Details Modal */}
+    <BookDetailsModal
+      isOpen={isDetailsModalOpen}
+      onClose={() => setIsDetailsModalOpen(false)}
+      book={{
+        title: displayTitle,
+        authors,
+        status: book.status,
+        format: book.format,
+        progress: book.progress,
+        startDate: book.startDate,
+        finishDate: book.finishDate,
+        imageUrl,
+        description: book.edition.googleBook?.description,
+        pageCount: book.edition.googleBook?.pageCount,
+        acquisitionMethod: book.acquisitionMethod,
+        acquisitionOther: book.acquisitionOther,
+        bookClubName: book.bookClubName,
+        readathonName: book.readathonName,
+        isReread: book.isReread,
+        dnfReason: book.dnfReason,
+        lgbtqRepresentation: book.lgbtqRepresentation,
+        lgbtqDetails: book.lgbtqDetails,
+        disabilityRepresentation: book.disabilityRepresentation,
+        disabilityDetails: book.disabilityDetails,
+        isNewAuthor: book.isNewAuthor,
+        authorPoc: book.authorPoc,
+        authorPocDetails: book.authorPocDetails,
+        cawpileRating: book.cawpileRating,
       }}
     />
     </>
