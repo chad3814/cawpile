@@ -15,12 +15,12 @@
 - [x] Create chart data caching context
 
 ## Phase 3: Chart Foundation (Steps 7-9)
-- [ ] Create BarChartSkeleton loading component
-- [ ] Create PieChartSkeleton loading component
-- [ ] Build BaseBarChart reusable component
-- [ ] Build BasePieChart reusable component
-- [ ] Create ChartTooltip and ChartModal components
-- [ ] Build data transformation utilities (processors, formatters)
+- [x] Create BarChartSkeleton loading component
+- [x] Create PieChartSkeleton loading component
+- [x] Build BaseBarChart reusable component
+- [x] Build BasePieChart reusable component
+- [x] Create ChartTooltip and ChartModal components (integrated into base components)
+- [x] Build data transformation utilities (processors, formatters)
 
 ## Phase 4: Monthly Bar Charts (Steps 10-17)
 - [ ] Create books-per-month API endpoint
