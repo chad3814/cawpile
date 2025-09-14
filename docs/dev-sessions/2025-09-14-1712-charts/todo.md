@@ -23,8 +23,8 @@
 - [x] Build data transformation utilities (processors, formatters)
 
 ## Phase 4: Monthly Bar Charts (Steps 10-17)
-- [ ] Create books-per-month API endpoint
-- [ ] Implement BooksPerMonthChart component
+- [x] Create books-per-month API endpoint
+- [x] Implement BooksPerMonthChart component
 - [ ] Create pages-per-month API endpoint
 - [ ] Implement PagesPerMonthChart component
 - [ ] Create dnf-per-month API endpoint
@@ -35,8 +35,8 @@
 ## Phase 5: Pie Charts (Steps 18-27)
 - [ ] Create dnf-reasons API endpoint
 - [ ] Implement DNFReasonsChart component
-- [ ] Create book-format API endpoint
-- [ ] Implement BookFormatChart component
+- [x] Create book-format API endpoint
+- [x] Implement BookFormatChart component
 - [ ] Create reading-type API endpoint
 - [ ] Implement ReadingTypeChart component
 - [ ] Create book-clubs API endpoint
