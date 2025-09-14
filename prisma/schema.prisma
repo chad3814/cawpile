@@ -62,14 +62,15 @@ model Session {
 
 // Book models for tracking reading
 model Book {
-  id        String    @id @default(cuid())
-  title     String
-  authors   String[]
-  language  String    @default("en")
-  bookType  BookType  @default(FICTION)
-  editions  Edition[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  title        String
+  authors      String[]
+  language     String    @default("en")
+  bookType     BookType  @default(FICTION)
+  primaryGenre String?   // For chart categorization
+  editions     Edition[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@unique([title, authors])
   @@index([title])
@@ -96,19 +97,21 @@ model Edition {
 }
 
 model GoogleBook {
-  id             String   @id @default(cuid())
-  googleId       String   @unique
-  editionId      String   @unique
-  title          String
-  subtitle       String?
-  authors        String[]
-  description    String?
-  publishedDate  String?
-  pageCount      Int?
-  imageUrl       String?
-  categories     String[]
-  edition        Edition  @relation(fields: [editionId], references: [id])
-  createdAt      DateTime @default(now())
+  id               String   @id @default(cuid())
+  googleId         String   @unique
+  editionId        String   @unique
+  title            String
+  subtitle         String?
+  authors          String[]
+  description      String?
+  publishedDate    String?
+  pageCount        Int?
+  imageUrl         String?
+  categories       String[]
+  publisher        String?  // For charts
+  audiobookDuration Int?     // Duration in minutes for audiobook calculations
+  edition          Edition  @relation(fields: [editionId], references: [id])
+  createdAt        DateTime @default(now())
 }
 
 model UserBook {
