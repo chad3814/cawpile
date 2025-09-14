@@ -3,6 +3,9 @@
 import { useState } from 'react'
 import LayoutToggle from './LayoutToggle'
 import ViewSwitcher from './ViewSwitcher'
+import TabNavigation from './TabNavigation'
+import { ChartsTab } from '@/components/charts/ChartsTab'
+import { ChartDataProvider } from '@/contexts/ChartDataContext'
 import { BookStatus, BookFormat } from '@prisma/client'
 
 interface BookData {
@@ -48,6 +51,7 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ books, initialLayout, userName }: DashboardClientProps) {
   const [layout, setLayout] = useState<'GRID' | 'TABLE'>(initialLayout)
+  const [activeTab, setActiveTab] = useState<'books' | 'charts'>('books')
 
   const handleLayoutChange = async (newLayout: 'GRID' | 'TABLE') => {
     // Optimistic update
@@ -74,26 +78,35 @@ export default function DashboardClient({ books, initialLayout, userName }: Dash
   }
 
   return (
-    <>
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome back, {userName || "Reader"}!
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Your reading dashboard
-            </p>
+    <ChartDataProvider>
+      <>
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Welcome back, {userName || "Reader"}!
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Your reading dashboard
+              </p>
+            </div>
+            {activeTab === 'books' && (
+              <LayoutToggle
+                currentLayout={layout}
+                onLayoutChange={handleLayoutChange}
+              />
+            )}
           </div>
-          <LayoutToggle
-            currentLayout={layout}
-            onLayoutChange={handleLayoutChange}
-          />
         </div>
-      </div>
 
-      {/* Book View */}
-      <ViewSwitcher books={books} layout={layout} />
-    </>
+        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {activeTab === 'books' ? (
+          <ViewSwitcher books={books} layout={layout} />
+        ) : (
+          <ChartsTab />
+        )}
+      </>
+    </ChartDataProvider>
   )
 }
