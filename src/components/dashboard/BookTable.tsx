@@ -117,8 +117,48 @@ export default function BookTable({ books }: BookTableProps) {
         onClick={() => handleRowClick(book.id)}
         className="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors"
       >
+        {/* Mobile Layout - Two rows */}
+        <td className="sm:hidden p-3" colSpan={6}>
+          <div className="grid grid-cols-[48px_1fr] gap-3">
+            {/* Cover Image - spans both rows */}
+            <div className="row-span-2">
+              <div className="relative w-12 h-16 bg-muted rounded overflow-hidden">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={displayTitle}
+                    fill
+                    className="object-cover"
+                    sizes="48px"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+                    No Cover
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Top row: Important data */}
+            <div className="space-y-1">
+              <div className="font-medium text-foreground truncate">{displayTitle}</div>
+              <div className="text-sm text-muted-foreground truncate">{authors || '--'}</div>
+              <span className={`text-sm font-medium ${getStatusColor(book.status)}`}>
+                {getStatusDisplay(book.status)}
+              </span>
+            </div>
+            {/* Bottom row: Secondary data */}
+            <div className="col-start-2 flex gap-4 text-sm">
+              <div className="text-foreground">{renderRating(book.cawpileRating)}</div>
+              {book.status === 'COMPLETED' && (
+                <div className="text-muted-foreground">{formatEndingMonth(book.finishDate)}</div>
+              )}
+            </div>
+          </div>
+        </td>
+
+        {/* Desktop Layout - Single row */}
         {/* Cover Image */}
-        <td className="p-3 border-r border-border w-16">
+        <td className="hidden sm:table-cell p-3 border-r border-border w-16">
           <div className="relative w-12 h-16 bg-muted rounded overflow-hidden">
             {imageUrl ? (
               <Image
@@ -137,35 +177,35 @@ export default function BookTable({ books }: BookTableProps) {
         </td>
 
         {/* Title */}
-        <td className="p-3 border-r border-border" title={displayTitle}>
+        <td className="hidden sm:table-cell p-3 border-r border-border" title={displayTitle}>
           <div className="font-medium text-foreground truncate max-w-xs">
             {displayTitle}
           </div>
         </td>
 
         {/* Author(s) */}
-        <td className="p-3 border-r border-border" title={authors}>
+        <td className="hidden sm:table-cell p-3 border-r border-border" title={authors}>
           <div className="text-muted-foreground truncate max-w-xs">
             {authors || '--'}
           </div>
         </td>
 
         {/* Status */}
-        <td className="p-3 border-r border-border">
+        <td className="hidden sm:table-cell p-3 border-r border-border">
           <span className={`font-medium ${getStatusColor(book.status)}`} title="Status">
             {getStatusDisplay(book.status)}
           </span>
         </td>
 
         {/* Rating */}
-        <td className="p-3 border-r border-border" title="Rating">
+        <td className="hidden sm:table-cell p-3 border-r border-border" title="Rating">
           <div className="text-foreground">
             {renderRating(book.cawpileRating)}
           </div>
         </td>
 
         {/* Ending Month */}
-        <td className="p-3" title="Ending Month">
+        <td className="hidden sm:table-cell p-3" title="Ending Month">
           <div className="text-muted-foreground">
             {book.status === 'COMPLETED' ? formatEndingMonth(book.finishDate) : '--'}
           </div>

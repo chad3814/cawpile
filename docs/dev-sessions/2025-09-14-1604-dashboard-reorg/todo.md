@@ -26,28 +26,28 @@
 - [x] Create API route for preference saving
 - [x] Implement optimistic updates
 - [ ] Add error handling with toast notifications
-- [ ] Test database persistence
+- [x] Test database persistence
 
 ## Phase 6: Enhancements
-- [ ] Add slide transition animation
-- [ ] Implement responsive two-row mobile layout
+- [x] Add slide transition animation
+- [x] Implement responsive two-row mobile layout
 - [ ] Create/integrate StatusBadge component
 - [ ] Create/integrate StarRating component
 - [ ] Optimize cover images for table view
 
 ## Phase 7: Polish & Testing
-- [ ] Test view toggle functionality
-- [ ] Verify preference persistence
-- [ ] Test responsive breakpoints
-- [ ] Check keyboard navigation
-- [ ] Validate accessibility (ARIA labels)
-- [ ] Ensure data consistency between views
-- [ ] Test error scenarios
+- [x] Test view toggle functionality
+- [x] Verify preference persistence
+- [x] Test responsive breakpoints
+- [x] Check keyboard navigation
+- [x] Validate accessibility (ARIA labels)
+- [x] Ensure data consistency between views
+- [x] Test error scenarios
 
 ## Completion Criteria
-- [ ] Users can toggle between grid and table views
-- [ ] Preference saves to database and persists
-- [ ] Table view displays all required data correctly
-- [ ] Mobile responsive layout works properly
-- [ ] Animations are smooth
-- [ ] All interactions work as specified
+- [x] Users can toggle between grid and table views
+- [x] Preference saves to database and persists
+- [x] Table view displays all required data correctly
+- [x] Mobile responsive layout works properly
+- [x] Animations are smooth
+- [x] All interactions work as specified
