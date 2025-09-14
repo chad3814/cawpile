@@ -119,7 +119,7 @@ export default function BookTable({ books }: BookTableProps) {
       >
         {/* Mobile Layout - Two rows */}
         <td className="sm:hidden p-3" colSpan={6}>
-          <div className="grid grid-cols-[48px_1fr] gap-3">
+          <div className="grid grid-cols-[48px_1fr] gap-3 max-w-full">
             {/* Cover Image - spans both rows */}
             <div className="row-span-2">
               <div className="relative w-12 h-16 bg-muted rounded overflow-hidden">
@@ -139,15 +139,15 @@ export default function BookTable({ books }: BookTableProps) {
               </div>
             </div>
             {/* Top row: Important data */}
-            <div className="space-y-1">
-              <div className="font-medium text-foreground truncate">{displayTitle}</div>
-              <div className="text-sm text-muted-foreground truncate">{authors || '--'}</div>
+            <div className="space-y-1 min-w-0">
+              <div className="font-medium text-foreground truncate max-w-full">{displayTitle}</div>
+              <div className="text-sm text-muted-foreground truncate max-w-full">{authors || '--'}</div>
               <span className={`text-sm font-medium ${getStatusColor(book.status)}`}>
                 {getStatusDisplay(book.status)}
               </span>
             </div>
             {/* Bottom row: Secondary data */}
-            <div className="col-start-2 flex gap-4 text-sm">
+            <div className="col-start-2 flex gap-4 text-sm min-w-0">
               <div className="text-foreground">{renderRating(book.cawpileRating)}</div>
               {book.status === 'COMPLETED' && (
                 <div className="text-muted-foreground">{formatEndingMonth(book.finishDate)}</div>
@@ -222,7 +222,7 @@ export default function BookTable({ books }: BookTableProps) {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Currently Reading
           </h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto sm:overflow-x-visible">
             <table className="w-full border border-border rounded-lg overflow-hidden">
               <tbody>
                 {readingBooks.map(renderBookRow)}
@@ -240,7 +240,7 @@ export default function BookTable({ books }: BookTableProps) {
               Library
             </h2>
           )}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto sm:overflow-x-visible">
             <table className="w-full border border-border rounded-lg overflow-hidden">
               <tbody>
                 {otherBooks.map(renderBookRow)}
