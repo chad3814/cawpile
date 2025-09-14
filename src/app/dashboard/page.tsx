@@ -1,7 +1,7 @@
 import { getCurrentUser } from "@/lib/auth-helpers"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import BookGrid from "@/components/dashboard/BookGrid"
+import DashboardClient from "@/components/dashboard/DashboardClient"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -9,6 +9,12 @@ export default async function DashboardPage() {
   if (!user?.id) {
     redirect("/auth/signin")
   }
+
+  // Fetch user's preferences
+  const userWithPreferences = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { dashboardLayout: true }
+  })
 
   // Fetch user's books
   const userBooks = await prisma.userBook.findMany({
@@ -62,17 +68,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">
-          Welcome back, {user?.name?.split(" ")[0] || "Reader"}!
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Your reading dashboard
-        </p>
-      </div>
-
-      {/* Book Grid */}
-      <BookGrid books={userBooks} />
+      <DashboardClient
+        books={userBooks}
+        initialLayout={userWithPreferences?.dashboardLayout || 'GRID'}
+        userName={user?.name?.split(" ")[0]}
+      />
 
       {/* Statistics */}
       {userBooks.length > 0 && (

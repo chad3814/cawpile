@@ -17,6 +17,7 @@ model User {
   username      String?          @unique
   bio           String?
   readingGoal   Int              @default(12)
+  dashboardLayout DashboardLayout @default(GRID)
   image         String?
   isAdmin       Boolean          @default(false)
   isSuperAdmin  Boolean          @default(false)
@@ -203,6 +204,11 @@ enum BookFormat {
 enum BookType {
   FICTION
   NONFICTION
+}
+
+enum DashboardLayout {
+  GRID
+  TABLE
 }
 
 // Admin audit log for tracking all admin actions
