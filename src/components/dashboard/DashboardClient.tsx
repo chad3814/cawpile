@@ -3,9 +3,45 @@
 import { useState } from 'react'
 import LayoutToggle from './LayoutToggle'
 import ViewSwitcher from './ViewSwitcher'
+import { BookStatus, BookFormat } from '@prisma/client'
+
+interface BookData {
+  id: string
+  status: BookStatus
+  format: BookFormat
+  progress: number
+  startDate: Date | null
+  finishDate: Date | null
+  createdAt: Date
+  edition: {
+    id: string
+    title: string | null
+    book: {
+      title: string
+      authors: string[]
+      bookType?: 'FICTION' | 'NONFICTION'
+    }
+    googleBook: {
+      imageUrl: string | null
+      description: string | null
+      pageCount: number | null
+    } | null
+  }
+  cawpileRating?: {
+    id: string
+    average: number
+    characters: number | null
+    atmosphere: number | null
+    writing: number | null
+    plot: number | null
+    intrigue: number | null
+    logic: number | null
+    enjoyment: number | null
+  } | null
+}
 
 interface DashboardClientProps {
-  books: any[]
+  books: BookData[]
   initialLayout: 'GRID' | 'TABLE'
   userName?: string
 }
