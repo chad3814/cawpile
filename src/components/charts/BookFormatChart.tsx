@@ -10,35 +10,40 @@ interface BookFormatChartProps {
   year: number;
 }
 
+interface ChartData {
+  name: string;
+  value: number;
+}
+
 export function BookFormatChart({ year }: BookFormatChartProps) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`/api/charts/book-format?year=${year}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const result = await response.json();
+        setData(result.data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load chart');
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, [year]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/charts/book-format?year=${year}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const result = await response.json();
-      setData(result.data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chart');
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return <PieChartSkeleton />;

@@ -6,33 +6,31 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
-  TooltipProps
+  Legend
 } from 'recharts';
 import { CHART_COLORS, CHART_CONFIG } from '@/lib/charts';
 
-interface BasePieChartProps<T = any> {
+interface BasePieChartProps<T = Record<string, unknown>> {
   data: T[];
   dataKey: string;
   nameKey: string;
   colors?: readonly string[] | string[];
-  tooltipFormatter?: (value: any, name: any) => string;
+  tooltipFormatter?: (value: number, name: string) => string;
   showLegend?: boolean;
   innerRadius?: number;
   outerRadius?: number;
 }
 
-export function BasePieChart<T = any>({
+export function BasePieChart<T = Record<string, unknown>>({
   data,
   dataKey,
-  nameKey,
   colors = CHART_COLORS.categorical as readonly string[],
   tooltipFormatter,
   showLegend = true,
   innerRadius = CHART_CONFIG.pieChart.innerRadius,
   outerRadius = CHART_CONFIG.pieChart.outerRadius
 }: BasePieChartProps<T>) {
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; percent: number }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
@@ -50,8 +48,9 @@ export function BasePieChart<T = any>({
     return null;
   };
 
-  const renderLabel = (entry: any) => {
-    const percent = Number((entry.percent * 100).toFixed(0));
+  const renderLabel = (entry: unknown) => {
+    const data = entry as { percent: number };
+    const percent = Number((data.percent * 100).toFixed(0));
     return percent > 5 ? `${percent}%` : '';
   };
 

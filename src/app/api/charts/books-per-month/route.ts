@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import prisma from '@/lib/prisma';
-import { createEmptyMonthlyData, processMonthlyData, getMonthName } from '@/lib/charts/processors';
+import { createEmptyMonthlyData, processMonthlyData } from '@/lib/charts/processors';
 
 export async function GET(request: Request) {
   try {

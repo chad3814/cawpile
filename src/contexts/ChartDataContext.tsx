@@ -3,14 +3,14 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 interface ChartData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface ChartDataContextType {
   data: ChartData;
   loading: { [key: string]: boolean };
   error: { [key: string]: string | null };
-  fetchChartData: (chartType: string, year: number, force?: boolean) => Promise<any>;
+  fetchChartData: (chartType: string, year: number, force?: boolean) => Promise<unknown>;
   clearCache: () => void;
 }
 
@@ -110,7 +110,7 @@ export function ChartDataProvider({ children }: { children: ReactNode }) {
                 sessionStorage.removeItem(key);
               }
             }
-          } catch (e) {
+          } catch {
             // Invalid cache data, remove it
             sessionStorage.removeItem(key);
           }

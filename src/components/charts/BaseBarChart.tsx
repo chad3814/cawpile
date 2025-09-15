@@ -7,22 +7,21 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  TooltipProps
+  ResponsiveContainer
 } from 'recharts';
 import { CHART_COLORS, CHART_CONFIG } from '@/lib/charts';
 
-interface BaseBarChartProps<T = any> {
+interface BaseBarChartProps<T = Record<string, unknown>> {
   data: T[];
   dataKey: string;
   xAxisKey: string;
   color?: string;
-  tooltipFormatter?: (value: any) => string;
-  xAxisFormatter?: (value: any) => string;
-  yAxisFormatter?: (value: any) => string;
+  tooltipFormatter?: (value: number) => string;
+  xAxisFormatter?: (value: string) => string;
+  yAxisFormatter?: (value: number) => string;
 }
 
-export function BaseBarChart<T = any>({
+export function BaseBarChart<T = Record<string, unknown>>({
   data,
   dataKey,
   xAxisKey,
@@ -31,7 +30,7 @@ export function BaseBarChart<T = any>({
   xAxisFormatter,
   yAxisFormatter
 }: BaseBarChartProps<T>) {
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
