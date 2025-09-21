@@ -124,6 +124,7 @@ export function mergeResults(providerResults: SearchProviderResult[][], limit: n
 
   // Limit results and remove source metadata for final output
   return finalResults.slice(0, limit).map(result => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { source, sourceWeight, ...bookResult } = result
     return bookResult as BookSearchResult
   })
