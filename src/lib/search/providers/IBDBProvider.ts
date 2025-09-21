@@ -1,9 +1,9 @@
 import { BaseSearchProvider } from "../BaseSearchProvider"
 import type { BookSearchResult } from "@/types/book"
-import { IBDBClient } from "../utils/ibdbClient"
+import { IbdbClient } from "../utils/ibdbClient"
 
-export class IBDBProvider extends BaseSearchProvider {
-  private client: IBDBClient
+export class IbdbProvider extends BaseSearchProvider {
+  private client: IbdbClient
 
   constructor() {
     super({
@@ -11,7 +11,7 @@ export class IBDBProvider extends BaseSearchProvider {
       weight: 4,
       timeout: 5000
     })
-    this.client = new IBDBClient()
+    this.client = new IbdbClient()
   }
 
   protected async searchInternal(query: string, limit: number): Promise<BookSearchResult[]> {

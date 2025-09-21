@@ -1,4 +1,4 @@
-interface IBDBBook {
+interface IbdbBook {
   id?: string
   title?: string
   authors?: string[]
@@ -12,16 +12,16 @@ interface IBDBBook {
   [key: string]: unknown
 }
 
-interface IBDBResponse {
+interface IbdbResponse {
   status: 'ok' | 'error'
-  books?: IBDBBook[]
+  books?: IbdbBook[]
   message?: string
 }
 
-export class IBDBClient {
+export class IbdbClient {
   private baseUrl = 'https://ibdb.dev'
 
-  async search(query: string): Promise<IBDBBook[]> {
+  async search(query: string): Promise<IbdbBook[]> {
     try {
       const url = new URL('/api/search', this.baseUrl)
       url.searchParams.append('q', query)
@@ -38,7 +38,7 @@ export class IBDBClient {
         return []
       }
 
-      const data: IBDBResponse = await response.json()
+      const data: IbdbResponse = await response.json()
 
       if (data.status === 'error') {
         console.error('IBDB search error:', data.message)

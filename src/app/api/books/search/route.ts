@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { SearchOrchestrator } from "@/lib/search/SearchOrchestrator"
 import { LocalDatabaseProvider } from "@/lib/search/providers/LocalDatabaseProvider"
 import { GoogleBooksProvider } from "@/lib/search/providers/GoogleBooksProvider"
-import { IBDBProvider } from "@/lib/search/providers/IBDBProvider"
+import { IbdbProvider } from "@/lib/search/providers/IbdbProvider"
 import { HardcoverProvider } from "@/lib/search/providers/HardcoverProvider"
 
 export async function GET(request: NextRequest) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     orchestrator.registerProvider(new LocalDatabaseProvider())    // weight: 10
     orchestrator.registerProvider(new HardcoverProvider())         // weight: 6
     orchestrator.registerProvider(new GoogleBooksProvider())       // weight: 5
-    orchestrator.registerProvider(new IBDBProvider())              // weight: 4
+    orchestrator.registerProvider(new IbdbProvider())              // weight: 4
 
     // Search across all providers
     const books = await orchestrator.search(query, maxResults)
