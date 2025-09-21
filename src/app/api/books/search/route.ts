@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { searchBooks } from "@/lib/googleBooks"
+import { SearchOrchestrator } from "@/lib/search/SearchOrchestrator"
+import { LocalDatabaseProvider } from "@/lib/search/providers/LocalDatabaseProvider"
+import { GoogleBooksProvider } from "@/lib/search/providers/GoogleBooksProvider"
+import { IBDBProvider } from "@/lib/search/providers/IBDBProvider"
+import { HardcoverProvider } from "@/lib/search/providers/HardcoverProvider"
 
 export async function GET(request: NextRequest) {
   // Check authentication
@@ -26,7 +30,18 @@ export async function GET(request: NextRequest) {
 
   try {
     const maxResults = limit ? parseInt(limit, 10) : 10
-    const books = await searchBooks(query, maxResults)
+
+    // Create and configure the search orchestrator
+    const orchestrator = new SearchOrchestrator()
+
+    // Register all providers in order of weight (highest to lowest)
+    orchestrator.registerProvider(new LocalDatabaseProvider())    // weight: 10
+    orchestrator.registerProvider(new HardcoverProvider())         // weight: 6
+    orchestrator.registerProvider(new GoogleBooksProvider())       // weight: 5
+    orchestrator.registerProvider(new IBDBProvider())              // weight: 4
+
+    // Search across all providers
+    const books = await orchestrator.search(query, maxResults)
 
     return NextResponse.json({ books })
   } catch (error) {
