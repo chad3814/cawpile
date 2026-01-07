@@ -24,11 +24,11 @@ export class HardcoverProvider extends BaseSearchProvider {
         googleId: book.id || "",
         title: book.title || "Unknown Title",
         subtitle: book.subtitle,
-        authors: book.authors?.map(a => a.name) || [],
+        authors: book.authors?.map(a => a.name).filter((name): name is string => !!name) || [],
         description: book.description,
         publishedDate: book.release_date,
         pageCount: book.pages,
-        categories: book.categories?.map(c => c.name) || [],
+        categories: book.categories?.map(c => c.name).filter((name): name is string => !!name) || [],
         imageUrl: book.image,
         isbn10: book.isbn,
         isbn13: book.isbn13

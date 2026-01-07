@@ -1,8 +1,19 @@
+interface HardcoverAuthor {
+  id?: string
+  createdAt?: number
+  updatedAt?: number
+  name?: string
+  openLibraryId?: string | null
+  goodReadsId?: string | null
+  hardcoverId?: number
+  hardcoverSlug?: string
+}
+
 interface HardcoverBook {
   id?: string
   title?: string
   subtitle?: string
-  authors?: Array<{ name: string }>
+  authors?: Array<HardcoverAuthor | { name: string }>
   description?: string
   release_date?: string
   pages?: number
@@ -16,7 +27,7 @@ interface HardcoverBook {
 interface HardcoverSearchResponse {
   data?: {
     search?: {
-      results?: string // JSON string of results
+      results?: string | HardcoverBook[] // Can be JSON string or already-parsed array
       error?: string
     }
   }
@@ -74,8 +85,11 @@ export class HardcoverClient {
 
       if (data.data?.search?.results) {
         try {
-          // Parse the JSON string results
-          const books = JSON.parse(data.data.search.results) as HardcoverBook[]
+          // Handle both JSON string and already-parsed array
+          const results = data.data.search.results
+          const books = typeof results === 'string'
+            ? JSON.parse(results) as HardcoverBook[]
+            : results as HardcoverBook[]
           return books.slice(0, limit)
         } catch (parseError) {
           console.error('Failed to parse Hardcover results:', parseError)

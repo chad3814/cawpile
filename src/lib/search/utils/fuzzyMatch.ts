@@ -1,3 +1,5 @@
+import { inspect } from "node:util"
+
 /**
  * Calculate Levenshtein distance between two strings
  */
@@ -47,7 +49,21 @@ export function calculateSimilarity(str1: string, str2: string): number {
 /**
  * Normalize author name for comparison (handle "John Smith" vs "Smith, John")
  */
-function normalizeAuthorName(name: string): string {
+function normalizeAuthorName(name: string | { name?: string }): string {
+  // Handle author objects with a 'name' property
+  if (typeof name === 'object' && name !== null) {
+    if ('name' in name && typeof name.name === 'string') {
+      return normalizeAuthorName(name.name)
+    }
+    console.error(`normalizeAuthorName bad author object "${inspect(name)}" - missing name property`);
+    return ''
+  }
+
+  if (!name || typeof name !== 'string') {
+    console.error(`normalizeAuthorName bad name "${inspect(name)}" ${typeof name}`);
+    return ''
+  }
+
   const normalized = name.toLowerCase().trim()
 
   // Handle "Last, First" format
@@ -65,15 +81,21 @@ function normalizeAuthorName(name: string): string {
  * Check if two author arrays match with fuzzy matching
  * @param threshold Minimum similarity percentage (default 80%)
  */
-export function fuzzyMatchAuthors(authors1: string[], authors2: string[], threshold: number = 80): boolean {
+export function fuzzyMatchAuthors(
+  authors1: (string | { name?: string })[],
+  authors2: (string | { name?: string })[],
+  threshold: number = 80
+): boolean {
   if (!authors1.length || !authors2.length) return false
 
   // Check if at least one author from each list matches
   for (const author1 of authors1) {
     const normalized1 = normalizeAuthorName(author1)
+    if (!normalized1) continue // Skip invalid authors
 
     for (const author2 of authors2) {
       const normalized2 = normalizeAuthorName(author2)
+      if (!normalized2) continue // Skip invalid authors
 
       if (calculateSimilarity(normalized1, normalized2) >= threshold) {
         return true
