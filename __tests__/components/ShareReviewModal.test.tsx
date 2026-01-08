@@ -24,7 +24,7 @@ jest.mock('next/navigation', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => {
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
     // eslint-disable-next-line jsx-a11y/alt-text, @next/next/no-img-element
     return <img {...props} />
   },
@@ -59,8 +59,8 @@ describe('ShareReviewModal', () => {
 
   beforeAll(() => {
     // Mock window.location once for all tests
-    delete (window as any).location
-    ;(window as any).location = { origin: 'http://localhost:3000' }
+    delete (window as unknown as { location: unknown }).location
+    ;(window as unknown as { location: { origin: string } }).location = { origin: 'http://localhost:3000' }
   })
 
   beforeEach(() => {

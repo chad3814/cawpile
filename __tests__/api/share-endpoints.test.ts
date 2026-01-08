@@ -22,7 +22,6 @@ const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurre
 describe('Share API Endpoints', () => {
   let testUserId: string
   let testUserBookId: string
-  let testEditionId: string
   let testBookId: string
 
   beforeAll(async () => {
