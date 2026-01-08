@@ -57,11 +57,7 @@ describe('ShareReviewModal', () => {
     showReadathons: true,
   }
 
-  beforeAll(() => {
-    // Mock window.location once for all tests
-    delete (window as unknown as { location: unknown }).location
-    ;(window as unknown as { location: { origin: string } }).location = { origin: 'http://localhost:3000' }
-  })
+  // window.location.origin is set to 'http://localhost:3000' via jest.config.ts testEnvironmentOptions
 
   beforeEach(() => {
     jest.clearAllMocks()

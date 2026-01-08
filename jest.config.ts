@@ -26,6 +26,7 @@ const config: Config = {
   // Use node environment for specific test files
   testEnvironmentOptions: {
     customExportConditions: [''],
+    url: 'http://localhost:3000',
   },
 }
 
