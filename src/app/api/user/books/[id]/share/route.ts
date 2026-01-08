@@ -68,6 +68,9 @@ export async function POST(
 
   try {
     const { id } = await params
+    const body = await request.json();
+
+    const { showDates, showBookClubs, showReadathons } = body
 
     // Check if user owns this book
     const userBook = await prisma.userBook.findFirst({
@@ -129,9 +132,9 @@ export async function POST(
         userId: user.id,
         userBookId: id,
         shareToken,
-        showDates: true,
-        showBookClubs: true,
-        showReadathons: true
+        showDates: showDates ?? true,
+        showBookClubs: showBookClubs ?? true,
+        showReadathons: showReadathons ?? true,
       }
     })
 
@@ -222,8 +225,10 @@ export async function PATCH(
       },
       data: updateData
     })
+    const shareToken = updatedShare.shareToken;
+    const shareUrl = `${process.env.NEXTAUTH_URL}/share/reviews/${shareToken}`
 
-    return NextResponse.json({ sharedReview: updatedShare })
+    return NextResponse.json({ shareUrl, shareToken, sharedReview: updatedShare })
   } catch (error) {
     console.error('Error updating share:', error)
     return NextResponse.json(

@@ -664,6 +664,7 @@ export default function BookCard({ book }: BookCardProps) {
           edition: book.edition,
         }}
         existingShare={shareData}
+        setShareData={setShareData}
       />
     )}
     </>

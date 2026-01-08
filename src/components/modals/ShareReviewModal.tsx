@@ -34,13 +34,15 @@ interface ShareReviewModalProps {
     }
   }
   existingShare: SharedReview | null
+  setShareData: (data: SharedReview | null) => void
 }
 
 export default function ShareReviewModal({
   isOpen,
   onClose,
   userBook,
-  existingShare
+  existingShare,
+  setShareData,
 }: ShareReviewModalProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -97,6 +99,7 @@ export default function ShareReviewModal({
         await copyToClipboard(data.shareUrl)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
+        setShareData(data);
       }
 
       router.refresh()
@@ -124,11 +127,11 @@ export default function ShareReviewModal({
         }),
       })
 
+    const data = await response.json()
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || 'Failed to update share settings')
       }
-
+      setShareData(data);
       router.refresh()
       onClose()
     } catch (err) {
@@ -155,7 +158,7 @@ export default function ShareReviewModal({
         const data = await response.json()
         throw new Error(data.error || 'Failed to delete share link')
       }
-
+      setShareData(null);
       router.refresh()
       onClose()
     } catch (err) {
