@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CawpileFacet } from '@/types/cawpile'
 import RatingGuide from './RatingGuide'
 
@@ -27,6 +27,18 @@ export default function RatingCard({
 }: RatingCardProps) {
   const [localValue, setLocalValue] = useState(value || 5)
   const [hasInteracted, setHasInteracted] = useState(value !== null)
+
+  useEffect(() => {
+    if (value !== null) {
+      // Editing mode: facet has an existing value
+      setLocalValue(value)
+      setHasInteracted(true)
+    } else {
+      // New facet: reset to default
+      setLocalValue(5)
+      setHasInteracted(false)
+    }
+  }, [facet.key, value])
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value)
