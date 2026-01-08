@@ -121,6 +121,14 @@ describe('Share API Endpoints', () => {
 
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: testUserBookId })
 
@@ -189,6 +197,14 @@ describe('Share API Endpoints', () => {
 
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: readingBook.id })
 
@@ -224,6 +240,14 @@ describe('Share API Endpoints', () => {
 
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: testUserBookId })
 

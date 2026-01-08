@@ -129,6 +129,10 @@ describe('Social Sharing E2E Integration', () => {
   })
 
   afterEach(async () => {
+    // Clean up shared reviews after each test to prevent unique constraint violations
+    await prisma.sharedReview.deleteMany({
+      where: { userId: testUserId },
+    })
     jest.clearAllMocks()
   })
 
@@ -145,6 +149,14 @@ describe('Social Sharing E2E Integration', () => {
 
       const createRequest = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const createParams = Promise.resolve({ id: testUserBookId })
 
@@ -327,6 +339,14 @@ describe('Social Sharing E2E Integration', () => {
 
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: userBookNoRating.id })
 
@@ -365,6 +385,14 @@ describe('Social Sharing E2E Integration', () => {
       // Attempt to create second share
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: testUserBookId })
 
@@ -488,6 +516,14 @@ describe('Social Sharing E2E Integration', () => {
 
       const request = new NextRequest('http://localhost:3000/api/user/books/test/share', {
         method: 'POST',
+        body: JSON.stringify({
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
       const params = Promise.resolve({ id: testUserBookId })
 
