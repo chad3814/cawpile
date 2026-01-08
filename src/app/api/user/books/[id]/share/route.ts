@@ -3,6 +3,55 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { nanoid } from 'nanoid'
 
+// GET - Check if share exists for this book
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getCurrentUser()
+
+  if (!user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const { id } = await params
+
+    // Check if SharedReview exists for this userBookId
+    const existingShare = await prisma.sharedReview.findUnique({
+      where: {
+        userBookId: id
+      }
+    })
+
+    if (!existingShare) {
+      return NextResponse.json(
+        { error: 'Share not found' },
+        { status: 404 }
+      )
+    }
+
+    // Verify user ownership
+    if (existingShare.userId !== user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
+    }
+
+    return NextResponse.json(existingShare)
+  } catch (error) {
+    console.error('Error fetching share:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch share' },
+      { status: 500 }
+    )
+  }
+}
+
 // POST - Create a new share
 export async function POST(
   request: NextRequest,

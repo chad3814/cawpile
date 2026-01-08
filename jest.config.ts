@@ -2,7 +2,8 @@ import type { Config } from 'jest'
 
 const config: Config = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  // Use jsdom for component tests, node for API/database tests
+  testEnvironment: 'jest-environment-jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
@@ -21,6 +22,10 @@ const config: Config = {
         allowSyntheticDefaultImports: true,
       }
     }]
+  },
+  // Use node environment for specific test files
+  testEnvironmentOptions: {
+    customExportConditions: [''],
   },
 }
 

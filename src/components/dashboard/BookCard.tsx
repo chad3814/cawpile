@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { BookStatus, BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
@@ -10,14 +10,23 @@ import MarkCompleteModal from '@/components/modals/MarkCompleteModal'
 import MarkDNFModal from '@/components/modals/MarkDNFModal'
 import EditBookModal from '@/components/modals/EditBookModal'
 import BookDetailsModal from '@/components/modals/BookDetailsModal'
+import ShareReviewModal from '@/components/modals/ShareReviewModal'
 import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import TrackingBadges from '@/components/book/TrackingBadges'
 import { BookType, convertToStars } from '@/types/cawpile'
 import { useRouter } from 'next/navigation'
-import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
+
+interface SharedReview {
+  id: string
+  shareToken: string
+  showDates: boolean
+  showBookClubs: boolean
+  showReadathons: boolean
+}
 
 interface BookCardProps {
   book: {
@@ -101,11 +110,37 @@ export default function BookCard({ book }: BookCardProps) {
   const [isMarkDNFModalOpen, setIsMarkDNFModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareData, setShareData] = useState<SharedReview | null>(null)
   const [selectedFormat, setSelectedFormat] = useState(book.format)
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
   const imageUrl = book.edition.googleBook?.imageUrl
   const bookType = (book.edition.book.bookType || 'FICTION') as BookType
+
+  // Determine if share button should be visible
+  const canShare = book.status === 'COMPLETED' && book.cawpileRating !== null && book.cawpileRating !== undefined
+
+  // Fetch existing share data if book is eligible
+  useEffect(() => {
+    if (canShare) {
+      fetch(`/api/user/books/${book.id}/share`)
+        .then(res => {
+          if (res.ok) {
+            return res.json()
+          }
+          return null
+        })
+        .then(data => {
+          if (data) {
+            setShareData(data)
+          }
+        })
+        .catch(() => {
+          // Silently fail - share doesn't exist
+        })
+    }
+  }, [book.id, canShare])
 
   const handleUpdateProgress = async (bookId: string, progress: number) => {
     try {
@@ -139,7 +174,7 @@ export default function BookCard({ book }: BookCardProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: 'COMPLETED',
           finishDate,
           progress: 100
@@ -311,6 +346,21 @@ export default function BookCard({ book }: BookCardProps) {
                     </button>
                   )}
                 </Menu.Item>
+                {canShare && (
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => setShowShareModal(true)}
+                        className={`${
+                          active ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-gray-100'
+                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                      >
+                        <ShareIcon className="mr-2 h-4 w-4" />
+                        Share Review
+                      </button>
+                    )}
+                  </Menu.Item>
+                )}
                 <Menu.Item>
                   {({ active }) => (
                     <button
@@ -349,14 +399,14 @@ export default function BookCard({ book }: BookCardProps) {
         {book.cawpileRating && (
           <div className="absolute top-2 left-2 z-20 bg-black/75 backdrop-blur-sm rounded px-2 py-1 shadow-lg">
             <span className="text-sm">
-              {convertToStars(book.cawpileRating.average) > 0 
+              {convertToStars(book.cawpileRating.average) > 0
                 ? '⭐'.repeat(convertToStars(book.cawpileRating.average))
                 : '☆☆☆☆☆'
               }
             </span>
           </div>
         )}
-        
+
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -396,17 +446,17 @@ export default function BookCard({ book }: BookCardProps) {
 
         {/* Rating Display */}
         {book.cawpileRating && (
-          <div 
+          <div
             className="mb-3 relative"
             onMouseEnter={() => setShowRatingPreview(true)}
             onMouseLeave={() => setShowRatingPreview(false)}
           >
-            <StarRating 
-              rating={book.cawpileRating.average} 
+            <StarRating
+              rating={book.cawpileRating.average}
               showAverage={true}
               size="sm"
             />
-            
+
             {/* Rating Preview on Hover */}
             {showRatingPreview && (
               <div className="absolute z-10 left-0 right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
@@ -601,6 +651,21 @@ export default function BookCard({ book }: BookCardProps) {
         cawpileRating: book.cawpileRating,
       }}
     />
+
+    {/* Share Review Modal */}
+    {canShare && (
+      <ShareReviewModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        userBook={{
+          id: book.id,
+          bookClubName: book.bookClubName,
+          readathonName: book.readathonName,
+          edition: book.edition,
+        }}
+        existingShare={shareData}
+      />
+    )}
     </>
   )
 }
