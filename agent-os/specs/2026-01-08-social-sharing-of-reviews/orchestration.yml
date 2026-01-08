@@ -1,0 +1,6 @@
+task_groups:
+  - name: Database Layer
+  - name: Backend API Layer
+  - name: Frontend Dashboard Integration and Share Modal
+  - name: Frontend Public Review Page
+  - name: Testing & Integration

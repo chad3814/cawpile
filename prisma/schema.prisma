@@ -27,6 +27,7 @@ model User {
   bookClubs     UserBookClub[]
   readathons    UserReadathon[]
   adminActions  AdminAuditLog[]  @relation("AdminUser")
+  sharedReviews SharedReview[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -147,6 +148,7 @@ model UserBook {
   edition        Edition          @relation(fields: [editionId], references: [id])
   cawpileRating  CawpileRating?
   readingSessions ReadingSession[]
+  sharedReview   SharedReview?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
@@ -188,6 +190,24 @@ model ReadingSession {
 
   @@index([userBookId])
   @@index([sessionDate])
+}
+
+// SharedReview model for social sharing
+model SharedReview {
+  id              String   @id @default(cuid())
+  userId          String
+  userBookId      String   @unique
+  shareToken      String   @unique
+  showDates       Boolean  @default(true)
+  showBookClubs   Boolean  @default(true)
+  showReadathons  Boolean  @default(true)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userBook        UserBook @relation(fields: [userBookId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([shareToken])
+  @@index([userId])
 }
 
 enum BookStatus {

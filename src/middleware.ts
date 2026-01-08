@@ -7,6 +7,12 @@ export default auth(async (req) => {
   const isOnAuth = req.nextUrl.pathname.startsWith("/auth")
   const isOnHome = req.nextUrl.pathname === "/"
   const isOnAdmin = req.nextUrl.pathname.startsWith("/admin")
+  const isOnPublicShare = req.nextUrl.pathname.startsWith("/share/reviews/")
+
+  // Public share routes - allow unauthenticated access
+  if (isOnPublicShare) {
+    return NextResponse.next()
+  }
 
   // Admin route protection
   if (isOnAdmin) {
