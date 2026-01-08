@@ -15,7 +15,7 @@ interface BookDetailsModalProps {
     title: string
     authors: string[]
     status: BookStatus
-    format: BookFormat
+    format: BookFormat[]
     progress: number
     startDate: Date | null
     finishDate: Date | null
@@ -151,7 +151,7 @@ export default function BookDetailsModal({
                       <div>
                         <span className="text-sm text-gray-500 dark:text-gray-400">Format</span>
                         <p className="font-medium text-gray-900 dark:text-gray-100">
-                          {formatLabels[book.format]}
+                          {book.format.map(f => formatLabels[f]).join(", ")}
                         </p>
                       </div>
                       {book.pageCount && (

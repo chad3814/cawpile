@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
+import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
 
 export async function PATCH(
@@ -9,7 +9,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser()
-  
+
   if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -47,6 +47,27 @@ export async function PATCH(
       authorPocDetails
     } = body
 
+    // Validate format array if provided
+    if (format !== undefined) {
+      if (!Array.isArray(format) || format.length === 0) {
+        return NextResponse.json(
+          { error: 'At least one format is required' },
+          { status: 400 }
+        )
+      }
+
+      // Validate each format is a valid BookFormat enum value
+      const validFormats = Object.values(BookFormat)
+      for (const f of format) {
+        if (!validFormats.includes(f)) {
+          return NextResponse.json(
+            { error: `Invalid format: ${f}` },
+            { status: 400 }
+          )
+        }
+      }
+    }
+
     // Validate progress if provided
     if (progress !== undefined && (typeof progress !== 'number' || progress < 0 || progress > 100)) {
       return NextResponse.json(
@@ -78,7 +99,12 @@ export async function PATCH(
 
     if (progress !== undefined) updateData.progress = progress
     if (status !== undefined) updateData.status = status
-    if (format !== undefined) updateData.format = format
+
+    // Handle format array - remove duplicates
+    if (format !== undefined) {
+      updateData.format = Array.from(new Set(format))
+    }
+
     if (review !== undefined) updateData.review = review
     if (notes !== undefined) updateData.notes = notes
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite
@@ -187,7 +213,7 @@ export async function PATCH(
         logic: cawpileRating.logic !== undefined ? cawpileRating.logic : null,
         enjoyment: cawpileRating.enjoyment !== undefined ? cawpileRating.enjoyment : null
       }
-      
+
       const average = calculateCawpileAverage(ratingData)
 
       if (userBook.cawpileRating) {
@@ -237,7 +263,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser()
-  
+
   if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },

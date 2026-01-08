@@ -120,7 +120,7 @@ model UserBook {
   userId         String
   editionId      String
   status         BookStatus
-  format         BookFormat
+  format         BookFormat[]
   startDate      DateTime?
   finishDate     DateTime?
   progress       Float            @default(0) // Percentage 0-100

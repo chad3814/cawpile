@@ -75,6 +75,7 @@ describe('ShareReviewModal', () => {
         onClose={jest.fn()}
         userBook={mockUserBook}
         existingShare={null}
+        setShareData={jest.fn()}
       />
     )
 
@@ -96,6 +97,7 @@ describe('ShareReviewModal', () => {
         onClose={jest.fn()}
         userBook={userBookWithoutClub}
         existingShare={null}
+        setShareData={jest.fn()}
       />
     )
 
@@ -111,6 +113,7 @@ describe('ShareReviewModal', () => {
         onClose={jest.fn()}
         userBook={mockUserBook}
         existingShare={mockExistingShare}
+        setShareData={jest.fn()}
       />
     )
 
@@ -134,6 +137,7 @@ describe('ShareReviewModal', () => {
         onClose={jest.fn()}
         userBook={mockUserBook}
         existingShare={mockExistingShare}
+        setShareData={jest.fn()}
       />
     )
 
@@ -174,6 +178,7 @@ describe('ShareReviewModal', () => {
         onClose={jest.fn()}
         userBook={mockUserBook}
         existingShare={null}
+        setShareData={jest.fn()}
       />
     )
 
@@ -217,6 +222,7 @@ describe('ShareReviewModal', () => {
         onClose={mockOnClose}
         userBook={mockUserBook}
         existingShare={mockExistingShare}
+        setShareData={jest.fn()}
       />
     )
 
@@ -262,6 +268,7 @@ describe('ShareReviewModal', () => {
         onClose={mockOnClose}
         userBook={mockUserBook}
         existingShare={mockExistingShare}
+        setShareData={jest.fn()}
       />
     )
 

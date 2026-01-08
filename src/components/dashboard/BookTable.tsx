@@ -9,7 +9,7 @@ import EmptyLibrary from './EmptyLibrary'
 interface BookData {
   id: string
   status: BookStatus
-  format: BookFormat
+  format: BookFormat[]
   progress: number
   startDate: Date | null
   finishDate: Date | null

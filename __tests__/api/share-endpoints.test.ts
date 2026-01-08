@@ -23,6 +23,7 @@ describe('Share API Endpoints', () => {
   let testUserId: string
   let testUserBookId: string
   let testBookId: string
+  let testEditionId: string
 
   beforeAll(async () => {
     // Create test user
@@ -56,7 +57,7 @@ describe('Share API Endpoints', () => {
         userId: testUserId,
         editionId: edition.id,
         status: 'COMPLETED',
-        format: 'HARDCOVER',
+        format: ['HARDCOVER'],
       },
     })
     testUserBookId = userBook.id
@@ -174,7 +175,7 @@ describe('Share API Endpoints', () => {
           userId: testUserId,
           editionId: readingEdition.id,
           status: 'READING',
-          format: 'EBOOK',
+          format: ['EBOOK'],
         },
       })
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import prisma from '@/lib/prisma';
-import { formatBookFormat } from '@/lib/charts/formatters';
+import { categorizeBookFormat } from '@/lib/charts/categorizeBookFormat';
 
 export async function GET(request: Request) {
   try {
@@ -31,16 +31,16 @@ export async function GET(request: Request) {
       }
     });
 
-    // Count by format
-    const formatCounts: Record<string, number> = {};
+    // Count by category using the categorizeBookFormat utility
+    const categoryCounts: Record<string, number> = {};
     userBooks.forEach(book => {
-      const format = book.format;
-      formatCounts[format] = (formatCounts[format] || 0) + 1;
+      const category = categorizeBookFormat(book.format);
+      categoryCounts[category] = (categoryCounts[category] || 0) + 1;
     });
 
     // Convert to array format for pie chart
-    const data = Object.entries(formatCounts).map(([format, count]) => ({
-      name: formatBookFormat(format),
+    const data = Object.entries(categoryCounts).map(([name, count]) => ({
+      name,
       value: count
     }));
 

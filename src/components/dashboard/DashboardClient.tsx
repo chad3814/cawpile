@@ -11,7 +11,7 @@ import { BookStatus, BookFormat } from '@prisma/client'
 interface BookData {
   id: string
   status: BookStatus
-  format: BookFormat
+  format: BookFormat[]
   progress: number
   startDate: Date | null
   finishDate: Date | null

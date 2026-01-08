@@ -1,24 +1,18 @@
 'use client'
 
 import { Fragment, useState } from 'react'
-import { Dialog, Transition, RadioGroup } from '@headlessui/react'
-import { XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { Dialog, Transition } from '@headlessui/react'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { BookFormat } from '@prisma/client'
+import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 
 interface ChangeFormatModalProps {
   isOpen: boolean
   onClose: () => void
-  currentFormat: BookFormat
+  currentFormat: BookFormat[]
   bookTitle: string
-  onFormatChange: (format: BookFormat) => void
+  onFormatChange: (format: BookFormat[]) => void
 }
-
-const formatOptions = [
-  { value: BookFormat.HARDCOVER, label: 'Hardcover', icon: '📖', description: 'Physical hardcover book' },
-  { value: BookFormat.PAPERBACK, label: 'Paperback', icon: '📗', description: 'Physical paperback book' },
-  { value: BookFormat.EBOOK, label: 'E-Book', icon: '📱', description: 'Digital book for e-readers' },
-  { value: BookFormat.AUDIOBOOK, label: 'Audiobook', icon: '🎧', description: 'Audio narration' },
-]
 
 export default function ChangeFormatModal({
   isOpen,
@@ -27,14 +21,26 @@ export default function ChangeFormatModal({
   bookTitle,
   onFormatChange,
 }: ChangeFormatModalProps) {
-  const [selected, setSelected] = useState(currentFormat)
+  const [selected, setSelected] = useState<BookFormat[]>(currentFormat)
 
   const handleSave = () => {
-    if (selected !== currentFormat) {
+    // Check if selection has changed
+    const hasChanged =
+      selected.length !== currentFormat.length ||
+      !selected.every(f => currentFormat.includes(f)) ||
+      !currentFormat.every(f => selected.includes(f))
+
+    if (hasChanged) {
       onFormatChange(selected)
     }
     onClose()
   }
+
+  // Check if formats have changed for button disable state
+  const isUnchanged =
+    selected.length === currentFormat.length &&
+    selected.every(f => currentFormat.includes(f)) &&
+    currentFormat.every(f => selected.includes(f))
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -79,64 +85,13 @@ export default function ChangeFormatModal({
                 </div>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Select the format you&rsquo;re reading &ldquo;{bookTitle}&rdquo; in:
+                  Select the format(s) you&rsquo;re reading &ldquo;{bookTitle}&rdquo; in:
                 </p>
 
-                <RadioGroup value={selected} onChange={setSelected}>
-                  <RadioGroup.Label className="sr-only">Reading format</RadioGroup.Label>
-                  <div className="space-y-2">
-                    {formatOptions.map((option) => (
-                      <RadioGroup.Option
-                        key={option.value}
-                        value={option.value}
-                        className={({ active, checked }) =>
-                          `${
-                            active
-                              ? 'ring-2 ring-offset-2 ring-orange-500 dark:ring-offset-gray-800'
-                              : ''
-                          }
-                          ${
-                            checked
-                              ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-                              : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                          }
-                          relative flex cursor-pointer rounded-lg px-5 py-4 border focus:outline-none`
-                        }
-                      >
-                        {({ checked }) => (
-                          <div className="flex w-full items-center justify-between">
-                            <div className="flex items-center">
-                              <div className="text-2xl mr-3">{option.icon}</div>
-                              <div className="text-sm">
-                                <RadioGroup.Label
-                                  as="p"
-                                  className={`font-medium ${
-                                    checked ? 'text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-gray-100'
-                                  }`}
-                                >
-                                  {option.label}
-                                </RadioGroup.Label>
-                                <RadioGroup.Description
-                                  as="span"
-                                  className={`inline ${
-                                    checked ? 'text-orange-700 dark:text-orange-300' : 'text-gray-500 dark:text-gray-400'
-                                  }`}
-                                >
-                                  {option.description}
-                                </RadioGroup.Description>
-                              </div>
-                            </div>
-                            {checked && (
-                              <div className="shrink-0 text-orange-600 dark:text-orange-400">
-                                <CheckCircleIcon className="h-6 w-6" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </RadioGroup.Option>
-                    ))}
-                  </div>
-                </RadioGroup>
+                <FormatMultiSelect
+                  selectedFormats={selected}
+                  onChange={setSelected}
+                />
 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
@@ -148,9 +103,9 @@ export default function ChangeFormatModal({
                   </button>
                   <button
                     type="button"
-                    className="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                    className="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleSave}
-                    disabled={selected === currentFormat}
+                    disabled={isUnchanged}
                   >
                     Save Changes
                   </button>

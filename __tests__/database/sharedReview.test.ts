@@ -40,7 +40,7 @@ describe('SharedReview Model', () => {
         userId: testUserId,
         editionId: edition.id,
         status: 'COMPLETED',
-        format: 'HARDCOVER',
+        format: ['HARDCOVER'],
       },
     })
     testUserBookId = userBook.id
@@ -164,7 +164,7 @@ describe('SharedReview Model', () => {
         userId: testUserId,
         editionId: edition2.id,
         status: 'COMPLETED',
-        format: 'HARDCOVER',
+        format: ['HARDCOVER'],
       },
     })
 
@@ -341,7 +341,7 @@ describe('SharedReview Model', () => {
         userId: testUserId,
         editionId: edition3.id,
         status: 'COMPLETED',
-        format: 'HARDCOVER',
+        format: ['HARDCOVER'],
       },
     })
 

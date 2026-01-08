@@ -10,6 +10,7 @@ import RereadField from '@/components/forms/RereadField'
 import RepresentationField from '@/components/forms/RepresentationField'
 import AuthorPocField from '@/components/forms/AuthorPocField'
 import NewAuthorField from '@/components/forms/NewAuthorField'
+import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 import { BookStatus, BookFormat } from '@prisma/client'
 import { AcquisitionMethod, RepresentationValue, BookTrackingData } from '@/types/book'
 import { useRouter } from 'next/navigation'
@@ -21,7 +22,7 @@ interface EditBookModalProps {
     id: string
     title: string
     status: BookStatus
-    format: BookFormat
+    format: BookFormat[]
     acquisitionMethod?: string | null
     acquisitionOther?: string | null
     bookClubName?: string | null
@@ -50,7 +51,7 @@ export default function EditBookModal({
 
   // Basic fields
   const [status, setStatus] = useState(book.status)
-  const [format, setFormat] = useState(book.format)
+  const [format, setFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const [dnfReason, setDnfReason] = useState(book.dnfReason || '')
   const [notes, setNotes] = useState(book.notes || '')
 
@@ -278,20 +279,13 @@ export default function EditBookModal({
                       </div>
 
                       <div>
-                        <label htmlFor="format" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Book Format
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Book Format(s)
                         </label>
-                        <select
-                          id="format"
-                          value={format}
-                          onChange={(e) => setFormat(e.target.value as BookFormat)}
-                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                        >
-                          <option value={BookFormat.HARDCOVER}>Hardcover</option>
-                          <option value={BookFormat.PAPERBACK}>Paperback</option>
-                          <option value={BookFormat.EBOOK}>E-book</option>
-                          <option value={BookFormat.AUDIOBOOK}>Audiobook</option>
-                        </select>
+                        <FormatMultiSelect
+                          selectedFormats={format}
+                          onChange={setFormat}
+                        />
                       </div>
                     </div>
                   )}

@@ -4,11 +4,13 @@ import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { BookSearchResult, AcquisitionMethod } from '@/types/book'
+import { BookFormat } from '@prisma/client'
 import Image from 'next/image'
 import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
 import BookClubField from '@/components/forms/BookClubField'
 import ReadathonField from '@/components/forms/ReadathonField'
 import RereadField from '@/components/forms/RereadField'
+import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 
 interface AddBookWizardProps {
   isOpen: boolean
@@ -18,11 +20,10 @@ interface AddBookWizardProps {
 }
 
 type BookStatus = 'WANT_TO_READ' | 'READING' | 'COMPLETED'
-type BookFormat = 'HARDCOVER' | 'PAPERBACK' | 'EBOOK' | 'AUDIOBOOK'
 
 interface BookFormData {
   status: BookStatus
-  format: BookFormat
+  format: BookFormat[]
   startDate?: string
   finishDate?: string
   progress?: number
@@ -40,7 +41,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<BookFormData>({
     status: 'WANT_TO_READ',
-    format: 'PAPERBACK',
+    format: [BookFormat.PAPERBACK],
   })
 
   // Set default finish date when reaching completion step
@@ -49,7 +50,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
       if (formData.startDate) {
         const startDate = new Date(formData.startDate)
         const today = new Date()
-        
+
         // Use the start date's month and year, but today's day
         // Unless today is earlier in the month than the start date
         const defaultDate = new Date(
@@ -57,7 +58,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
           startDate.getMonth(),
           Math.max(startDate.getDate(), Math.min(today.getDate(), new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate()))
         )
-        
+
         // If the default date is in the future, use today
         if (defaultDate > today) {
           setFormData(prev => ({ ...prev, finishDate: today.toISOString().split('T')[0] }))
@@ -75,7 +76,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     setCurrentStep(1)
     setFormData({
       status: 'WANT_TO_READ',
-      format: 'PAPERBACK',
+      format: [BookFormat.PAPERBACK],
     })
     onClose()
   }, [onClose])
@@ -267,26 +268,13 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                       </div>
 
                       <div>
-                        <label className="text-sm font-semibold text-card-foreground">Format</label>
-                        <div className="mt-2 space-y-2">
-                          {[
-                            { value: 'HARDCOVER', label: 'Hardcover' },
-                            { value: 'PAPERBACK', label: 'Paperback' },
-                            { value: 'EBOOK', label: 'E-book' },
-                            { value: 'AUDIOBOOK', label: 'Audiobook' },
-                          ].map((option) => (
-                            <label key={option.value} className="flex items-center">
-                              <input
-                                type="radio"
-                                value={option.value}
-                                checked={formData.format === option.value}
-                                onChange={(e) => setFormData({ ...formData, format: e.target.value as BookFormat })}
-                                className="mr-2"
-                              />
-                              <span className="text-sm text-card-foreground">{option.label}</span>
-                            </label>
-                          ))}
-                        </div>
+                        <label className="text-sm font-semibold text-card-foreground mb-2 block">
+                          Format(s)
+                        </label>
+                        <FormatMultiSelect
+                          selectedFormats={formData.format}
+                          onChange={(formats) => setFormData({ ...formData, format: formats })}
+                        />
                       </div>
                     </div>
                   )}
@@ -348,57 +336,51 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                       <input
                         type="number"
                         min="0"
-                        max="99"
+                        max="100"
                         value={formData.progress || 0}
-                        onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
+                        onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value, 10) })}
                         className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Enter your progress as a percentage (0-99)
-                      </p>
                     </div>
                   )}
 
                   {currentStep === 4 && formData.status === 'COMPLETED' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-sm font-semibold text-card-foreground">
-                          Did you finish the book?
+                    <div>
+                      <label className="text-sm font-semibold text-card-foreground mb-2 block">
+                        Did you finish reading this book?
+                      </label>
+                      <div className="space-y-2">
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            value="yes"
+                            checked={formData.didFinish === true}
+                            onChange={() => setFormData({ ...formData, didFinish: true })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm text-card-foreground">Yes, I finished it</span>
                         </label>
-                        <div className="mt-2 space-y-2">
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              value="yes"
-                              checked={formData.didFinish === true}
-                              onChange={() => setFormData({ ...formData, didFinish: true })}
-                              className="mr-2"
-                            />
-                            <span className="text-sm text-card-foreground">Yes</span>
-                          </label>
-                          <label className="flex items-center">
-                            <input
-                              type="radio"
-                              value="no"
-                              checked={formData.didFinish === false}
-                              onChange={() => setFormData({ ...formData, didFinish: false })}
-                              className="mr-2"
-                            />
-                            <span className="text-sm text-card-foreground">No (DNF)</span>
-                          </label>
-                        </div>
+                        <label className="flex items-center">
+                          <input
+                            type="radio"
+                            value="no"
+                            checked={formData.didFinish === false}
+                            onChange={() => setFormData({ ...formData, didFinish: false })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm text-card-foreground">No, I did not finish (DNF)</span>
+                        </label>
                       </div>
 
-                      {formData.didFinish && (
-                        <div>
+                      {formData.didFinish === true && (
+                        <div className="mt-4">
                           <label className="text-sm font-semibold text-card-foreground">
-                            Finish Date
+                            When did you finish?
                           </label>
                           <input
                             type="date"
                             value={formData.finishDate || ''}
                             onChange={(e) => setFormData({ ...formData, finishDate: e.target.value })}
-                            min={formData.startDate}
                             max={new Date().toISOString().split('T')[0]}
                             className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                           />
@@ -410,29 +392,27 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
 
                 {/* Navigation Buttons */}
                 <div className="flex justify-between">
-                  <button
-                    onClick={handleBack}
-                    disabled={currentStep === 1}
-                    className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-secondary border border-border rounded-md hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-ring"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors focus-ring"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Adding...
-                      </span>
-                    ) : currentStep === getTotalSteps() ? (
-                      'Add Book'
-                    ) : (
-                      'Next'
-                    )}
-                  </button>
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="px-4 py-2 text-sm font-medium text-card-foreground hover:bg-muted rounded-md transition-colors"
+                    >
+                      Back
+                    </button>
+                  )}
+                  <div className="ml-auto">
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
+                    >
+                      {currentStep === getTotalSteps()
+                        ? (isSubmitting ? 'Adding...' : 'Add Book')
+                        : 'Next'}
+                    </button>
+                  </div>
                 </div>
               </Dialog.Panel>
             </Transition.Child>

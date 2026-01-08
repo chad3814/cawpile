@@ -32,7 +32,7 @@ interface BookCardProps {
   book: {
     id: string
     status: BookStatus
-    format: BookFormat
+    format: BookFormat[]
     progress: number
     startDate: Date | null
     finishDate: Date | null
@@ -112,7 +112,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [shareData, setShareData] = useState<SharedReview | null>(null)
-  const [selectedFormat, setSelectedFormat] = useState(book.format)
+  const [selectedFormat, setSelectedFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
   const imageUrl = book.edition.googleBook?.imageUrl
@@ -239,7 +239,7 @@ export default function BookCard({ book }: BookCardProps) {
     }
   }
 
-  const handleFormatChange = async (newFormat: BookFormat) => {
+  const handleFormatChange = async (newFormat: BookFormat[]) => {
     try {
       const response = await fetch(`/api/user/books/${book.id}`, {
         method: 'PATCH',
@@ -475,9 +475,13 @@ export default function BookCard({ book }: BookCardProps) {
           <span className={statusColors[book.status]}>
             {statusLabels[book.status]}
           </span>
-          <span className="text-lg" title={book.format}>
-            {formatIcons[book.format]}
-          </span>
+          <div className="flex gap-1">
+            {selectedFormat.map((fmt) => (
+              <span key={fmt} className="text-lg" title={fmt}>
+                {formatIcons[fmt]}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* Tracking Badges */}

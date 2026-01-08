@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 import { getBookById } from '@/lib/googleBooks'
 import { findOrCreateBook, findOrCreateEdition } from '@/lib/db/books'
 import prisma from '@/lib/prisma'
-import { BookStatus, Prisma } from '@prisma/client'
+import { BookStatus, BookFormat, Prisma } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
@@ -31,6 +31,28 @@ export async function POST(request: NextRequest) {
       readathonName,
       isReread
     } = body
+
+    // Validate format array
+    if (!format || !Array.isArray(format) || format.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one format is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate each format is a valid BookFormat enum value
+    const validFormats = Object.values(BookFormat)
+    for (const f of format) {
+      if (!validFormats.includes(f)) {
+        return NextResponse.json(
+          { error: `Invalid format: ${f}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Remove duplicates from format array
+    const uniqueFormats = Array.from(new Set(format))
 
     // Fetch book data from Google Books
     const bookData = await getBookById(googleBooksId)
@@ -115,7 +137,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         editionId: edition.id,
         status,
-        format,
+        format: uniqueFormats,
         startDate: startDate ? new Date(startDate) : null,
         finishDate: finishDate ? new Date(finishDate) : null,
         progress: progress || 0,
