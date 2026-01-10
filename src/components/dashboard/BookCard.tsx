@@ -26,6 +26,7 @@ interface SharedReview {
   showDates: boolean
   showBookClubs: boolean
   showReadathons: boolean
+  showReview: boolean
 }
 
 interface BookCardProps {

@@ -30,6 +30,7 @@ describe('ReviewImageTemplate', () => {
     showDates: true,
     showBookClubs: true,
     showReadathons: true,
+    showReview: true,
   }
 
   const mockMetadata = {
@@ -91,6 +92,7 @@ describe('ReviewImageTemplate', () => {
       showDates: false,
       showBookClubs: false,
       showReadathons: false,
+      showReview: true,
     }
 
     render(

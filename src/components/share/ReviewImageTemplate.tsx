@@ -20,6 +20,7 @@ interface ReviewImageTemplateProps {
     authors: string[]
     coverUrl: string | null
     bookType: BookType
+    description?: string | null
   }
   rating: {
     average: number
@@ -36,6 +37,7 @@ interface ReviewImageTemplateProps {
     showDates: boolean
     showBookClubs: boolean
     showReadathons: boolean
+    showReview: boolean
   }
   metadata?: {
     startDate: Date | null
@@ -81,6 +83,15 @@ export default function ReviewImageTemplate({
   // Card background color (slate-800/900 mix for card feel)
   const CARD_BG = '#1e293b'
   const MUTED_BG = 'rgba(100, 116, 139, 0.2)' // muted background for rating box
+
+  // Truncate description to fit within the available space
+  // The description should be around 80-100px max height, which is roughly 3-4 lines at 16px font
+  const MAX_DESCRIPTION_CHARS = 200
+  const truncatedDescription = book.description
+    ? book.description.length > MAX_DESCRIPTION_CHARS
+      ? book.description.substring(0, MAX_DESCRIPTION_CHARS).trim() + '...'
+      : book.description
+    : null
 
   return (
     <div
@@ -234,6 +245,29 @@ export default function ReviewImageTemplate({
                 ({rating.average.toFixed(1)}/10)
               </span>
             </div>
+
+            {/* Book Description */}
+            {truncatedDescription && (
+              <div
+                style={{
+                  marginTop: 16,
+                  maxHeight: 90,
+                  overflow: 'hidden',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 16,
+                    lineHeight: 1.5,
+                    color: TEXT_MUTED_COLOR,
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {truncatedDescription}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -360,7 +394,7 @@ export default function ReviewImageTemplate({
         </div>
 
         {/* Review Text Section */}
-        {truncatedReview && (
+        {privacySettings.showReview && truncatedReview && (
           <div
             style={{
               padding: '0 32px 24px 32px',

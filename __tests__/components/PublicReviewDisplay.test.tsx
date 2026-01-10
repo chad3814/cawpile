@@ -22,6 +22,7 @@ describe('PublicReviewDisplay', () => {
     showDates: true,
     showBookClubs: true,
     showReadathons: true,
+    showReview: true,
     userBook: {
       startDate: new Date('2024-01-01'),
       finishDate: new Date('2024-01-15'),

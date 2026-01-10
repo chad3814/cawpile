@@ -125,6 +125,7 @@ describe('ShareReviewModal', () => {
     showDates: true,
     showBookClubs: true,
     showReadathons: true,
+    showReview: true,
   }
 
   // window.location.origin is set to 'http://localhost:3000' via jest.config.ts testEnvironmentOptions
@@ -281,6 +282,7 @@ describe('ShareReviewModal', () => {
             showDates: true,
             showBookClubs: true,
             showReadathons: true,
+            showReview: true,
           }),
         })
       )
@@ -332,6 +334,7 @@ describe('ShareReviewModal', () => {
             showDates: false,
             showBookClubs: true,
             showReadathons: true,
+            showReview: true,
           }),
         })
       )

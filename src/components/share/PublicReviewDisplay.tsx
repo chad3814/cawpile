@@ -11,6 +11,7 @@ interface PublicReviewDisplayProps {
     showDates: boolean
     showBookClubs: boolean
     showReadathons: boolean
+    showReview: boolean
     userBook: {
       startDate: Date | null
       finishDate: Date | null
@@ -26,6 +27,7 @@ interface PublicReviewDisplayProps {
         }
         googleBook: {
           imageUrl: string | null
+          description: string | null
         } | null
       }
       cawpileRating: {
@@ -44,12 +46,13 @@ interface PublicReviewDisplayProps {
 }
 
 export default function PublicReviewDisplay({ sharedReview }: PublicReviewDisplayProps) {
-  const { userBook, showDates, showBookClubs, showReadathons } = sharedReview
+  const { userBook, showDates, showBookClubs, showReadathons, showReview } = sharedReview
   const { edition, cawpileRating, review, startDate, finishDate, bookClubName, readathonName } = userBook
 
   const displayTitle = edition.title || edition.book.title
   const authors = edition.book.authors
   const imageUrl = edition.googleBook?.imageUrl
+  const description = edition.googleBook?.description
   const bookType = (edition.book.bookType || 'FICTION') as BookType
 
   const formatDate = (date: Date | null) => {
@@ -109,6 +112,15 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
                   </div>
                 </div>
               )}
+
+              {/* Book Description */}
+              {description && (
+                <div className="mt-4 max-h-72 overflow-hidden">
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-[12]">
+                    {description}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -127,7 +139,7 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
         )}
 
         {/* Review Text */}
-        {review && (
+        {showReview && review && (
           <div className="px-6 sm:px-8 pb-6">
             <h2 className="text-xl font-semibold text-card-foreground mb-3">
               Review

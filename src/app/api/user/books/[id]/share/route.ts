@@ -70,7 +70,7 @@ export async function POST(
     const { id } = await params
     const body = await request.json();
 
-    const { showDates, showBookClubs, showReadathons } = body
+    const { showDates, showBookClubs, showReadathons, showReview } = body
 
     // Check if user owns this book
     const userBook = await prisma.userBook.findFirst({
@@ -135,6 +135,7 @@ export async function POST(
         showDates: showDates ?? true,
         showBookClubs: showBookClubs ?? true,
         showReadathons: showReadathons ?? true,
+        showReview: showReview ?? true,
       }
     })
 
@@ -172,10 +173,10 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
-    const { showDates, showBookClubs, showReadathons } = body
+    const { showDates, showBookClubs, showReadathons, showReview } = body
 
     // Validate at least one field is provided
-    if (showDates === undefined && showBookClubs === undefined && showReadathons === undefined) {
+    if (showDates === undefined && showBookClubs === undefined && showReadathons === undefined && showReview === undefined) {
       return NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
@@ -212,11 +213,13 @@ export async function PATCH(
       showDates?: boolean
       showBookClubs?: boolean
       showReadathons?: boolean
+      showReview?: boolean
     } = {}
 
     if (showDates !== undefined) updateData.showDates = showDates
     if (showBookClubs !== undefined) updateData.showBookClubs = showBookClubs
     if (showReadathons !== undefined) updateData.showReadathons = showReadathons
+    if (showReview !== undefined) updateData.showReview = showReview
 
     // Update SharedReview
     const updatedShare = await prisma.sharedReview.update({

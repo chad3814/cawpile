@@ -17,6 +17,7 @@ interface SharedReview {
   showDates: boolean
   showBookClubs: boolean
   showReadathons: boolean
+  showReview: boolean
 }
 
 interface CawpileRating {
@@ -50,6 +51,7 @@ interface ShareReviewModalProps {
       }
       googleBook: {
         imageUrl: string | null
+        description?: string | null
       } | null
     }
     cawpileRating?: CawpileRating | null
@@ -72,6 +74,7 @@ export default function ShareReviewModal({
   const [showDates, setShowDates] = useState(existingShare?.showDates ?? true)
   const [showBookClubs, setShowBookClubs] = useState(existingShare?.showBookClubs ?? true)
   const [showReadathons, setShowReadathons] = useState(existingShare?.showReadathons ?? true)
+  const [showReview, setShowReview] = useState(existingShare?.showReview ?? true)
   const [copied, setCopied] = useState(false)
 
   // Image generation state
@@ -115,7 +118,8 @@ export default function ShareReviewModal({
         body: JSON.stringify({
           showDates,
           showBookClubs,
-          showReadathons
+          showReadathons,
+          showReview
         }),
       })
 
@@ -155,7 +159,8 @@ export default function ShareReviewModal({
         body: JSON.stringify({
           showDates,
           showBookClubs,
-          showReadathons
+          showReadathons,
+          showReview
         }),
       })
 
@@ -258,6 +263,7 @@ export default function ShareReviewModal({
 
   const hasBookClub = !!userBook.bookClubName
   const hasReadathon = !!userBook.readathonName
+  const hasReview = !!userBook.review
   const bookType = (userBook.edition.book.bookType || 'FICTION') as BookType
 
   return (
@@ -500,6 +506,20 @@ export default function ShareReviewModal({
                           Show readathons {!hasReadathon && '(not set)'}
                         </span>
                       </label>
+
+                      {/* Show review text */}
+                      <label className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={showReview}
+                          onChange={(e) => setShowReview(e.target.checked)}
+                          disabled={!hasReview}
+                          className="rounded border-gray-300 text-orange-600 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <span className={`text-sm ${hasReview ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400'}`}>
+                          Show review text {!hasReview && '(no review)'}
+                        </span>
+                      </label>
                     </div>
 
                     {/* Error Message */}
@@ -569,6 +589,7 @@ export default function ShareReviewModal({
                         authors: userBook.edition.book.authors,
                         coverUrl: coverDataUrl || imageUrl || null,
                         bookType: bookType,
+                        description: userBook.edition.googleBook?.description || null,
                       }}
                       rating={{
                         average: userBook.cawpileRating.average,
@@ -585,6 +606,7 @@ export default function ShareReviewModal({
                         showDates: existingShare?.showDates ?? showDates,
                         showBookClubs: existingShare?.showBookClubs ?? showBookClubs,
                         showReadathons: existingShare?.showReadathons ?? showReadathons,
+                        showReview: existingShare?.showReview ?? showReview,
                       }}
                       metadata={{
                         startDate: userBook.startDate || null,

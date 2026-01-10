@@ -201,6 +201,7 @@ model SharedReview {
   showDates       Boolean  @default(true)
   showBookClubs   Boolean  @default(true)
   showReadathons  Boolean  @default(true)
+  showReview      Boolean  @default(true)
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userBook        UserBook @relation(fields: [userBookId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
