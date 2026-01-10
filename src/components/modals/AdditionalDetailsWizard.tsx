@@ -6,6 +6,7 @@ import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/2
 import RepresentationField from '@/components/forms/RepresentationField'
 import AuthorPocField from '@/components/forms/AuthorPocField'
 import NewAuthorField from '@/components/forms/NewAuthorField'
+import ReviewTextareaField from '@/components/forms/ReviewTextareaField'
 import { RepresentationValue, AdditionalDetailsData } from '@/types/book'
 
 interface AdditionalDetailsWizardProps {
@@ -13,13 +14,15 @@ interface AdditionalDetailsWizardProps {
   onClose: () => void
   bookTitle: string
   onSave: (data: AdditionalDetailsData) => Promise<void>
+  initialReview?: string
 }
 
 export default function AdditionalDetailsWizard({
   isOpen,
   onClose,
   bookTitle,
-  onSave
+  onSave,
+  initialReview = ''
 }: AdditionalDetailsWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -32,8 +35,9 @@ export default function AdditionalDetailsWizard({
   const [isNewAuthor, setIsNewAuthor] = useState<boolean | null>(null)
   const [authorPoc, setAuthorPoc] = useState<RepresentationValue | ''>('')
   const [authorPocDetails, setAuthorPocDetails] = useState('')
+  const [review, setReview] = useState(initialReview)
 
-  const totalSteps = 4
+  const totalSteps = 5
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -61,7 +65,8 @@ export default function AdditionalDetailsWizard({
         disabilityDetails: disabilityRepresentation === RepresentationValue.Yes ? disabilityDetails : undefined,
         isNewAuthor: isNewAuthor ?? undefined,
         authorPoc: authorPoc || undefined,
-        authorPocDetails: authorPoc === RepresentationValue.Yes ? authorPocDetails : undefined
+        authorPocDetails: authorPoc === RepresentationValue.Yes ? authorPocDetails : undefined,
+        review: review.trim() || undefined
       }
 
       await onSave(data)
@@ -83,6 +88,7 @@ export default function AdditionalDetailsWizard({
     setIsNewAuthor(null)
     setAuthorPoc('')
     setAuthorPocDetails('')
+    setReview('')
   }
 
   const handleClose = () => {
@@ -134,6 +140,13 @@ export default function AdditionalDetailsWizard({
             onDetailsChange={setAuthorPocDetails}
           />
         )
+      case 5:
+        return (
+          <ReviewTextareaField
+            value={review}
+            onChange={setReview}
+          />
+        )
       default:
         return null
     }
@@ -149,6 +162,8 @@ export default function AdditionalDetailsWizard({
         return 'New Author'
       case 4:
         return 'Author Diversity'
+      case 5:
+        return 'Review'
       default:
         return ''
     }

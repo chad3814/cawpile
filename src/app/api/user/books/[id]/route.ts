@@ -76,6 +76,14 @@ export async function PATCH(
       )
     }
 
+    // Validate review character limit
+    if (review !== undefined && typeof review === 'string' && review.length > 5000) {
+      return NextResponse.json(
+        { error: 'Review must not exceed 5,000 characters' },
+        { status: 400 }
+      )
+    }
+
     // Check if user owns this book
     const userBook = await prisma.userBook.findFirst({
       where: {
@@ -105,7 +113,7 @@ export async function PATCH(
       updateData.format = Array.from(new Set(format))
     }
 
-    if (review !== undefined) updateData.review = review
+    if (review !== undefined) updateData.review = review.trim() || null
     if (notes !== undefined) updateData.notes = notes
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite
     if (currentPage !== undefined) updateData.currentPage = currentPage

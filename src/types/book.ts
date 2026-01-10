@@ -127,6 +127,7 @@ export interface AdditionalDetailsData {
   isNewAuthor?: boolean | null
   authorPoc?: RepresentationValue | null
   authorPocDetails?: string | null
+  review?: string | null
 }
 
 export interface UserBookClub {
