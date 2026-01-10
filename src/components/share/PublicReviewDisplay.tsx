@@ -98,13 +98,10 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
                   <div className="flex items-center gap-3">
                     <StarRating
                       rating={cawpileRating.average}
-                      showAverage={true}
+                      showAverage={false}
                       size="lg"
                     />
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-card-foreground">
-                        {getCawpileGrade(cawpileRating.average)}
-                      </span>
                       <span className="text-sm text-muted-foreground">
                         ({cawpileRating.average.toFixed(1)}/10)
                       </span>
