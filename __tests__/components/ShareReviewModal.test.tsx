@@ -46,6 +46,7 @@ jest.mock('@/lib/image/generateReviewImage', () => ({
   generateImageFilename: jest.fn((title: string) => `cawpile-review-${title.toLowerCase()}.png`),
   truncateReviewText: jest.fn((text: string | null | undefined) => text || ''),
   slugifyBookTitle: jest.fn((title: string) => title.toLowerCase().replace(/\s+/g, '-')),
+  imageUrlToDataUrl: jest.fn(() => Promise.resolve('data:image/png;base64,mock-cover-data')),
 }))
 
 // Mock imageTheme

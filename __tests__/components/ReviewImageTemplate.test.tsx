@@ -2,21 +2,10 @@
  * Tests for ReviewImageTemplate component
  * Task Group 2.1: Component rendering tests
  */
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import ReviewImageTemplate from '@/components/share/ReviewImageTemplate'
 import { BookType } from '@/types/cawpile'
-
-// Mock next/image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement> & { unoptimized?: boolean }) => {
-    const { unoptimized, ...rest } = props
-    // eslint-disable-next-line jsx-a11y/alt-text, @next/next/no-img-element
-    return <img {...rest} data-unoptimized={unoptimized ? 'true' : 'false'} />
-  },
-}))
 
 describe('ReviewImageTemplate', () => {
   const mockBook = {
@@ -65,16 +54,17 @@ describe('ReviewImageTemplate', () => {
     expect(screen.getByText('The Great Gatsby')).toBeInTheDocument()
     expect(screen.getByText('F. Scott Fitzgerald')).toBeInTheDocument()
 
-    // Rating
-    expect(screen.getByText('8.5/10')).toBeInTheDocument()
+    // Rating - average is now in format "(8.5/10)" split across elements
+    expect(screen.getByText(/8\.5/)).toBeInTheDocument()
     expect(screen.getByText('CAWPILE Rating')).toBeInTheDocument()
 
     // Review
     expect(screen.getByText('Review')).toBeInTheDocument()
     expect(screen.getByText(/incredible classic/)).toBeInTheDocument()
 
-    // Branding
-    expect(screen.getByText('Powered by Cawpile')).toBeInTheDocument()
+    // Branding - now split into separate elements
+    expect(screen.getByText(/Powered by/)).toBeInTheDocument()
+    expect(screen.getByText('Cawpile')).toBeInTheDocument()
   })
 
   test('should handle missing book cover gracefully', () => {
@@ -149,7 +139,7 @@ describe('ReviewImageTemplate', () => {
     expect(screen.queryByText('Review')).not.toBeInTheDocument()
     // Other content should still render
     expect(screen.getByText('The Great Gatsby')).toBeInTheDocument()
-    expect(screen.getByText('8.5/10')).toBeInTheDocument()
+    expect(screen.getByText(/8\.5/)).toBeInTheDocument()
   })
 
   test('should display all 7 CAWPILE facets for fiction', () => {
@@ -193,7 +183,7 @@ describe('ReviewImageTemplate', () => {
     expect(screen.getByText('Personal Impact')).toBeInTheDocument()
   })
 
-  test('should use unoptimized prop on Image for html2canvas compatibility', () => {
+  test('should use crossOrigin attribute on img for html2canvas compatibility', () => {
     render(
       <ReviewImageTemplate
         book={mockBook}
@@ -204,6 +194,6 @@ describe('ReviewImageTemplate', () => {
     )
 
     const img = screen.getByAltText('The Great Gatsby')
-    expect(img).toHaveAttribute('data-unoptimized', 'true')
+    expect(img).toHaveAttribute('crossOrigin', 'anonymous')
   })
 })

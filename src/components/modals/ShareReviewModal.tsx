@@ -8,7 +8,7 @@ import Image from 'next/image'
 import { copyToClipboard } from '@/lib/utils/clipboard'
 import { BookType } from '@/types/cawpile'
 import ReviewImageTemplate from '@/components/share/ReviewImageTemplate'
-import { downloadImage, generateImageFilename } from '@/lib/image/generateReviewImage'
+import { downloadImage, generateImageFilename, imageUrlToDataUrl } from '@/lib/image/generateReviewImage'
 import { IMAGE_WIDTH, IMAGE_HEIGHT } from '@/lib/image/imageTheme'
 
 interface SharedReview {
@@ -79,6 +79,7 @@ export default function ShareReviewModal({
   const [imageGenerating, setImageGenerating] = useState(false)
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
+  const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null)
 
   const displayTitle = userBook.edition.title || userBook.edition.book.title
   const imageUrl = userBook.edition.googleBook?.imageUrl
@@ -206,6 +207,18 @@ export default function ShareReviewModal({
     setImageError(null)
 
     try {
+      // Use proxied image URL to avoid CORS issues with Google Books
+      if (imageUrl && !coverDataUrl) {
+        const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
+        // Pre-load the proxied image and convert to data URL
+        const dataUrl = await imageUrlToDataUrl(proxyUrl)
+        if (dataUrl) {
+          setCoverDataUrl(dataUrl)
+          // Give React time to re-render with the new cover URL
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      }
+
       // Dynamically import html2canvas to avoid SSR issues
       const html2canvas = (await import('html2canvas')).default
 
@@ -240,6 +253,7 @@ export default function ShareReviewModal({
     setShowImagePreview(false)
     setGeneratedImageUrl(null)
     setImageError(null)
+    setCoverDataUrl(null)
   }
 
   const hasBookClub = !!userBook.bookClubName
@@ -553,7 +567,7 @@ export default function ShareReviewModal({
                       book={{
                         title: displayTitle,
                         authors: userBook.edition.book.authors,
-                        coverUrl: imageUrl || null,
+                        coverUrl: coverDataUrl || imageUrl || null,
                         bookType: bookType,
                       }}
                       rating={{

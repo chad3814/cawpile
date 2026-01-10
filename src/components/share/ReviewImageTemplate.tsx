@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { BookType, getFacetConfig, convertToStars, getStarEmojis } from '@/types/cawpile'
 import {
   IMAGE_WIDTH,
@@ -10,11 +9,8 @@ import {
   TEXT_MUTED_COLOR,
   ACCENT_COLOR,
   BORDER_COLOR,
-  TYPOGRAPHY,
   SPACING,
-  COVER_SIZE,
   MAX_REVIEW_CHARS,
-  getScoreColor,
 } from '@/lib/image/imageTheme'
 import { truncateReviewText } from '@/lib/image/generateReviewImage'
 
@@ -53,6 +49,7 @@ interface ReviewImageTemplateProps {
  * Template component for generating shareable review images.
  * Uses inline styles exclusively for html2canvas compatibility.
  * Dimensions: 1080x1920 (9:16 aspect ratio for Instagram Stories/TikTok)
+ * Design matches PublicReviewDisplay layout.
  */
 export default function ReviewImageTemplate({
   book,
@@ -70,7 +67,7 @@ export default function ReviewImageTemplate({
     if (!date) return null
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
     })
   }
@@ -80,6 +77,10 @@ export default function ReviewImageTemplate({
     (privacySettings.showDates && metadata && (metadata.startDate || metadata.finishDate)) ||
     (privacySettings.showBookClubs && metadata?.bookClubName) ||
     (privacySettings.showReadathons && metadata?.readathonName)
+
+  // Card background color (slate-800/900 mix for card feel)
+  const CARD_BG = '#1e293b'
+  const MUTED_BG = 'rgba(100, 116, 139, 0.2)' // muted background for rating box
 
   return (
     <div
@@ -96,298 +97,411 @@ export default function ReviewImageTemplate({
         overflow: 'hidden',
       }}
     >
-      {/* Book Cover & Title Section */}
+      {/* Main Card Container */}
       <div
         style={{
+          backgroundColor: CARD_BG,
+          borderRadius: 16,
+          border: `1px solid ${BORDER_COLOR}`,
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          marginBottom: SPACING.sectionGap,
+          overflow: 'hidden',
         }}
       >
-        {/* Book Cover */}
+        {/* Book Header - Side by Side Layout */}
         <div
           style={{
-            width: COVER_SIZE.width,
-            height: COVER_SIZE.height,
-            borderRadius: 12,
-            overflow: 'hidden',
-            marginBottom: SPACING.itemGap,
-            backgroundColor: '#1e293b', // slate-800 for placeholder
+            padding: 32,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 32,
           }}
         >
-          {book.coverUrl ? (
-            <Image
-              src={book.coverUrl}
-              alt={book.title}
-              width={COVER_SIZE.width}
-              height={COVER_SIZE.height}
-              style={{
-                objectFit: 'cover',
-                width: COVER_SIZE.width,
-                height: COVER_SIZE.height,
-              }}
-              unoptimized
-            />
-          ) : (
+          {/* Book Cover */}
+          <div
+            style={{
+              width: 240,
+              flexShrink: 0,
+            }}
+          >
             <div
               style={{
-                color: TEXT_MUTED_COLOR,
-                fontSize: 14,
-                textAlign: 'center',
-                padding: 20,
+                width: 240,
+                height: 360,
+                borderRadius: 12,
+                overflow: 'hidden',
+                backgroundColor: '#334155',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
               }}
             >
-              No Cover Available
+              {book.coverUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={book.coverUrl}
+                  alt={book.title}
+                  width={240}
+                  height={360}
+                  style={{
+                    objectFit: 'cover',
+                    width: 240,
+                    height: 360,
+                  }}
+                  crossOrigin="anonymous"
+                />
+              ) : (
+                <div
+                  style={{
+                    color: TEXT_MUTED_COLOR,
+                    fontSize: 14,
+                    textAlign: 'center',
+                    padding: 20,
+                  }}
+                >
+                  No Cover Available
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Book Title */}
-        <h1
-          style={{
-            fontSize: TYPOGRAPHY.title.fontSize,
-            fontWeight: TYPOGRAPHY.title.fontWeight,
-            lineHeight: TYPOGRAPHY.title.lineHeight,
-            textAlign: 'center',
-            margin: 0,
-            marginBottom: SPACING.smallGap,
-            maxWidth: '100%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-          }}
-        >
-          {book.title}
-        </h1>
+          {/* Book Info */}
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0,
+            }}
+          >
+            {/* Title */}
+            <h1
+              style={{
+                fontSize: 48,
+                fontWeight: 700,
+                lineHeight: 1.2,
+                margin: 0,
+                marginBottom: 12,
+                color: TEXT_COLOR,
+                textDecoration: 'none',
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              {book.title}
+            </h1>
 
-        {/* Author */}
-        <p
-          style={{
-            fontSize: TYPOGRAPHY.author.fontSize,
-            fontWeight: TYPOGRAPHY.author.fontWeight,
-            lineHeight: TYPOGRAPHY.author.lineHeight,
-            color: TEXT_MUTED_COLOR,
-            textAlign: 'center',
-            margin: 0,
-          }}
-        >
-          {book.authors.join(', ')}
-        </p>
-      </div>
+            {/* Author */}
+            <p
+              style={{
+                fontSize: 24,
+                lineHeight: 1.4,
+                color: TEXT_MUTED_COLOR,
+                margin: 0,
+                marginBottom: 24,
+              }}
+            >
+              {book.authors.join(', ')}
+            </p>
 
-      {/* Overall Rating Section */}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          marginBottom: SPACING.sectionGap,
-          padding: SPACING.itemGap,
-          backgroundColor: '#1e293b',
-          borderRadius: 12,
-        }}
-      >
-        <div
-          style={{
-            fontSize: TYPOGRAPHY.average.fontSize,
-            fontWeight: TYPOGRAPHY.average.fontWeight,
-            lineHeight: TYPOGRAPHY.average.lineHeight,
-            color: ACCENT_COLOR,
-          }}
-        >
-          {rating.average.toFixed(1)}/10
-        </div>
-        <div
-          style={{
-            fontSize: TYPOGRAPHY.stars.fontSize,
-            lineHeight: TYPOGRAPHY.stars.lineHeight,
-            marginTop: SPACING.smallGap,
-          }}
-        >
-          {starEmojis || 'Not rated'}
-        </div>
-      </div>
-
-      {/* CAWPILE Facets Section */}
-      <div
-        style={{
-          marginBottom: SPACING.sectionGap,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 24,
-            fontWeight: 600,
-            color: TEXT_COLOR,
-            margin: 0,
-            marginBottom: SPACING.itemGap,
-          }}
-        >
-          CAWPILE Rating
-        </h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: SPACING.smallGap,
-          }}
-        >
-          {facets.map((facet) => {
-            const value = rating[facet.key as keyof typeof rating]
-            const displayValue = typeof value === 'number' ? value : '--'
-            const scoreColor = typeof value === 'number' ? getScoreColor(value) : TEXT_MUTED_COLOR
-
-            return (
-              <div
-                key={facet.key}
+            {/* Overall Rating Box */}
+            <div
+              style={{
+                backgroundColor: MUTED_BG,
+                borderRadius: 12,
+                padding: 20,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+              }}
+            >
+              <span
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: `${SPACING.smallGap}px ${SPACING.itemGap}px`,
-                  backgroundColor: '#1e293b',
-                  borderRadius: 8,
+                  fontSize: 36,
+                  lineHeight: 1,
                 }}
               >
-                <span
-                  style={{
-                    fontSize: TYPOGRAPHY.facetName.fontSize,
-                    fontWeight: TYPOGRAPHY.facetName.fontWeight,
-                    color: TEXT_COLOR,
-                  }}
-                >
-                  {facet.name.split('/')[0]}
-                </span>
-                <span
-                  style={{
-                    fontSize: TYPOGRAPHY.facetScore.fontSize,
-                    fontWeight: TYPOGRAPHY.facetScore.fontWeight,
-                    color: scoreColor,
-                  }}
-                >
-                  {displayValue}
-                </span>
-              </div>
-            )
-          })}
+                {starEmojis || '☆☆☆☆☆'}
+              </span>
+              <span
+                style={{
+                  fontSize: 20,
+                  color: TEXT_MUTED_COLOR,
+                }}
+              >
+                ({rating.average.toFixed(1)}/10)
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Review Text Section */}
-      {truncatedReview && (
+        {/* CAWPILE Rating Section */}
         <div
           style={{
-            marginBottom: SPACING.sectionGap,
-            flex: 1,
-            overflow: 'hidden',
+            padding: '0 32px 24px 32px',
           }}
         >
           <h2
             style={{
-              fontSize: 24,
+              fontSize: 28,
               fontWeight: 600,
               color: TEXT_COLOR,
               margin: 0,
-              marginBottom: SPACING.smallGap,
+              marginBottom: 20,
             }}
           >
-            Review
+            CAWPILE Rating
           </h2>
-          <p
+
+          {/* Facets - Vertical List */}
+          <div
             style={{
-              fontSize: TYPOGRAPHY.review.fontSize,
-              fontWeight: TYPOGRAPHY.review.fontWeight,
-              lineHeight: TYPOGRAPHY.review.lineHeight,
-              color: TEXT_MUTED_COLOR,
-              margin: 0,
-              whiteSpace: 'pre-wrap',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
             }}
           >
-            {truncatedReview}
-          </p>
-        </div>
-      )}
+            {facets.map((facet) => {
+              const value = rating[facet.key as keyof typeof rating]
+              const displayValue = typeof value === 'number' ? value : '--'
+              const letter = facet.name.charAt(0).toUpperCase()
 
-      {/* Metadata Section (Conditional) */}
-      {showMetadata && (
+              return (
+                <div
+                  key={facet.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 20,
+                  }}
+                >
+                  {/* Box with Letter + Word */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: MUTED_BG,
+                      border: `1px solid ${BORDER_COLOR}`,
+                      borderRadius: 12,
+                      padding: '12px 20px',
+                      minWidth: 120,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 40,
+                        fontWeight: 700,
+                        color: TEXT_COLOR,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {letter}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 16,
+                        color: TEXT_COLOR,
+                        marginTop: 4,
+                      }}
+                    >
+                      {facet.name.split('/')[0]}
+                    </span>
+                  </div>
+
+                  {/* Rating Number with /10 suffix */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'baseline',
+                      gap: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 700,
+                        color: TEXT_COLOR,
+                      }}
+                    >
+                      {displayValue}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 18,
+                        color: TEXT_MUTED_COLOR,
+                      }}
+                    >
+                      /10
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  <p
+                    style={{
+                      fontSize: 16,
+                      color: TEXT_MUTED_COLOR,
+                      margin: 0,
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {facet.description}
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Review Text Section */}
+        {truncatedReview && (
+          <div
+            style={{
+              padding: '0 32px 24px 32px',
+              flex: 1,
+              overflow: 'hidden',
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 28,
+                fontWeight: 600,
+                color: TEXT_COLOR,
+                margin: 0,
+                marginBottom: 16,
+              }}
+            >
+              Review
+            </h2>
+            <p
+              style={{
+                fontSize: 20,
+                lineHeight: 1.6,
+                color: TEXT_COLOR,
+                margin: 0,
+                whiteSpace: 'pre-wrap',
+              }}
+            >
+              {truncatedReview}
+            </p>
+          </div>
+        )}
+
+        {/* Metadata Section (Reading Details) */}
+        {showMetadata && (
+          <div
+            style={{
+              padding: '24px 32px',
+              borderTop: `1px solid ${BORDER_COLOR}`,
+            }}
+          >
+            <h2
+              style={{
+                fontSize: 28,
+                fontWeight: 600,
+                color: TEXT_COLOR,
+                margin: 0,
+                marginBottom: 16,
+              }}
+            >
+              Reading Details
+            </h2>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              {privacySettings.showDates && metadata && (metadata.startDate || metadata.finishDate) && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    fontSize: 18,
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>📅</span>
+                  <div>
+                    <span style={{ color: TEXT_MUTED_COLOR }}>Reading period: </span>
+                    <span style={{ color: TEXT_COLOR }}>
+                      {metadata.startDate && metadata.finishDate
+                        ? `${formatDate(metadata.startDate)} - ${formatDate(metadata.finishDate)}`
+                        : metadata.startDate
+                        ? `Started ${formatDate(metadata.startDate)}`
+                        : `Finished ${formatDate(metadata.finishDate)}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {privacySettings.showBookClubs && metadata?.bookClubName && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    fontSize: 18,
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>👥</span>
+                  <div>
+                    <span style={{ color: TEXT_MUTED_COLOR }}>Book club: </span>
+                    <span style={{ color: TEXT_COLOR, fontWeight: 500 }}>{metadata.bookClubName}</span>
+                  </div>
+                </div>
+              )}
+
+              {privacySettings.showReadathons && metadata?.readathonName && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    fontSize: 18,
+                  }}
+                >
+                  <span style={{ fontSize: 24 }}>⚡</span>
+                  <div>
+                    <span style={{ color: TEXT_MUTED_COLOR }}>Readathon: </span>
+                    <span style={{ color: TEXT_COLOR, fontWeight: 500 }}>{metadata.readathonName}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Footer - Powered by Cawpile */}
         <div
           style={{
-            marginBottom: SPACING.sectionGap,
-            padding: SPACING.itemGap,
+            marginTop: 'auto',
+            padding: '20px 32px',
+            backgroundColor: 'rgba(100, 116, 139, 0.1)',
             borderTop: `1px solid ${BORDER_COLOR}`,
-            paddingTop: SPACING.itemGap,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          {privacySettings.showDates && metadata && (metadata.startDate || metadata.finishDate) && (
-            <div
-              style={{
-                fontSize: TYPOGRAPHY.metadata.fontSize,
-                color: TEXT_MUTED_COLOR,
-                marginBottom: SPACING.smallGap,
-              }}
-            >
-              <span style={{ marginRight: 8 }}>📅</span>
-              {metadata.startDate && metadata.finishDate
-                ? `${formatDate(metadata.startDate)} - ${formatDate(metadata.finishDate)}`
-                : metadata.startDate
-                ? `Started ${formatDate(metadata.startDate)}`
-                : `Finished ${formatDate(metadata.finishDate)}`}
-            </div>
-          )}
-
-          {privacySettings.showBookClubs && metadata?.bookClubName && (
-            <div
-              style={{
-                fontSize: TYPOGRAPHY.metadata.fontSize,
-                color: TEXT_MUTED_COLOR,
-                marginBottom: SPACING.smallGap,
-              }}
-            >
-              <span style={{ marginRight: 8 }}>👥</span>
-              {metadata.bookClubName}
-            </div>
-          )}
-
-          {privacySettings.showReadathons && metadata?.readathonName && (
-            <div
-              style={{
-                fontSize: TYPOGRAPHY.metadata.fontSize,
-                color: TEXT_MUTED_COLOR,
-              }}
-            >
-              <span style={{ marginRight: 8 }}>⚡</span>
-              {metadata.readathonName}
-            </div>
-          )}
+          <span
+            style={{
+              fontSize: 16,
+              color: TEXT_MUTED_COLOR,
+            }}
+          >
+            Powered by{' '}
+            <span style={{ color: ACCENT_COLOR, fontWeight: 600 }}>Cawpile</span>
+          </span>
         </div>
-      )}
-
-      {/* Cawpile Branding Footer */}
-      <div
-        style={{
-          marginTop: 'auto',
-          paddingTop: SPACING.itemGap,
-          borderTop: `1px solid ${BORDER_COLOR}`,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <span
-          style={{
-            fontSize: TYPOGRAPHY.branding.fontSize,
-            fontWeight: TYPOGRAPHY.branding.fontWeight,
-            color: ACCENT_COLOR,
-          }}
-        >
-          Powered by Cawpile
-        </span>
       </div>
     </div>
   )
