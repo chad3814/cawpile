@@ -37,6 +37,7 @@ interface BookCardProps {
     startDate: Date | null
     finishDate: Date | null
     createdAt: Date
+    review?: string | null
     acquisitionMethod?: string | null
     acquisitionOther?: string | null
     bookClubName?: string | null
@@ -665,7 +666,11 @@ export default function BookCard({ book }: BookCardProps) {
           id: book.id,
           bookClubName: book.bookClubName,
           readathonName: book.readathonName,
+          review: book.review,
+          startDate: book.startDate,
+          finishDate: book.finishDate,
           edition: book.edition,
+          cawpileRating: book.cawpileRating,
         }}
         existingShare={shareData}
         setShareData={setShareData}
