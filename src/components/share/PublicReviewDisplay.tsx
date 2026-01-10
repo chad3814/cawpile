@@ -1,9 +1,9 @@
 'use client'
 
 import Image from 'next/image'
-import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
+import PublicCawpileFacetDisplay from '@/components/share/PublicCawpileFacetDisplay'
 import StarRating from '@/components/rating/StarRating'
-import { BookType, getCawpileGrade } from '@/types/cawpile'
+import { BookType } from '@/types/cawpile'
 
 interface PublicReviewDisplayProps {
   sharedReview: {
@@ -119,10 +119,9 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
             <h2 className="text-xl font-semibold text-card-foreground mb-4">
               CAWPILE Rating
             </h2>
-            <CawpileFacetDisplay
+            <PublicCawpileFacetDisplay
               rating={cawpileRating}
               bookType={bookType}
-              compact={false}
             />
           </div>
         )}
