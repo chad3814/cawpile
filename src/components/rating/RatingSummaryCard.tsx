@@ -8,9 +8,10 @@ import {
   getCawpileColor
 } from '@/types/cawpile'
 import StarRating from './StarRating'
+import { inspect } from 'node:util'
 
 interface RatingSummaryCardProps {
-  rating: Partial<CawpileRating>
+  rating: CawpileRating
   bookType: BookType
   onDone: () => void
   onEdit: (facetIndex: number) => void
@@ -25,7 +26,7 @@ export default function RatingSummaryCard({
   onAdditionalDetails
 }: RatingSummaryCardProps) {
   const facets = getFacetConfig(bookType)
-  const average = calculateCawpileAverage(rating as CawpileRating)
+  const average = calculateCawpileAverage(rating)
 
   return (
     <div className="p-6 space-y-6">

@@ -213,13 +213,13 @@ export async function PATCH(
     if (cawpileRating) {
       // Allow null values for skipped facets
       const ratingData = {
-        characters: cawpileRating.characters !== undefined ? cawpileRating.characters : null,
-        atmosphere: cawpileRating.atmosphere !== undefined ? cawpileRating.atmosphere : null,
-        writing: cawpileRating.writing !== undefined ? cawpileRating.writing : null,
-        plot: cawpileRating.plot !== undefined ? cawpileRating.plot : null,
-        intrigue: cawpileRating.intrigue !== undefined ? cawpileRating.intrigue : null,
-        logic: cawpileRating.logic !== undefined ? cawpileRating.logic : null,
-        enjoyment: cawpileRating.enjoyment !== undefined ? cawpileRating.enjoyment : null
+        characters: cawpileRating.characters ?? null,
+        atmosphere: cawpileRating.atmosphere ?? null,
+        writing: cawpileRating.writing ?? null,
+        plot: cawpileRating.plot ?? null,
+        intrigue: cawpileRating.intrigue ?? null,
+        logic: cawpileRating.logic ?? null,
+        enjoyment: cawpileRating.enjoyment ?? null,
       }
 
       const average = calculateCawpileAverage(ratingData)

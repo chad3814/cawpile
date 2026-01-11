@@ -20,7 +20,7 @@ interface CawpileRatingModalProps {
   bookId: string
   bookType: BookType
   bookTitle: string
-  initialRating?: Partial<CawpileRating> | null
+  initialRating?: CawpileRating | null
 }
 
 export default function CawpileRatingModal({
@@ -34,7 +34,7 @@ export default function CawpileRatingModal({
   const router = useRouter()
   const facets = getFacetConfig(bookType)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [ratings, setRatings] = useState<Partial<CawpileRating>>(() => {
+  const [ratings, setRatings] = useState<CawpileRating>(() => {
     if (initialRating) return { ...initialRating }
     return {
       characters: null,

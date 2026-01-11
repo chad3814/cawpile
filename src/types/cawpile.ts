@@ -198,8 +198,14 @@ export function getFacetConfig(bookType: BookType): CawpileFacet[] {
   return bookType === BookType.NONFICTION ? NONFICTION_FACETS : FICTION_FACETS
 }
 
+const RATING_KEYS = ['character', 'atmospher', 'writing', 'plot', 'intrigue', 'enjoyment']
 export function calculateCawpileAverage(rating: CawpileRating): number {
-  const values = Object.values(rating).filter(val => val !== null) as number[]
+  const values = Object.entries(rating).filter(
+    ([key, val]: [string, string | number | null]) =>
+      RATING_KEYS.includes(key) && 'number' === typeof val
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ).map(([_key, val]: [string, number]) => val) as number[];
+
   if (values.length === 0) return 0
   const sum = values.reduce((acc, val) => acc + val, 0)
   return Number((sum / values.length).toFixed(1))
