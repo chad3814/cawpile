@@ -13,6 +13,7 @@ import {
   MAX_REVIEW_CHARS,
 } from '@/lib/image/imageTheme'
 import { truncateReviewText } from '@/lib/image/generateReviewImage'
+import { stripHtmlToText } from '@/lib/utils/sanitize'
 
 interface ReviewImageTemplateProps {
   book: {
@@ -85,12 +86,14 @@ export default function ReviewImageTemplate({
   const MUTED_BG = 'rgba(100, 116, 139, 0.2)' // muted background for rating box
 
   // Truncate description to fit within the available space
-  // The description should be around 80-100px max height, which is roughly 3-4 lines at 16px font
-  const MAX_DESCRIPTION_CHARS = 200
-  const truncatedDescription = book.description
-    ? book.description.length > MAX_DESCRIPTION_CHARS
-      ? book.description.substring(0, MAX_DESCRIPTION_CHARS).trim() + '...'
-      : book.description
+  // The description should be around 140px max height, which is roughly 5-6 lines at 16px font
+  const MAX_DESCRIPTION_CHARS = 350
+  // Strip HTML from description before truncation (image templates cannot render HTML)
+  const cleanDescription = stripHtmlToText(book.description)
+  const truncatedDescription = cleanDescription
+    ? cleanDescription.length > MAX_DESCRIPTION_CHARS
+      ? cleanDescription.substring(0, MAX_DESCRIPTION_CHARS).trim() + '...'
+      : cleanDescription
     : null
 
   return (
@@ -251,7 +254,7 @@ export default function ReviewImageTemplate({
               <div
                 style={{
                   marginTop: 16,
-                  maxHeight: 90,
+                  maxHeight: 140,
                   overflow: 'hidden',
                 }}
               >

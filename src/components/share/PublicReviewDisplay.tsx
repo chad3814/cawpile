@@ -4,6 +4,7 @@ import Image from 'next/image'
 import PublicCawpileFacetDisplay from '@/components/share/PublicCawpileFacetDisplay'
 import StarRating from '@/components/rating/StarRating'
 import { BookType } from '@/types/cawpile'
+import { sanitizeHtml } from '@/lib/utils/sanitize'
 
 interface PublicReviewDisplayProps {
   sharedReview: {
@@ -115,10 +116,11 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
 
               {/* Book Description */}
               {description && (
-                <div className="mt-4 max-h-72 overflow-hidden">
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-[12]">
-                    {description}
-                  </p>
+                <div className="mt-4 max-h-40 overflow-hidden">
+                  <div
+                    className="text-sm text-muted-foreground line-clamp-6"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
+                  />
                 </div>
               )}
             </div>
