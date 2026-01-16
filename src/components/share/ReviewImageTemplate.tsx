@@ -103,12 +103,14 @@ export default function ReviewImageTemplate({
         height: IMAGE_HEIGHT,
         backgroundColor: BG_COLOR,
         color: TEXT_COLOR,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: 'Arial, Helvetica, sans-serif',
         display: 'flex',
         flexDirection: 'column',
         padding: SPACING.padding,
         boxSizing: 'border-box',
         overflow: 'hidden',
+        wordSpacing: 'normal',
+        letterSpacing: 'normal',
       }}
     >
       {/* Main Card Container */}
@@ -215,6 +217,8 @@ export default function ReviewImageTemplate({
                 color: TEXT_MUTED_COLOR,
                 margin: 0,
                 marginBottom: 24,
+                whiteSpace: 'pre-wrap',
+                wordSpacing: 4,
               }}
             >
               {book.authors.join(', ')}
@@ -265,6 +269,7 @@ export default function ReviewImageTemplate({
                     color: TEXT_MUTED_COLOR,
                     margin: 0,
                     whiteSpace: 'pre-wrap',
+                    wordSpacing: 4,
                   }}
                 >
                   {truncatedDescription}
@@ -287,6 +292,7 @@ export default function ReviewImageTemplate({
               color: TEXT_COLOR,
               margin: 0,
               marginBottom: 20,
+              wordSpacing: 4,
             }}
           >
             CAWPILE Rating
@@ -386,6 +392,7 @@ export default function ReviewImageTemplate({
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      wordSpacing: 4,
                     }}
                   >
                     {facet.description}
@@ -412,6 +419,7 @@ export default function ReviewImageTemplate({
                 color: TEXT_COLOR,
                 margin: 0,
                 marginBottom: 16,
+                wordSpacing: 4,
               }}
             >
               Review
@@ -423,6 +431,7 @@ export default function ReviewImageTemplate({
                 color: TEXT_COLOR,
                 margin: 0,
                 whiteSpace: 'pre-wrap',
+                wordSpacing: 4,
               }}
             >
               {truncatedReview}
@@ -445,6 +454,7 @@ export default function ReviewImageTemplate({
                 color: TEXT_COLOR,
                 margin: 0,
                 marginBottom: 16,
+                wordSpacing: 4,
               }}
             >
               Reading Details
@@ -464,6 +474,7 @@ export default function ReviewImageTemplate({
                     alignItems: 'center',
                     gap: 12,
                     fontSize: 18,
+                    wordSpacing: 4,
                   }}
                 >
                   <span style={{ fontSize: 24 }}>📅</span>
@@ -533,6 +544,7 @@ export default function ReviewImageTemplate({
             style={{
               fontSize: 16,
               color: TEXT_MUTED_COLOR,
+              wordSpacing: 4,
             }}
           >
             Powered by{' '}
