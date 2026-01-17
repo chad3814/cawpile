@@ -15,6 +15,7 @@ import StarRating from '@/components/rating/StarRating'
 import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import TrackingBadges from '@/components/book/TrackingBadges'
 import { BookType, convertToStars } from '@/types/cawpile'
+import { RepresentationValue } from '@/types/book'
 import { useRouter } from 'next/navigation'
 import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
@@ -122,6 +123,17 @@ export default function BookCard({ book }: BookCardProps) {
 
   // Determine if share button should be visible
   const canShare = book.status === 'COMPLETED' && book.cawpileRating !== null && book.cawpileRating !== undefined
+
+  // Prepare initial additional details for the rating modal
+  const initialAdditionalDetails = {
+    lgbtqRepresentation: book.lgbtqRepresentation as RepresentationValue | null,
+    lgbtqDetails: book.lgbtqDetails,
+    disabilityRepresentation: book.disabilityRepresentation as RepresentationValue | null,
+    disabilityDetails: book.disabilityDetails,
+    isNewAuthor: book.isNewAuthor,
+    authorPoc: book.authorPoc as RepresentationValue | null,
+    authorPocDetails: book.authorPocDetails
+  }
 
   // Fetch existing share data if book is eligible
   useEffect(() => {
@@ -561,6 +573,8 @@ export default function BookCard({ book }: BookCardProps) {
       bookType={bookType}
       bookTitle={displayTitle}
       initialRating={book.cawpileRating}
+      initialAdditionalDetails={initialAdditionalDetails}
+      initialReview={book.review}
     />
 
     {/* Change Format Modal */}
