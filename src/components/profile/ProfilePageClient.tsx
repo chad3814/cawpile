@@ -80,7 +80,7 @@ export default function ProfilePageClient({
 
       {/* Shared Reviews Section */}
       <div className="mt-8">
-        <SharedReviewsSection reviews={sharedReviews} />
+        <SharedReviewsSection reviews={sharedReviews} layout={layout} />
       </div>
 
       {/* No Content State */}
