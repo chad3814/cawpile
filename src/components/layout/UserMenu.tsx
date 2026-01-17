@@ -5,10 +5,15 @@ import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
 
+interface UserData {
+  profilePictureUrl: string | null
+}
+
 export default function UserMenu() {
   const { data: session } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -32,7 +37,20 @@ export default function UserMenu() {
     }
   }, [session])
 
+  useEffect(() => {
+    // Fetch user profile data for custom avatar
+    if (session?.user) {
+      fetch('/api/user/settings')
+        .then(res => res.json())
+        .then(data => setUserData({ profilePictureUrl: data.profilePictureUrl }))
+        .catch(() => setUserData(null))
+    }
+  }, [session])
+
   if (!session?.user) return null
+
+  // Prioritize custom profile picture, then Google OAuth image
+  const avatarUrl = userData?.profilePictureUrl || session.user.image
 
   return (
     <div className="relative" ref={menuRef}>
@@ -40,13 +58,13 @@ export default function UserMenu() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
       >
-        {session.user.image ? (
+        {avatarUrl ? (
           <Image
-            src={session.user.image}
+            src={avatarUrl}
             alt={session.user.name || "User"}
             width={32}
             height={32}
-            className="rounded-full"
+            className="rounded-full object-cover"
           />
         ) : (
           <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
@@ -65,20 +83,14 @@ export default function UserMenu() {
             </p>
             <p className="text-xs text-gray-500">{session.user.email}</p>
           </div>
-          
-          <button
-            onClick={() => setIsOpen(false)}
-            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            Profile
-          </button>
-          
-          <button
+
+          <Link
+            href="/settings"
             onClick={() => setIsOpen(false)}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           >
             Settings
-          </button>
+          </Link>
 
           {isAdmin && (
             <Link
@@ -89,9 +101,9 @@ export default function UserMenu() {
               Admin Panel
             </Link>
           )}
-          
+
           <hr className="my-1" />
-          
+
           <button
             onClick={() => signOut()}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"

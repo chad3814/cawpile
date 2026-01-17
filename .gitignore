@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Playwright MCP
 .playwright-mcp
+
+# AWS credentials
+aws_id
+aws_secret

@@ -10,10 +10,13 @@ export default async function DashboardPage() {
     redirect("/auth/signin")
   }
 
-  // Fetch user's preferences
+  // Fetch user's preferences including reading goal
   const userWithPreferences = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { dashboardLayout: true }
+    select: {
+      dashboardLayout: true,
+      readingGoal: true,
+    }
   })
 
   // Fetch user's books
@@ -59,12 +62,8 @@ export default async function DashboardPage() {
     }
   })
 
-  const completedBooks = await prisma.userBook.count({
-    where: {
-      userId: user.id,
-      status: 'COMPLETED'
-    }
-  })
+  // Use user's reading goal or default to 12
+  const readingGoal = userWithPreferences?.readingGoal ?? 12
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -85,8 +84,8 @@ export default async function DashboardPage() {
 
           <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
             <h3 className="font-semibold text-card-foreground mb-2">Reading Goal</h3>
-            <p className="text-3xl font-bold text-primary">{completedBooks}/12</p>
-            <p className="text-muted-foreground">Books completed</p>
+            <p className="text-3xl font-bold text-primary">{booksThisYear}/{readingGoal}</p>
+            <p className="text-muted-foreground">Books completed this year</p>
           </div>
 
           <div className="bg-card p-6 rounded-lg shadow-sm border border-border">

@@ -17,6 +17,8 @@ model User {
   username      String?          @unique
   bio           String?
   readingGoal   Int              @default(12)
+  profilePictureUrl String?
+  showCurrentlyReading Boolean   @default(false)
   dashboardLayout DashboardLayout @default(GRID)
   image         String?
   isAdmin       Boolean          @default(false)

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 export default auth(async (req) => {
   const isLoggedIn = !!req.auth
   const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard")
+  const isOnSettings = req.nextUrl.pathname.startsWith("/settings")
   const isOnAuth = req.nextUrl.pathname.startsWith("/auth")
   const isOnHome = req.nextUrl.pathname === "/"
   const isOnAdmin = req.nextUrl.pathname.startsWith("/admin")
@@ -25,7 +26,8 @@ export default auth(async (req) => {
     // This middleware ensures at least authentication
   }
 
-  if (isOnDashboard && !isLoggedIn) {
+  // Protected routes - require authentication
+  if ((isOnDashboard || isOnSettings) && !isLoggedIn) {
     return NextResponse.redirect(new URL("/auth/signin", req.url))
   }
 
