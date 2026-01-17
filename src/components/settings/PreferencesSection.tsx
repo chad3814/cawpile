@@ -6,6 +6,7 @@ import { Switch } from '@headlessui/react'
 interface PreferencesData {
   readingGoal: number
   showCurrentlyReading: boolean
+  username?: string | null
 }
 
 interface PreferencesSectionProps {
@@ -63,6 +64,9 @@ export default function PreferencesSection({
     }
   }
 
+  // Generate the profile URL if username is available
+  const profileUrl = data.username ? `/u/${data.username}` : null
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
       <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">
@@ -107,8 +111,19 @@ export default function PreferencesSection({
               Show my currently reading books publicly
             </label>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              When enabled, your currently reading books will be visible on your public profile
-              (public profiles coming soon)
+              When enabled, your currently reading books will be visible on your{' '}
+              {profileUrl ? (
+                <a
+                  href={profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline"
+                >
+                  public profile
+                </a>
+              ) : (
+                'public profile'
+              )}
             </p>
           </div>
           <Switch
