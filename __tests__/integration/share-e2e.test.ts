@@ -312,14 +312,24 @@ describe('Social Sharing E2E Integration', () => {
 
   describe('Edge Case: Book Without Rating', () => {
     test('should return 400 when attempting to share book without CAWPILE rating', async () => {
-      // Create userBook without rating
+      // Create independent Book for this test (prevents FK constraint issues with shared testBookId)
+      const bookNoRating = await prisma.book.create({
+        data: {
+          title: `No Rating Test Book ${nanoid(6)}`,
+          authors: ['Test Author'],
+          bookType: 'FICTION',
+        },
+      })
+
+      // Create Edition linked to the test-specific Book
       const edition2 = await prisma.edition.create({
         data: {
-          bookId: testBookId,
+          bookId: bookNoRating.id,
           isbn13: `979${nanoid(10)}`,
         },
       })
 
+      // Create userBook without rating
       const userBookNoRating = await prisma.userBook.create({
         data: {
           userId: testUserId,
@@ -356,9 +366,10 @@ describe('Social Sharing E2E Integration', () => {
       expect(response.status).toBe(400)
       expect(data.error).toBe('Book must have a CAWPILE rating to be shared')
 
-      // Cleanup
+      // Cleanup in reverse FK order: UserBook -> Edition -> Book
       await prisma.userBook.delete({ where: { id: userBookNoRating.id } })
       await prisma.edition.delete({ where: { id: edition2.id } })
+      await prisma.book.delete({ where: { id: bookNoRating.id } })
     })
   })
 
