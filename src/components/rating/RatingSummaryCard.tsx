@@ -8,7 +8,6 @@ import {
   getCawpileColor
 } from '@/types/cawpile'
 import StarRating from './StarRating'
-import { inspect } from 'node:util'
 
 interface RatingSummaryCardProps {
   rating: CawpileRating

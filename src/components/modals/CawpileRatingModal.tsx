@@ -10,9 +10,20 @@ import {
 } from '@/types/cawpile'
 import RatingCard from '../rating/RatingCard'
 import RatingSummaryCard from '../rating/RatingSummaryCard'
-import AdditionalDetailsWizard from './AdditionalDetailsWizard'
-import { AdditionalDetailsData } from '@/types/book'
+import AdditionalDetailsModal from './AdditionalDetailsModal'
+import ReviewModal from './ReviewModal'
+import { AdditionalDetailsData, RepresentationValue } from '@/types/book'
 import { useRouter } from 'next/navigation'
+
+interface InitialAdditionalDetails {
+  lgbtqRepresentation?: RepresentationValue | null
+  lgbtqDetails?: string | null
+  disabilityRepresentation?: RepresentationValue | null
+  disabilityDetails?: string | null
+  isNewAuthor?: boolean | null
+  authorPoc?: RepresentationValue | null
+  authorPocDetails?: string | null
+}
 
 interface CawpileRatingModalProps {
   isOpen: boolean
@@ -21,6 +32,8 @@ interface CawpileRatingModalProps {
   bookType: BookType
   bookTitle: string
   initialRating?: CawpileRating | null
+  initialAdditionalDetails?: InitialAdditionalDetails | null
+  initialReview?: string | null
 }
 
 export default function CawpileRatingModal({
@@ -29,11 +42,19 @@ export default function CawpileRatingModal({
   bookId,
   bookType,
   bookTitle,
-  initialRating
+  initialRating,
+  initialAdditionalDetails,
+  initialReview
 }: CawpileRatingModalProps) {
   const router = useRouter()
   const facets = getFacetConfig(bookType)
-  const [currentIndex, setCurrentIndex] = useState(0)
+
+  // If editing existing rating, start at summary view (facets.length)
+  // If new rating, start at first facet (0)
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    initialRating ? facets.length : 0
+  )
+
   const [ratings, setRatings] = useState<CawpileRating>(() => {
     if (initialRating) return { ...initialRating }
     return {
@@ -49,6 +70,7 @@ export default function CawpileRatingModal({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
 
   // Auto-save when ratings change
   const saveRatings = useCallback(async () => {
@@ -113,12 +135,24 @@ export default function CawpileRatingModal({
     setCurrentIndex(facetIndex)
   }
 
+  const handleViewSummary = () => {
+    // Save current rating if there's a value before jumping to summary
+    const currentFacet = facets[currentIndex]
+    if (ratings[currentFacet.key] !== null) {
+      saveRatings()
+    }
+    setCurrentIndex(facets.length)
+  }
 
   const handleAdditionalDetails = () => {
     setShowAdditionalDetails(true)
   }
 
-  const handleSaveAdditionalDetails = async (data: AdditionalDetailsData) => {
+  const handleOpenReview = () => {
+    setShowReviewModal(true)
+  }
+
+  const handleSaveAdditionalDetails = async (data: Omit<AdditionalDetailsData, 'review'>) => {
     try {
       const response = await fetch(`/api/user/books/${bookId}`, {
         method: 'PATCH',
@@ -134,10 +168,31 @@ export default function CawpileRatingModal({
 
       router.refresh()
       setShowAdditionalDetails(false)
-      onClose()
     } catch (error) {
       console.error('Error saving additional details:', error)
       setSaveError('Failed to save additional details. Please try again.')
+    }
+  }
+
+  const handleSaveReview = async (review: string) => {
+    try {
+      const response = await fetch(`/api/user/books/${bookId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ review: review || null }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save review')
+      }
+
+      router.refresh()
+      setShowReviewModal(false)
+    } catch (error) {
+      console.error('Error saving review:', error)
+      throw error
     }
   }
 
@@ -210,6 +265,7 @@ export default function CawpileRatingModal({
                 onNext={handleNext}
                 onPrevious={handlePrevious}
                 onSkip={handleSkip}
+                onViewSummary={handleViewSummary}
                 isFirst={currentIndex === 0}
                 isLast={currentIndex === facets.length - 1}
               />
@@ -227,11 +283,21 @@ export default function CawpileRatingModal({
       </div>
     </Dialog>
 
-    <AdditionalDetailsWizard
+    <AdditionalDetailsModal
       isOpen={showAdditionalDetails}
       onClose={() => setShowAdditionalDetails(false)}
       bookTitle={bookTitle}
+      initialData={initialAdditionalDetails ?? undefined}
       onSave={handleSaveAdditionalDetails}
+      onReview={handleOpenReview}
+    />
+
+    <ReviewModal
+      isOpen={showReviewModal}
+      onClose={() => setShowReviewModal(false)}
+      bookTitle={bookTitle}
+      initialReview={initialReview ?? ''}
+      onSave={handleSaveReview}
     />
     </>
   )

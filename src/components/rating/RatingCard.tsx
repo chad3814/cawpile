@@ -11,6 +11,7 @@ interface RatingCardProps {
   onNext: () => void
   onPrevious: () => void
   onSkip: () => void
+  onViewSummary?: () => void
   isFirst: boolean
   isLast: boolean
 }
@@ -22,6 +23,7 @@ export default function RatingCard({
   onNext,
   onPrevious,
   onSkip,
+  onViewSummary,
   isFirst,
   isLast
 }: RatingCardProps) {
@@ -50,6 +52,14 @@ export default function RatingCard({
   const handleSkip = () => {
     onChange(null)
     onSkip()
+  }
+
+  const handleViewSummary = () => {
+    // Save current facet rating if user has interacted before jumping to summary
+    if (hasInteracted && value === null) {
+      onChange(localValue)
+    }
+    onViewSummary?.()
   }
 
   return (
@@ -115,12 +125,23 @@ export default function RatingCard({
           Previous
         </button>
 
-        <button
-          onClick={handleSkip}
-          className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-        >
-          Skip This Facet
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleSkip}
+            className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            Skip This Facet
+          </button>
+
+          {onViewSummary && (
+            <button
+              onClick={handleViewSummary}
+              className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              View Summary
+            </button>
+          )}
+        </div>
 
         <button
           onClick={() => {
