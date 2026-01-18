@@ -59,6 +59,8 @@ export interface Edition {
   format: string | null
   googleBooksId: string | null
   googleBook?: GoogleBook | null
+  hardcoverBook?: HardcoverBook | null
+  ibdbBook?: IbdbBook | null
   _count?: {
     userBooks: number
   }
@@ -78,9 +80,62 @@ export interface GoogleBook {
   categories: string[]
 }
 
+export interface HardcoverBook {
+  id: string
+  hardcoverId: string
+  editionId: string
+  title: string
+  subtitle: string | null
+  authors: string[]
+  description: string | null
+  releaseDate: string | null
+  pages: number | null
+  imageUrl: string | null
+  categories: string[]
+  isbn: string | null
+  isbn13: string | null
+  hardcoverSlug: string | null
+  openLibraryId: string | null
+  goodReadsId: string | null
+}
+
+export interface IbdbBook {
+  id: string
+  ibdbId: string
+  editionId: string
+  title: string
+  authors: string[]
+  description: string | null
+  publishedDate: string | null
+  pageCount: number | null
+  imageUrl: string | null
+  categories: string[]
+  isbn10: string | null
+  isbn13: string | null
+}
+
 export interface BookWithEditions extends Book {
   editions: Edition[]
   userCount?: number
+}
+
+/**
+ * Enriched book data with merged fields from multiple providers
+ * Priority order: Edition (local edits) > Hardcover > GoogleBooks > IBDB
+ */
+export interface EnrichedBookData {
+  title: string
+  subtitle: string | null
+  authors: string[]
+  description: string | null
+  publishedDate: string | null
+  pageCount: number | null
+  imageUrl: string | null
+  categories: string[]
+  isbn10: string | null
+  isbn13: string | null
+  /** Indicates which provider supplied each field value */
+  dataSource: Record<string, 'edition' | 'hardcover' | 'google' | 'ibdb'>
 }
 
 // New tracking field enums and types

@@ -6,7 +6,7 @@ export interface AdminUser {
   isSuperAdmin: boolean
 }
 
-export type AuditActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'MERGE'
+export type AuditActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'MERGE' | 'RESYNC'
 
 export interface AuditLogEntry {
   entityType: string
