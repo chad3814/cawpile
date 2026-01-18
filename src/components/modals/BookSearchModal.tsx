@@ -60,6 +60,7 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
                   </h3>
                   <button
                     onClick={handleClose}
+                    title="Close"
                     className="rounded-md p-1 hover:bg-muted transition-colors focus-ring"
                   >
                     <XMarkIcon className="h-5 w-5 text-muted-foreground" />
