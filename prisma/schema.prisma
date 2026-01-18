@@ -80,19 +80,21 @@ model Book {
 }
 
 model Edition {
-  id            String      @id @default(cuid())
+  id            String         @id @default(cuid())
   bookId        String
   isbn10        String?
   isbn13        String?
-  title         String?     // Edition-specific title if different
-  authors       String[]    // Edition-specific authors if different
+  title         String?        // Edition-specific title if different
+  authors       String[]       // Edition-specific authors if different
   format        BookFormat?
-  googleBooksId String?     @unique
-  book          Book        @relation(fields: [bookId], references: [id])
+  googleBooksId String?        @unique
+  book          Book           @relation(fields: [bookId], references: [id])
   userBooks     UserBook[]
   googleBook    GoogleBook?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  hardcoverBook HardcoverBook?
+  ibdbBook      IbdbBook?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@unique([isbn10])
   @@unique([isbn13])
@@ -115,6 +117,47 @@ model GoogleBook {
   audiobookDuration Int?     // Duration in minutes for audiobook calculations
   edition          Edition  @relation(fields: [editionId], references: [id])
   createdAt        DateTime @default(now())
+}
+
+// Hardcover.app book metadata
+model HardcoverBook {
+  id              String   @id @default(cuid())
+  hardcoverId     String   @unique
+  editionId       String   @unique
+  title           String
+  subtitle        String?
+  authors         String[]
+  description     String?
+  releaseDate     String?
+  pages           Int?
+  imageUrl        String?
+  categories      String[]
+  isbn            String?
+  isbn13          String?
+  // Cross-reference fields for future linking
+  hardcoverSlug   String?
+  openLibraryId   String?
+  goodReadsId     String?
+  edition         Edition  @relation(fields: [editionId], references: [id])
+  createdAt       DateTime @default(now())
+}
+
+// IBDB.dev book metadata
+model IbdbBook {
+  id            String   @id @default(cuid())
+  ibdbId        String   @unique
+  editionId     String   @unique
+  title         String
+  authors       String[]
+  description   String?
+  publishedDate String?
+  pageCount     Int?
+  imageUrl      String?
+  categories    String[]
+  isbn10        String?
+  isbn13        String?
+  edition       Edition  @relation(fields: [editionId], references: [id])
+  createdAt     DateTime @default(now())
 }
 
 model UserBook {
@@ -247,7 +290,7 @@ model AdminAuditLog {
   fieldName  String?  // Column/field that was changed
   oldValue   String?  @db.Text // Previous value (JSON stringified)
   newValue   String?  @db.Text // New value (JSON stringified)
-  actionType String   // CREATE, UPDATE, DELETE, MERGE
+  actionType String   // CREATE, UPDATE, DELETE, MERGE, RESYNC
   timestamp  DateTime @default(now())
 
   @@index([adminId])

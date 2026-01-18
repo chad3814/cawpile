@@ -1,10 +1,19 @@
-import type { SearchProviderResult } from "../types"
+import type { SearchProviderResult, SourceEntry, SignedBookSearchResult } from "../types"
 import type { BookSearchResult } from "@/types/book"
 import { fuzzyMatchAuthors, fuzzyMatchTitle } from "./fuzzyMatch"
+import { signResults } from "./signResult"
 
 interface MergedResult {
   primary: SearchProviderResult
   duplicates: SearchProviderResult[]
+}
+
+/**
+ * Intermediate type to hold augmented result alongside sources
+ */
+interface AugmentedResultWithSources {
+  augmented: SearchProviderResult
+  sources: SourceEntry[]
 }
 
 /**
@@ -72,9 +81,23 @@ function augmentResult(primary: SearchProviderResult, duplicates: SearchProvider
 }
 
 /**
- * Merge and deduplicate results from multiple search providers
+ * Build sources array from all versions, sorted by weight (highest first)
  */
-export function mergeResults(providerResults: SearchProviderResult[][], limit: number): BookSearchResult[] {
+function buildSourcesArray(allVersions: SearchProviderResult[]): SourceEntry[] {
+  // Sort by sourceWeight (highest first) and map to SourceEntry
+  return [...allVersions]
+    .sort((a, b) => b.sourceWeight - a.sourceWeight)
+    .map((version) => ({
+      provider: version.source,
+      data: version,
+    }))
+}
+
+/**
+ * Merge and deduplicate results from multiple search providers
+ * Returns signed results with source provenance
+ */
+export function mergeResults(providerResults: SearchProviderResult[][], limit: number): SignedBookSearchResult[] {
   // Flatten all results
   const allResults = providerResults.flat()
 
@@ -105,8 +128,8 @@ export function mergeResults(providerResults: SearchProviderResult[][], limit: n
     }
   }
 
-  // Sort merged results by weight and select primary
-  const finalResults: SearchProviderResult[] = mergedResults.map(merged => {
+  // Sort merged results by weight, select primary, and build sources array
+  const resultsWithSources: AugmentedResultWithSources[] = mergedResults.map(merged => {
     // Sort duplicates by weight (highest first)
     const allVersions = [merged.primary, ...merged.duplicates].sort((a, b) => b.sourceWeight - a.sourceWeight)
 
@@ -116,16 +139,27 @@ export function mergeResults(providerResults: SearchProviderResult[][], limit: n
 
     // Augment primary with data from other versions
     const others = allVersions.filter(v => v !== primary)
-    return augmentResult(primary, others)
+    const augmented = augmentResult(primary, others)
+
+    // Build sources array from all versions
+    const sources = buildSourcesArray(allVersions)
+
+    return { augmented, sources }
   })
 
   // Sort by source weight (highest first)
-  finalResults.sort((a, b) => b.sourceWeight - a.sourceWeight)
+  resultsWithSources.sort((a, b) => b.augmented.sourceWeight - a.augmented.sourceWeight)
 
-  // Limit results and remove source metadata for final output
-  return finalResults.slice(0, limit).map(result => {
+  // Limit results, add sources, and strip source metadata from primary fields
+  const resultsToSign = resultsWithSources.slice(0, limit).map(({ augmented, sources }) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { source, sourceWeight, ...bookResult } = result
-    return bookResult as BookSearchResult
+    const { source, sourceWeight, ...bookResult } = augmented
+    return {
+      ...(bookResult as BookSearchResult),
+      sources,
+    }
   })
+
+  // Sign all results and return
+  return signResults(resultsToSign)
 }

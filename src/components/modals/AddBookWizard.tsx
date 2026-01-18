@@ -200,6 +200,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   <button
                     onClick={handleClose}
                     className="rounded-md p-1 hover:bg-muted transition-colors focus-ring"
+                    title="Close"
                   >
                     <XMarkIcon className="h-5 w-5 text-muted-foreground" />
                   </button>
@@ -322,6 +323,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                         value={formData.startDate || ''}
                         onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                         max={new Date().toISOString().split('T')[0]}
+                        title="Start Date"
                         className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
                     </div>
@@ -339,6 +341,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                         max="100"
                         value={formData.progress || 0}
                         onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value, 10) })}
+                        title="Progress"
                         className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
                     </div>
@@ -382,6 +385,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                             value={formData.finishDate || ''}
                             onChange={(e) => setFormData({ ...formData, finishDate: e.target.value })}
                             max={new Date().toISOString().split('T')[0]}
+                            title="End Date"
                             className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                           />
                         </div>

@@ -4,6 +4,7 @@ import { getBookById } from '@/lib/googleBooks'
 import { findOrCreateBook, findOrCreateEdition } from '@/lib/db/books'
 import prisma from '@/lib/prisma'
 import { BookStatus, BookFormat, Prisma } from '@prisma/client'
+import type { SignedBookSearchResult } from '@/lib/search/types'
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       googleBooksId,
+      signedResult,
       status,
       format,
       startDate,
@@ -30,7 +32,20 @@ export async function POST(request: NextRequest) {
       bookClubName,
       readathonName,
       isReread
-    } = body
+    } = body as {
+      googleBooksId: string
+      signedResult?: SignedBookSearchResult
+      status: BookStatus
+      format: BookFormat[]
+      startDate?: string
+      finishDate?: string
+      progress?: number
+      acquisitionMethod?: string
+      acquisitionOther?: string
+      bookClubName?: string
+      readathonName?: string
+      isReread?: boolean
+    }
 
     // Validate format array
     if (!format || !Array.isArray(format) || format.length === 0) {
@@ -72,8 +87,10 @@ export async function POST(request: NextRequest) {
       bookData.categories // Pass categories for book type detection
     )
 
-    // Find or create edition
-    const edition = await findOrCreateEdition(book.id, bookData)
+    // Find or create edition, passing signed result if provided
+    // The findOrCreateEdition function will verify the signature and
+    // only persist provider data if verification passes
+    const edition = await findOrCreateEdition(book.id, bookData, signedResult)
 
     // Check if user already has this book
     const existingUserBook = await prisma.userBook.findUnique({
@@ -152,7 +169,9 @@ export async function POST(request: NextRequest) {
         edition: {
           include: {
             book: true,
-            googleBook: true
+            googleBook: true,
+            hardcoverBook: true,
+            ibdbBook: true
           }
         }
       }
@@ -198,7 +217,9 @@ export async function GET(request: NextRequest) {
         edition: {
           include: {
             book: true,
-            googleBook: true
+            googleBook: true,
+            hardcoverBook: true,
+            ibdbBook: true
           }
         },
         cawpileRating: true

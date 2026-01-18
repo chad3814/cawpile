@@ -12,6 +12,24 @@ export interface SearchProviderResult extends BookSearchResult {
   sourceWeight: number
 }
 
+/**
+ * Represents a single source entry in a merged search result
+ * Contains the provider name and the original data from that provider
+ */
+export interface SourceEntry {
+  provider: string
+  data: SearchProviderResult
+}
+
+/**
+ * Extended search result that includes source provenance and cryptographic signature
+ * Used for merged results where multiple providers may have contributed data
+ */
+export interface SignedBookSearchResult extends BookSearchResult {
+  sources: SourceEntry[]
+  signature?: string
+}
+
 export interface ProviderConfig {
   name: string
   weight: number
