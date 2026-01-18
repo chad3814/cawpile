@@ -23,8 +23,17 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 ### Admin
 - `npm run make-admin` - Create admin user (custom script)
 
-### No Test Framework
-This project does not have a testing framework configured yet.
+### Testing
+- `npm run test` - Run all Jest tests
+- `npm run test -- path/to/test` - Run specific test file
+- `npm run test -- --watch` - Run tests in watch mode
+
+Tests are located in `__tests__/` directory with the following structure:
+- `__tests__/components/` - React component tests (PublicReviewDisplay, SharePageLayout, etc.)
+- `__tests__/lib/` - Utility function tests (sanitize, image generation)
+- `__tests__/api/` - API route tests
+
+Testing stack: Jest + React Testing Library + @testing-library/jest-dom
 
 ## Architecture
 
@@ -123,8 +132,16 @@ session.user = {
 - `GET /api/books/search` - Multi-provider search
 
 ### Chart Data
-- `GET /api/charts/books-per-month` - Monthly reading volume
+- `GET /api/charts/books-per-month` - Monthly reading volume (stacked: completed + DNF)
+- `GET /api/charts/pages-per-month` - Pages read per month (excludes audiobooks)
+- `GET /api/charts/dnf-per-month` - DNF books per month
 - `GET /api/charts/book-format` - Format distribution
+- `GET /api/charts/main-genres` - Genre distribution (fiction vs non-fiction)
+- `GET /api/charts/acquisition-method` - How books were acquired
+- `GET /api/charts/lgbtq-representation` - LGBTQ+ representation stats
+- `GET /api/charts/disability-representation` - Disability representation stats
+- `GET /api/charts/poc-authors` - POC author stats
+- `GET /api/charts/new-authors` - New-to-user author stats
 - `GET /api/charts/available-years` - Years with data
 
 ### User Preferences
@@ -257,7 +274,12 @@ src/
 ├── contexts/
 │   └── ChartDataContext.tsx # Chart data caching
 │
-└── middleware.ts           # Route protection
+├── middleware.ts           # Route protection
+│
+__tests__/                   # Jest test files
+├── components/             # Component tests
+├── lib/                    # Utility function tests
+└── api/                    # API route tests
 ```
 
 ## Unique Features
@@ -295,6 +317,13 @@ src/
 - `AdminAuditLog` captures every admin action
 - Who, what, when, before/after values
 - Full audit trail for compliance
+
+### 7. Social Sharing & Public Profiles
+- **SharedReview** model: Public share links for individual reviews
+- Privacy controls: showDates, showBookClubs, showReadathons, showReview
+- Shareable image generation via `ReviewImageTemplate` component
+- Public profile pages with customizable visibility
+- Components: `PublicReviewDisplay`, `SharePageLayout`, `ProfilePageClient`
 
 ## Data Flow Examples
 
