@@ -87,10 +87,17 @@ export class HardcoverClient {
         try {
           // Handle both JSON string and already-parsed array
           const results = data.data.search.results
-          const books = typeof results === 'string'
-            ? JSON.parse(results) as HardcoverBook[]
-            : results as HardcoverBook[]
-          return books.slice(0, limit)
+          const parsed = typeof results === 'string'
+            ? JSON.parse(results)
+            : results
+
+          // Validate that parsed result is an array
+          if (!Array.isArray(parsed)) {
+            console.error('Hardcover results is not an array:', typeof parsed)
+            return []
+          }
+
+          return (parsed as HardcoverBook[]).slice(0, limit)
         } catch (parseError) {
           console.error('Failed to parse Hardcover results:', parseError)
           return []
