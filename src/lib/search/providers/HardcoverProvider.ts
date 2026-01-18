@@ -19,20 +19,25 @@ export class HardcoverProvider extends BaseSearchProvider {
       const hardcoverBooks = await this.client.search(query, limit)
 
       // Normalize Hardcover results to our format
-      const results: BookSearchResult[] = hardcoverBooks.map(book => ({
-        id: book.id || `hardcover-${Date.now()}-${Math.random()}`,
-        googleId: book.id || "",
-        title: book.title || "Unknown Title",
-        subtitle: book.subtitle,
-        authors: book.authors?.map(a => a.name).filter((name): name is string => !!name) || [],
-        description: book.description,
-        publishedDate: book.release_date,
-        pageCount: book.pages,
-        categories: book.categories?.map(c => c.name).filter((name): name is string => !!name) || [],
-        imageUrl: book.image,
-        isbn10: book.isbn,
-        isbn13: book.isbn13
-      }))
+      const results: BookSearchResult[] = hardcoverBooks.map(book => {
+        // Extract ISBN-10 and ISBN-13 from isbns array
+        const isbn10 = book.isbns?.find(isbn => isbn.length === 10)
+        const isbn13 = book.isbns?.find(isbn => isbn.length === 13)
+
+        return {
+          id: book.id || `hardcover-${Date.now()}-${Math.random()}`,
+          googleId: book.id || "",
+          title: book.title || "Unknown Title",
+          authors: book.author_names || [],
+          description: book.description,
+          publishedDate: book.release_date,
+          pageCount: book.pages,
+          categories: book.genres || [],
+          imageUrl: book.image?.url,
+          isbn10,
+          isbn13
+        }
+      })
 
       return results
     } catch (error) {

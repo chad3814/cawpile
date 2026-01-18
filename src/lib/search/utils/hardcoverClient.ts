@@ -1,33 +1,30 @@
-interface HardcoverAuthor {
-  id?: string
-  createdAt?: number
-  updatedAt?: number
-  name?: string
-  openLibraryId?: string | null
-  goodReadsId?: string | null
-  hardcoverId?: number
-  hardcoverSlug?: string
-}
-
-interface HardcoverBook {
+interface HardcoverDocument {
   id?: string
   title?: string
-  subtitle?: string
-  authors?: Array<HardcoverAuthor | { name: string }>
   description?: string
+  author_names?: string[]
   release_date?: string
   pages?: number
-  image?: string
-  isbn?: string
-  isbn13?: string
-  categories?: Array<{ name: string }>
-  [key: string]: unknown
+  image?: {
+    url?: string
+  }
+  isbns?: string[]
+  genres?: string[]
+}
+
+interface HardcoverHit {
+  document: HardcoverDocument
+}
+
+interface HardcoverSearchResults {
+  hits?: HardcoverHit[]
+  found?: number
 }
 
 interface HardcoverSearchResponse {
   data?: {
     search?: {
-      results?: string | HardcoverBook[] // Can be JSON string or already-parsed array
+      results?: string | HardcoverSearchResults
       error?: string
     }
   }
@@ -38,7 +35,7 @@ export class HardcoverClient {
   private endpoint = 'https://api.hardcover.app/v1/graphql'
   private token = process.env.HARDCOVER_TOKEN
 
-  async search(query: string, limit: number = 10): Promise<HardcoverBook[]> {
+  async search(query: string, limit: number = 10): Promise<HardcoverDocument[]> {
     if (!this.token) {
       console.error('HARDCOVER_TOKEN not configured')
       return []
@@ -85,19 +82,19 @@ export class HardcoverClient {
 
       if (data.data?.search?.results) {
         try {
-          // Handle both JSON string and already-parsed array
+          // Handle both JSON string and already-parsed object
           const results = data.data.search.results
-          const parsed = typeof results === 'string'
+          const parsed: HardcoverSearchResults = typeof results === 'string'
             ? JSON.parse(results)
             : results
 
-          // Validate that parsed result is an array
-          if (!Array.isArray(parsed)) {
-            console.error('Hardcover results is not an array:', JSON.stringify(parsed, null, 2))
+          // Extract documents from hits array
+          if (!parsed.hits || !Array.isArray(parsed.hits)) {
+            console.error('Hardcover results missing hits array')
             return []
           }
 
-          return (parsed as HardcoverBook[]).slice(0, limit)
+          return parsed.hits.slice(0, limit).map(hit => hit.document)
         } catch (parseError) {
           console.error('Failed to parse Hardcover results:', parseError)
           return []
