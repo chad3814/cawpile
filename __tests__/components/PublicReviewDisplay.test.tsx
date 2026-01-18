@@ -158,9 +158,9 @@ describe('PublicReviewDisplay', () => {
     expect(screen.queryByText('Reading Details')).not.toBeInTheDocument()
   })
 
-  test('should render Powered by Cawpile footer', () => {
+  test('should render Powered by CAWPILE.org footer', () => {
     render(<PublicReviewDisplay sharedReview={mockSharedReview} />)
 
-    expect(screen.getByText('Powered by Cawpile')).toBeInTheDocument()
+    expect(screen.getByText('Powered by CAWPILE.org')).toBeInTheDocument()
   })
 })

@@ -93,7 +93,7 @@ export default function ProfilePageClient({
       {/* Footer */}
       <div className="mt-12 py-4 border-t border-border">
         <p className="text-xs text-center text-muted-foreground">
-          Powered by Cawpile
+          Powered by CAWPILE.org
         </p>
       </div>
     </div>

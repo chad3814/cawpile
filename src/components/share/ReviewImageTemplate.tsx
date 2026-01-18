@@ -548,7 +548,7 @@ export default function ReviewImageTemplate({
             }}
           >
             Powered by{' '}
-            <span style={{ color: ACCENT_COLOR, fontWeight: 600 }}>Cawpile</span>
+            <span style={{ color: ACCENT_COLOR, fontWeight: 600 }}>CAWPILE.org</span>
           </span>
         </div>
       </div>

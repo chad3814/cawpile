@@ -211,7 +211,7 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
         {/* Footer */}
         <div className="px-6 sm:px-8 py-4 bg-muted/30 border-t border-border">
           <p className="text-xs text-center text-muted-foreground">
-            Powered by Cawpile
+            Powered by CAWPILE.org
           </p>
         </div>
       </div>
