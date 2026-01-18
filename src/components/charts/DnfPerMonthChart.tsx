@@ -6,17 +6,16 @@ import { BarChartSkeleton } from './skeletons';
 import { formatBookCount } from '@/lib/charts/formatters';
 import { CHART_COLORS } from '@/lib/charts';
 
-interface BooksPerMonthChartProps {
+interface DnfPerMonthChartProps {
   year: number;
 }
 
 interface ChartData {
   month: string;
-  completed: number;
-  dnf: number;
+  value: number;
 }
 
-export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
+export function DnfPerMonthChart({ year }: DnfPerMonthChartProps) {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +26,7 @@ export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/charts/books-per-month?year=${year}`);
+        const response = await fetch(`/api/charts/dnf-per-month?year=${year}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch data');
@@ -61,22 +60,17 @@ export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
-        No books completed this year
+        No DNF books this year
       </div>
     );
   }
 
-  const stackedKeys = [
-    { key: 'completed', color: CHART_COLORS.books, label: 'Completed' },
-    { key: 'dnf', color: CHART_COLORS.dnf, label: 'DNF' }
-  ];
-
   return (
     <BaseBarChart
       data={data}
+      dataKey="value"
       xAxisKey="month"
-      stackedKeys={stackedKeys}
-      showLegend={true}
+      color={CHART_COLORS.dnf}
       tooltipFormatter={(value) => formatBookCount(value)}
     />
   );

@@ -36,6 +36,19 @@ export const CHART_COLORS = {
   firstTime: '#3b82f6', // blue-500
   reread: '#10b981', // emerald-500
 
+  // Representation colors (Yes/No/Unknown)
+  representation: {
+    Yes: '#10b981', // emerald-500 (green)
+    No: '#6b7280', // gray-500
+    Unknown: '#3b82f6', // blue-500
+  },
+
+  // New author colors (Yes/No only - boolean field)
+  newAuthor: {
+    Yes: '#10b981', // emerald-500 (green)
+    No: '#6b7280', // gray-500
+  },
+
   // Background and grid
   background: '#ffffff',
   grid: '#e5e7eb', // gray-200

@@ -1,22 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BaseBarChart } from './BaseBarChart';
-import { BarChartSkeleton } from './skeletons';
-import { formatBookCount } from '@/lib/charts/formatters';
+import { BasePieChart } from './BasePieChart';
+import { PieChartSkeleton } from './skeletons';
 import { CHART_COLORS } from '@/lib/charts';
+import { formatBookCount } from '@/lib/charts/formatters';
 
-interface BooksPerMonthChartProps {
+interface NewAuthorsChartProps {
   year: number;
 }
 
 interface ChartData {
-  month: string;
-  completed: number;
-  dnf: number;
+  name: string;
+  value: number;
 }
 
-export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
+export function NewAuthorsChart({ year }: NewAuthorsChartProps) {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +26,7 @@ export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/charts/books-per-month?year=${year}`);
+        const response = await fetch(`/api/charts/new-authors?year=${year}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch data');
@@ -47,7 +46,7 @@ export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
   }, [year]);
 
   if (loading) {
-    return <BarChartSkeleton />;
+    return <PieChartSkeleton />;
   }
 
   if (error) {
@@ -61,22 +60,23 @@ export function BooksPerMonthChart({ year }: BooksPerMonthChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
-        No books completed this year
+        No new author data available
       </div>
     );
   }
 
-  const stackedKeys = [
-    { key: 'completed', color: CHART_COLORS.books, label: 'Completed' },
-    { key: 'dnf', color: CHART_COLORS.dnf, label: 'DNF' }
-  ];
+  // Use newAuthor colors (Yes: green, No: gray)
+  const newAuthorColors = data.map(item => {
+    const colorMap = CHART_COLORS.newAuthor as Record<string, string>;
+    return colorMap[item.name] || CHART_COLORS.primary;
+  });
 
   return (
-    <BaseBarChart
+    <BasePieChart
       data={data}
-      xAxisKey="month"
-      stackedKeys={stackedKeys}
-      showLegend={true}
+      dataKey="value"
+      nameKey="name"
+      colors={newAuthorColors}
       tooltipFormatter={(value) => formatBookCount(value)}
     />
   );

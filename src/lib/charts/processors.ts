@@ -3,6 +3,12 @@ interface MonthlyData {
   value: number;
 }
 
+export interface StackedMonthlyData {
+  month: string;
+  completed: number;
+  dnf: number;
+}
+
 interface PieData {
   name: string;
   value: number;
@@ -97,4 +103,41 @@ export function createEmptyMonthlyData(year: number): MonthlyData[] {
   }
 
   return data;
+}
+
+/**
+ * Create empty stacked monthly data for a year up to current month
+ */
+export function createEmptyStackedMonthlyData(year: number): StackedMonthlyData[] {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const maxMonth = year === currentYear ? currentDate.getMonth() : 11;
+
+  const data: StackedMonthlyData[] = [];
+  for (let i = 0; i <= maxMonth; i++) {
+    data.push({
+      month: getMonthName(i),
+      completed: 0,
+      dnf: 0
+    });
+  }
+
+  return data;
+}
+
+/**
+ * Process stacked monthly data and trim trailing zero months
+ */
+export function processStackedMonthlyData(data: StackedMonthlyData[]): StackedMonthlyData[] {
+  if (!data || data.length === 0) return [];
+
+  // Find the last non-zero month (either completed or dnf)
+  let lastNonZeroIndex = data.length - 1;
+  while (lastNonZeroIndex >= 0 && data[lastNonZeroIndex].completed === 0 && data[lastNonZeroIndex].dnf === 0) {
+    lastNonZeroIndex--;
+  }
+
+  // Return data up to and including the last non-zero month
+  // But always show at least January
+  return data.slice(0, Math.max(1, lastNonZeroIndex + 1));
 }

@@ -6,6 +6,14 @@ import { ChartGrid } from './ChartGrid';
 import { ChartCard } from './ChartCard';
 import { BooksPerMonthChart } from './BooksPerMonthChart';
 import { BookFormatChart } from './BookFormatChart';
+import { PagesPerMonthChart } from './PagesPerMonthChart';
+import { DnfPerMonthChart } from './DnfPerMonthChart';
+import { MainGenresChart } from './MainGenresChart';
+import { AcquisitionMethodChart } from './AcquisitionMethodChart';
+import { LgbtqRepresentationChart } from './LgbtqRepresentationChart';
+import { DisabilityRepresentationChart } from './DisabilityRepresentationChart';
+import { PocAuthorsChart } from './PocAuthorsChart';
+import { NewAuthorsChart } from './NewAuthorsChart';
 
 export function ChartsTab() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -28,28 +36,36 @@ export function ChartsTab() {
           <BookFormatChart year={selectedYear} />
         </ChartCard>
 
-        <ChartCard id="placeholder-2" title="Pages per Month">
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Coming soon...
-          </div>
+        <ChartCard id="pages-per-month" title="Pages per Month">
+          <PagesPerMonthChart year={selectedYear} />
         </ChartCard>
 
-        <ChartCard id="placeholder-3" title="DNF per Month">
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Coming soon...
-          </div>
+        <ChartCard id="dnf-per-month" title="DNF per Month">
+          <DnfPerMonthChart year={selectedYear} />
         </ChartCard>
 
-        <ChartCard id="placeholder-4" title="Reading Type">
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Coming soon...
-          </div>
+        <ChartCard id="acquisition-method" title="Acquisition Method">
+          <AcquisitionMethodChart year={selectedYear} />
         </ChartCard>
 
-        <ChartCard id="placeholder-5" title="Main Genres">
-          <div className="flex items-center justify-center h-full text-gray-400">
-            Coming soon...
-          </div>
+        <ChartCard id="main-genres" title="Main Genres">
+          <MainGenresChart year={selectedYear} />
+        </ChartCard>
+
+        <ChartCard id="lgbtq-representation" title="LGBTQ+ Representation">
+          <LgbtqRepresentationChart year={selectedYear} />
+        </ChartCard>
+
+        <ChartCard id="disability-representation" title="Disability Representation">
+          <DisabilityRepresentationChart year={selectedYear} />
+        </ChartCard>
+
+        <ChartCard id="poc-authors" title="POC Authors">
+          <PocAuthorsChart year={selectedYear} />
+        </ChartCard>
+
+        <ChartCard id="new-authors" title="New Authors">
+          <NewAuthorsChart year={selectedYear} />
         </ChartCard>
       </ChartGrid>
     </div>

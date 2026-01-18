@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import prisma from '@/lib/prisma';
-import { createEmptyStackedMonthlyData, processStackedMonthlyData } from '@/lib/charts/processors';
+import { createEmptyMonthlyData, processMonthlyData } from '@/lib/charts/processors';
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
 
-    // Get all books completed or DNF'd in the specified year
+    // Get all DNF'd books in the specified year
     const userBooks = await prisma.userBook.findMany({
       where: {
         userId: user.id,
@@ -22,33 +22,26 @@ export async function GET(request: Request) {
           gte: new Date(`${year}-01-01`),
           lt: new Date(`${year + 1}-01-01`)
         },
-        status: {
-          in: ['COMPLETED', 'DNF']
-        }
+        status: 'DNF'
       },
       select: {
-        finishDate: true,
-        status: true
+        finishDate: true
       }
     });
 
-    // Initialize stacked monthly data
-    const monthlyData = createEmptyStackedMonthlyData(year);
+    // Initialize monthly data
+    const monthlyData = createEmptyMonthlyData(year);
 
-    // Count books per month by status
+    // Count DNF books per month
     userBooks.forEach(book => {
       if (book.finishDate) {
         const monthIndex = new Date(book.finishDate).getMonth();
-        if (book.status === 'COMPLETED') {
-          monthlyData[monthIndex].completed++;
-        } else if (book.status === 'DNF') {
-          monthlyData[monthIndex].dnf++;
-        }
+        monthlyData[monthIndex].value++;
       }
     });
 
     // Process data to trim trailing zeros
-    const processedData = processStackedMonthlyData(monthlyData);
+    const processedData = processMonthlyData(monthlyData);
 
     return NextResponse.json({
       data: processedData,
@@ -56,9 +49,9 @@ export async function GET(request: Request) {
       total: userBooks.length
     });
   } catch (error) {
-    console.error('Error fetching books per month:', error);
+    console.error('Error fetching DNF per month:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch books per month' },
+      { error: 'Failed to fetch DNF per month' },
       { status: 500 }
     );
   }

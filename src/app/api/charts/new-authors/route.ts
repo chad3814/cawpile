@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import prisma from '@/lib/prisma';
-import { createEmptyStackedMonthlyData, processStackedMonthlyData } from '@/lib/charts/processors';
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +13,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
 
-    // Get all books completed or DNF'd in the specified year
+    // Get all books completed or DNF'd in the specified year with isNewAuthor set
     const userBooks = await prisma.userBook.findMany({
       where: {
         userId: user.id,
@@ -24,41 +23,44 @@ export async function GET(request: Request) {
         },
         status: {
           in: ['COMPLETED', 'DNF']
+        },
+        isNewAuthor: {
+          not: null
         }
       },
       select: {
-        finishDate: true,
-        status: true
+        isNewAuthor: true
       }
     });
 
-    // Initialize stacked monthly data
-    const monthlyData = createEmptyStackedMonthlyData(year);
+    // Count books by isNewAuthor value (boolean -> Yes/No)
+    const valueCounts: Record<string, number> = {
+      'Yes': 0,
+      'No': 0
+    };
 
-    // Count books per month by status
     userBooks.forEach(book => {
-      if (book.finishDate) {
-        const monthIndex = new Date(book.finishDate).getMonth();
-        if (book.status === 'COMPLETED') {
-          monthlyData[monthIndex].completed++;
-        } else if (book.status === 'DNF') {
-          monthlyData[monthIndex].dnf++;
-        }
+      if (book.isNewAuthor === true) {
+        valueCounts['Yes']++;
+      } else if (book.isNewAuthor === false) {
+        valueCounts['No']++;
       }
     });
 
-    // Process data to trim trailing zeros
-    const processedData = processStackedMonthlyData(monthlyData);
+    // Convert to array format, filtering out zero values
+    const data = Object.entries(valueCounts)
+      .filter(([, value]) => value > 0)
+      .map(([name, value]) => ({ name, value }));
 
     return NextResponse.json({
-      data: processedData,
+      data,
       year,
       total: userBooks.length
     });
   } catch (error) {
-    console.error('Error fetching books per month:', error);
+    console.error('Error fetching new authors:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch books per month' },
+      { error: 'Failed to fetch new authors' },
       { status: 500 }
     );
   }

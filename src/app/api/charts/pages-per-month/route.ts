@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-helpers';
 import prisma from '@/lib/prisma';
-import { createEmptyStackedMonthlyData, processStackedMonthlyData } from '@/lib/charts/processors';
+import { createEmptyMonthlyData, processMonthlyData } from '@/lib/charts/processors';
 
 export async function GET(request: Request) {
   try {
@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
 
     // Get all books completed or DNF'd in the specified year
+    // Include page count from GoogleBook - we'll filter out audiobooks in JS
     const userBooks = await prisma.userBook.findMany({
       where: {
         userId: user.id,
@@ -28,37 +29,50 @@ export async function GET(request: Request) {
       },
       select: {
         finishDate: true,
-        status: true
-      }
-    });
-
-    // Initialize stacked monthly data
-    const monthlyData = createEmptyStackedMonthlyData(year);
-
-    // Count books per month by status
-    userBooks.forEach(book => {
-      if (book.finishDate) {
-        const monthIndex = new Date(book.finishDate).getMonth();
-        if (book.status === 'COMPLETED') {
-          monthlyData[monthIndex].completed++;
-        } else if (book.status === 'DNF') {
-          monthlyData[monthIndex].dnf++;
+        format: true,
+        edition: {
+          select: {
+            googleBook: {
+              select: {
+                pageCount: true
+              }
+            }
+          }
         }
       }
     });
 
+    // Initialize monthly data
+    const monthlyData = createEmptyMonthlyData(year);
+
+    // Sum pages per month, excluding audiobooks
+    let totalPages = 0;
+    userBooks.forEach(book => {
+      // Skip if the format includes AUDIOBOOK
+      if (book.format && book.format.includes('AUDIOBOOK')) {
+        return;
+      }
+
+      if (book.finishDate && book.edition?.googleBook?.pageCount) {
+        const monthIndex = new Date(book.finishDate).getMonth();
+        const pages = book.edition.googleBook.pageCount;
+        monthlyData[monthIndex].value += pages;
+        totalPages += pages;
+      }
+    });
+
     // Process data to trim trailing zeros
-    const processedData = processStackedMonthlyData(monthlyData);
+    const processedData = processMonthlyData(monthlyData);
 
     return NextResponse.json({
       data: processedData,
       year,
-      total: userBooks.length
+      total: totalPages
     });
   } catch (error) {
-    console.error('Error fetching books per month:', error);
+    console.error('Error fetching pages per month:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch books per month' },
+      { error: 'Failed to fetch pages per month' },
       { status: 500 }
     );
   }
