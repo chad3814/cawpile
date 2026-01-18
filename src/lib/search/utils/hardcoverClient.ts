@@ -93,7 +93,7 @@ export class HardcoverClient {
 
           // Validate that parsed result is an array
           if (!Array.isArray(parsed)) {
-            console.error('Hardcover results is not an array:', typeof parsed)
+            console.error('Hardcover results is not an array:', JSON.stringify(parsed, null, 2))
             return []
           }
 
