@@ -46,7 +46,7 @@ export async function getBookById(googleBookId: string): Promise<BookSearchResul
     const response = await fetch(`${GOOGLE_BOOKS_API_URL}/${googleBookId}?${params}`)
     
     if (!response.ok) {
-      console.error("Google Books API error:", response.status)
+      console.error(`Google Books API error: ${response.status} ${response.statusText}\n${await response.text()}`);
       return null
     }
 
