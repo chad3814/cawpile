@@ -34,6 +34,10 @@ export async function searchBooks(
 }
 
 export async function getBookById(googleBookId: string): Promise<BookSearchResult | null> {
+  if (!googleBookId) {
+    console.error(`No googleBookId provided`);
+    return null;
+  }
   try {
     const params = new URLSearchParams({
       key: process.env.GOOGLE_BOOKS_API_KEY || "",

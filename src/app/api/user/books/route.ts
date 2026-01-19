@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     const bookData = await getBookById(googleBooksId)
 
     if (!bookData) {
+      console.error(`No google book data found\n${JSON.stringify(body, null, 4)}`);
       return NextResponse.json(
         { error: 'Book not found' },
         { status: 404 }
