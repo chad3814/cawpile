@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import UserMenu from "./UserMenu"
 import BookSearchModal from "@/components/modals/BookSearchModal"
 import AddBookWizard from "@/components/modals/AddBookWizard"
-import { BookSearchResult } from "@/types/book"
+import type { SignedBookSearchResult } from "@/lib/search/types"
 
 export default function Header() {
   const { status } = useSession()
@@ -15,9 +15,9 @@ export default function Header() {
   const isAuthenticated = status === "authenticated"
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [isAddWizardOpen, setIsAddWizardOpen] = useState(false)
-  const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null)
+  const [selectedBook, setSelectedBook] = useState<SignedBookSearchResult | null>(null)
 
-  const handleSelectBook = (book: BookSearchResult) => {
+  const handleSelectBook = (book: SignedBookSearchResult) => {
     setSelectedBook(book)
     setIsSearchModalOpen(false)
     setIsAddWizardOpen(true)

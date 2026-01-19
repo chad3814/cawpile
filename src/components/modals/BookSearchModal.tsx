@@ -4,19 +4,19 @@ import { Fragment } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useBookSearch } from '@/hooks/useBookSearch'
-import { BookSearchResult } from '@/types/book'
+import type { SignedBookSearchResult } from '@/lib/search/types'
 import Image from 'next/image'
 
 interface BookSearchModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelectBook: (book: BookSearchResult) => void
+  onSelectBook: (book: SignedBookSearchResult) => void
 }
 
 export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookSearchModalProps) {
   const { query, setQuery, results, isLoading, error } = useBookSearch()
 
-  const handleSelectBook = (book: BookSearchResult) => {
+  const handleSelectBook = (book: SignedBookSearchResult) => {
     onSelectBook(book)
     onClose()
     setQuery('')

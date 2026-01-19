@@ -3,7 +3,8 @@
 import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { BookSearchResult, AcquisitionMethod } from '@/types/book'
+import { AcquisitionMethod } from '@/types/book'
+import type { SignedBookSearchResult } from '@/lib/search/types'
 import { BookFormat } from '@prisma/client'
 import Image from 'next/image'
 import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
@@ -15,7 +16,7 @@ import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 interface AddBookWizardProps {
   isOpen: boolean
   onClose: () => void
-  book: BookSearchResult | null
+  book: SignedBookSearchResult | null
   onComplete: () => void
 }
 
@@ -135,7 +136,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          googleBooksId: book.googleId,
+          signedResult: book,
           status: formData.status,
           format: formData.format,
           startDate: formData.startDate,

@@ -434,6 +434,188 @@ export function getEnrichedBookData(edition: EditionWithProviders): EnrichedBook
 }
 
 /**
+ * Map a Google source entry to Prisma GoogleBook create input
+ */
+function mapGoogleSource(source: SourceEntry, editionId: string): Prisma.GoogleBookCreateInput {
+  const data = source.data as SearchProviderResult
+
+  return {
+    googleId: data.googleId || data.id || `google-${Date.now()}`,
+    edition: { connect: { id: editionId } },
+    title: data.title || 'Unknown Title',
+    subtitle: data.subtitle || null,
+    authors: data.authors || [],
+    description: data.description || null,
+    publishedDate: data.publishedDate || null,
+    pageCount: data.pageCount || null,
+    imageUrl: data.imageUrl || null,
+    categories: data.categories || [],
+  }
+}
+
+/**
+ * Create edition and all provider records from a verified signed result
+ * This function assumes the signature has already been verified
+ */
+export async function findOrCreateEditionFromSignedResult(
+  bookId: string,
+  signedResult: SignedBookSearchResult
+): Promise<Edition> {
+  // Build where conditions to find existing edition
+  const whereConditions: Prisma.EditionWhereInput[] = []
+
+  // Check for google source to get googleBooksId
+  const googleSource = signedResult.sources.find(s => s.provider === 'google')
+  const googleId = googleSource?.data?.googleId || googleSource?.data?.id || signedResult.googleId
+
+  if (googleId) {
+    whereConditions.push({ googleBooksId: googleId })
+  }
+
+  if (signedResult.isbn10) {
+    whereConditions.push({ isbn10: signedResult.isbn10 })
+  }
+
+  if (signedResult.isbn13) {
+    whereConditions.push({ isbn13: signedResult.isbn13 })
+  }
+
+  // Try to find existing edition
+  let existingEdition: Edition | null = null
+
+  if (whereConditions.length > 0) {
+    existingEdition = await prisma.edition.findFirst({
+      where: {
+        OR: whereConditions
+      }
+    })
+
+    if (existingEdition) {
+      // Update provider records for existing edition
+      await upsertAllProviderRecords(existingEdition.id, signedResult.sources)
+      return existingEdition
+    }
+  }
+
+  // Create new edition
+  const edition = await prisma.edition.create({
+    data: {
+      bookId,
+      isbn10: signedResult.isbn10 || null,
+      isbn13: signedResult.isbn13 || null,
+      title: signedResult.subtitle
+        ? `${signedResult.title}: ${signedResult.subtitle}`
+        : signedResult.title || null,
+      authors: signedResult.authors || [],
+      googleBooksId: googleId || null,
+    }
+  })
+
+  // Create all provider records
+  await upsertAllProviderRecords(edition.id, signedResult.sources)
+
+  return edition
+}
+
+/**
+ * Create or update all provider records (Google, Hardcover, IBDB) for an edition
+ */
+async function upsertAllProviderRecords(
+  editionId: string,
+  sources: SourceEntry[]
+): Promise<void> {
+  for (const source of sources) {
+    try {
+      if (source.provider === 'google') {
+        const existing = await prisma.googleBook.findUnique({
+          where: { editionId }
+        })
+
+        if (existing) {
+          const data = mapGoogleSource(source, editionId)
+          await prisma.googleBook.update({
+            where: { editionId },
+            data: {
+              title: data.title,
+              subtitle: data.subtitle,
+              authors: data.authors,
+              description: data.description,
+              publishedDate: data.publishedDate,
+              pageCount: data.pageCount,
+              imageUrl: data.imageUrl,
+              categories: data.categories,
+            }
+          })
+        } else {
+          await prisma.googleBook.create({
+            data: mapGoogleSource(source, editionId)
+          })
+        }
+      } else if (source.provider === 'hardcover') {
+        const existing = await prisma.hardcoverBook.findUnique({
+          where: { editionId }
+        })
+
+        if (existing) {
+          const data = mapHardcoverSource(source, editionId)
+          await prisma.hardcoverBook.update({
+            where: { editionId },
+            data: {
+              title: data.title,
+              subtitle: data.subtitle,
+              authors: data.authors,
+              description: data.description,
+              releaseDate: data.releaseDate,
+              pages: data.pages,
+              imageUrl: data.imageUrl,
+              categories: data.categories,
+              isbn: data.isbn,
+              isbn13: data.isbn13,
+              hardcoverSlug: data.hardcoverSlug,
+              openLibraryId: data.openLibraryId,
+              goodReadsId: data.goodReadsId,
+            }
+          })
+        } else {
+          await prisma.hardcoverBook.create({
+            data: mapHardcoverSource(source, editionId)
+          })
+        }
+      } else if (source.provider === 'ibdb') {
+        const existing = await prisma.ibdbBook.findUnique({
+          where: { editionId }
+        })
+
+        if (existing) {
+          const data = mapIbdbSource(source, editionId)
+          await prisma.ibdbBook.update({
+            where: { editionId },
+            data: {
+              title: data.title,
+              authors: data.authors,
+              description: data.description,
+              publishedDate: data.publishedDate,
+              pageCount: data.pageCount,
+              imageUrl: data.imageUrl,
+              categories: data.categories,
+              isbn10: data.isbn10,
+              isbn13: data.isbn13,
+            }
+          })
+        } else {
+          await prisma.ibdbBook.create({
+            data: mapIbdbSource(source, editionId)
+          })
+        }
+      }
+      // Skip 'local' provider - it's already in our database
+    } catch (error) {
+      console.error(`Failed to upsert ${source.provider} record:`, error)
+    }
+  }
+}
+
+/**
  * Export upsert function for use in re-sync API
  */
 export { upsertProviderRecords }

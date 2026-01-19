@@ -1,5 +1,4 @@
-import type { SearchProvider, SearchProviderResult, ProviderSearchResponse } from "./types"
-import type { BookSearchResult } from "@/types/book"
+import type { SearchProvider, SearchProviderResult, ProviderSearchResponse, SignedBookSearchResult } from "./types"
 import { mergeResults } from "./utils/resultMerger"
 
 export class SearchOrchestrator {
@@ -16,7 +15,7 @@ export class SearchOrchestrator {
   /**
    * Search across all registered providers in parallel
    */
-  async search(query: string, limit: number = 10): Promise<BookSearchResult[]> {
+  async search(query: string, limit: number = 10): Promise<SignedBookSearchResult[]> {
     if (this.providers.length === 0) {
       console.warn("No search providers registered")
       return []

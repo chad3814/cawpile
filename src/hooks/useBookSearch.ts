@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { BookSearchResult } from '@/types/book'
+import type { SignedBookSearchResult } from '@/lib/search/types'
 
 export function useBookSearch() {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<BookSearchResult[]>([])
+  const [results, setResults] = useState<SignedBookSearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

@@ -3,16 +3,16 @@
 import { useState } from 'react'
 import BookSearchModal from '@/components/modals/BookSearchModal'
 import AddBookWizard from '@/components/modals/AddBookWizard'
-import { BookSearchResult } from '@/types/book'
+import type { SignedBookSearchResult } from '@/lib/search/types'
 import { useRouter } from 'next/navigation'
 
 export default function EmptyLibrary() {
   const router = useRouter()
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [isAddWizardOpen, setIsAddWizardOpen] = useState(false)
-  const [selectedBook, setSelectedBook] = useState<BookSearchResult | null>(null)
+  const [selectedBook, setSelectedBook] = useState<SignedBookSearchResult | null>(null)
 
-  const handleSelectBook = (book: BookSearchResult) => {
+  const handleSelectBook = (book: SignedBookSearchResult) => {
     setSelectedBook(book)
     setIsSearchModalOpen(false)
     setIsAddWizardOpen(true)

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
-import { getBookById } from '@/lib/googleBooks'
-import { findOrCreateBook, findOrCreateEdition } from '@/lib/db/books'
+import { findOrCreateBook, findOrCreateEditionFromSignedResult } from '@/lib/db/books'
 import prisma from '@/lib/prisma'
 import { BookStatus, BookFormat, Prisma } from '@prisma/client'
 import type { SignedBookSearchResult } from '@/lib/search/types'
+import { verifySignature } from '@/lib/search/utils/signResult'
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
-      googleBooksId,
       signedResult,
       status,
       format,
@@ -33,8 +32,7 @@ export async function POST(request: NextRequest) {
       readathonName,
       isReread
     } = body as {
-      googleBooksId: string
-      signedResult?: SignedBookSearchResult
+      signedResult: SignedBookSearchResult
       status: BookStatus
       format: BookFormat[]
       startDate?: string
@@ -45,6 +43,22 @@ export async function POST(request: NextRequest) {
       bookClubName?: string
       readathonName?: string
       isReread?: boolean
+    }
+
+    // Validate signed result is provided
+    if (!signedResult) {
+      return NextResponse.json(
+        { error: 'Signed result is required' },
+        { status: 400 }
+      )
+    }
+
+    // Verify signature before processing
+    if (!verifySignature(signedResult)) {
+      return NextResponse.json(
+        { error: 'Invalid signature - book data may have been tampered with' },
+        { status: 400 }
+      )
     }
 
     // Validate format array
@@ -69,16 +83,8 @@ export async function POST(request: NextRequest) {
     // Remove duplicates from format array
     const uniqueFormats = Array.from(new Set(format))
 
-    // Fetch book data from Google Books
-    const bookData = await getBookById(googleBooksId)
-
-    if (!bookData) {
-      console.error(`No google book data found\n${JSON.stringify(body, null, 4)}`);
-      return NextResponse.json(
-        { error: 'Book not found' },
-        { status: 404 }
-      )
-    }
+    // Extract book data from the verified signed result
+    const bookData = signedResult
 
     // Find or create book (now with book type detection)
     const book = await findOrCreateBook(
@@ -88,10 +94,8 @@ export async function POST(request: NextRequest) {
       bookData.categories // Pass categories for book type detection
     )
 
-    // Find or create edition, passing signed result if provided
-    // The findOrCreateEdition function will verify the signature and
-    // only persist provider data if verification passes
-    const edition = await findOrCreateEdition(book.id, bookData, signedResult)
+    // Find or create edition using the verified signed result data
+    const edition = await findOrCreateEditionFromSignedResult(book.id, signedResult)
 
     // Check if user already has this book
     const existingUserBook = await prisma.userBook.findUnique({
