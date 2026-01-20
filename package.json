@@ -2,9 +2,6 @@
   "name": "cawpile",
   "version": "0.1.0",
   "private": true,
-  "overrides": {
-    "diff": "^8.0.3"
-  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build --turbopack",
@@ -32,7 +29,7 @@
     "prisma": "^6.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "recharts": "^3.2.0",
+    "recharts": "3.2.0",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
@@ -52,7 +49,6 @@
     "jest-environment-jsdom": "^30.2.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
-    "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "typescript": "^5"
   }
