@@ -164,6 +164,7 @@ export default function UpdateProgressModal({
                     type="number"
                     value={progressValue}
                     onChange={(e) => setProgressValue(e.target.value)}
+                    onFocus={(e) => e.target.select()}
                     min="0"
                     max={progressType === 'percentage' ? '100' : book.pageCount?.toString()}
                     className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
