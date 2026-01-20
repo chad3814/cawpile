@@ -27,7 +27,6 @@ describe('Social Sharing E2E Integration', () => {
   let testUserBookId: string
   let testBookId: string
   let testBookTitle: string
-  let testEditionId: string
 
   beforeAll(async () => {
     // Create test user
@@ -56,7 +55,6 @@ describe('Social Sharing E2E Integration', () => {
         isbn13: `978${nanoid(10)}`,
       },
     })
-    testEditionId = edition.id
 
     // Create Google Book metadata with required googleId field
     const googleId = `gb-${nanoid(10)}`

@@ -23,7 +23,6 @@ describe('Share API Endpoints', () => {
   let testUserId: string
   let testUserBookId: string
   let testBookId: string
-  let testEditionId: string
 
   beforeAll(async () => {
     // Create test user
@@ -50,7 +49,6 @@ describe('Share API Endpoints', () => {
         isbn13: `978${nanoid(10)}`,
       },
     })
-    testEditionId = edition.id
 
     const userBook = await prisma.userBook.create({
       data: {

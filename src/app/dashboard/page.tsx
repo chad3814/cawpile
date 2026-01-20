@@ -2,6 +2,38 @@ import { getCurrentUser } from "@/lib/auth-helpers"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import DashboardClient from "@/components/dashboard/DashboardClient"
+import type { LibrarySortBy, LibrarySortOrder } from "@prisma/client"
+
+// Helper to build orderBy based on user preferences
+function buildOrderBy(sortBy: LibrarySortBy, sortOrder: LibrarySortOrder) {
+  const order = sortOrder.toLowerCase() as 'asc' | 'desc'
+  const nullsPosition = sortOrder === 'DESC' ? 'first' : 'last'
+
+  // Primary sort is always by status
+  const statusOrder = { status: 'asc' as const }
+
+  // Secondary sort based on user preference
+  let secondaryOrder: Record<string, unknown>
+
+  switch (sortBy) {
+    case 'END_DATE':
+      secondaryOrder = { finishDate: { sort: order, nulls: nullsPosition } }
+      break
+    case 'START_DATE':
+      secondaryOrder = { startDate: { sort: order, nulls: nullsPosition } }
+      break
+    case 'TITLE':
+      // Title sort needs to go through the relation
+      secondaryOrder = { edition: { book: { title: order } } }
+      break
+    case 'DATE_ADDED':
+    default:
+      secondaryOrder = { createdAt: order }
+      break
+  }
+
+  return [statusOrder, secondaryOrder]
+}
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -10,16 +42,21 @@ export default async function DashboardPage() {
     redirect("/auth/signin")
   }
 
-  // Fetch user's preferences including reading goal
+  // Fetch user's preferences including reading goal and sort preferences
   const userWithPreferences = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
       dashboardLayout: true,
       readingGoal: true,
+      librarySortBy: true,
+      librarySortOrder: true,
     }
   })
 
-  // Fetch user's books
+  const sortBy = userWithPreferences?.librarySortBy || 'END_DATE'
+  const sortOrder = userWithPreferences?.librarySortOrder || 'DESC'
+
+  // Fetch user's books with dynamic sorting
   const userBooks = await prisma.userBook.findMany({
     where: {
       userId: user.id
@@ -33,14 +70,7 @@ export default async function DashboardPage() {
       },
       cawpileRating: true
     },
-    orderBy: [
-      {
-        status: 'asc'
-      },
-      {
-        createdAt: 'desc'
-      }
-    ]
+    orderBy: buildOrderBy(sortBy, sortOrder)
   })
 
   // Get statistics
@@ -70,6 +100,8 @@ export default async function DashboardPage() {
       <DashboardClient
         books={userBooks}
         initialLayout={userWithPreferences?.dashboardLayout || 'GRID'}
+        initialSortBy={sortBy}
+        initialSortOrder={sortOrder}
         userName={user?.name?.split(" ")[0]}
       />
 

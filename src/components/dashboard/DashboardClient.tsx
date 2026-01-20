@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import LayoutToggle from './LayoutToggle'
+import SortDropdown from './SortDropdown'
 import ViewSwitcher from './ViewSwitcher'
 import TabNavigation from './TabNavigation'
 import { ChartsTab } from '@/components/charts/ChartsTab'
 import { ChartDataProvider } from '@/contexts/ChartDataContext'
-import { BookStatus, BookFormat } from '@prisma/client'
+import { BookStatus, BookFormat, LibrarySortBy, LibrarySortOrder } from '@prisma/client'
 
 interface BookData {
   id: string
@@ -46,11 +47,15 @@ interface BookData {
 interface DashboardClientProps {
   books: BookData[]
   initialLayout: 'GRID' | 'TABLE'
+  initialSortBy: LibrarySortBy
+  initialSortOrder: LibrarySortOrder
   userName?: string
 }
 
-export default function DashboardClient({ books, initialLayout, userName }: DashboardClientProps) {
+export default function DashboardClient({ books, initialLayout, initialSortBy, initialSortOrder, userName }: DashboardClientProps) {
   const [layout, setLayout] = useState<'GRID' | 'TABLE'>(initialLayout)
+  const [sortBy, setSortBy] = useState<LibrarySortBy>(initialSortBy)
+  const [sortOrder, setSortOrder] = useState<LibrarySortOrder>(initialSortOrder)
   const [activeTab, setActiveTab] = useState<'books' | 'charts'>('books')
 
   const handleLayoutChange = async (newLayout: 'GRID' | 'TABLE') => {
@@ -77,6 +82,32 @@ export default function DashboardClient({ books, initialLayout, userName }: Dash
     }
   }
 
+  const handleSortChange = async (newSortBy: LibrarySortBy, newSortOrder: LibrarySortOrder) => {
+    // Optimistic update
+    setSortBy(newSortBy)
+    setSortOrder(newSortOrder)
+
+    // Save to database
+    try {
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ librarySortBy: newSortBy, librarySortOrder: newSortOrder }),
+      })
+
+      if (response.ok) {
+        // Reload the page to refetch sorted data from server
+        window.location.reload()
+      } else {
+        console.error('Failed to save sort preference')
+      }
+    } catch (error) {
+      console.error('Error saving sort preference:', error)
+    }
+  }
+
   return (
     <ChartDataProvider>
       <>
@@ -91,10 +122,17 @@ export default function DashboardClient({ books, initialLayout, userName }: Dash
               </p>
             </div>
             {activeTab === 'books' && (
-              <LayoutToggle
-                currentLayout={layout}
-                onLayoutChange={handleLayoutChange}
-              />
+              <div className="flex items-center gap-2">
+                <SortDropdown
+                  currentSortBy={sortBy}
+                  currentSortOrder={sortOrder}
+                  onSortChange={handleSortChange}
+                />
+                <LayoutToggle
+                  currentLayout={layout}
+                  onLayoutChange={handleLayoutChange}
+                />
+              </div>
             )}
           </div>
         </div>

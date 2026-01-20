@@ -20,6 +20,8 @@ model User {
   profilePictureUrl String?
   showCurrentlyReading Boolean   @default(false)
   dashboardLayout DashboardLayout @default(GRID)
+  librarySortBy   LibrarySortBy    @default(END_DATE)
+  librarySortOrder LibrarySortOrder @default(DESC)
   image         String?
   isAdmin       Boolean          @default(false)
   isSuperAdmin  Boolean          @default(false)
@@ -278,6 +280,18 @@ enum BookType {
 enum DashboardLayout {
   GRID
   TABLE
+}
+
+enum LibrarySortBy {
+  END_DATE
+  START_DATE
+  TITLE
+  DATE_ADDED
+}
+
+enum LibrarySortOrder {
+  ASC
+  DESC
 }
 
 // Admin audit log for tracking all admin actions

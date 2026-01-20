@@ -305,6 +305,7 @@ export default function ShareReviewModal({
                       </Dialog.Title>
                       <button
                         onClick={onClose}
+                        title="Close"
                         className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                       >
                         <XMarkIcon className="h-6 w-6" />
@@ -326,7 +327,9 @@ export default function ShareReviewModal({
                         </div>
                       ) : generatedImageUrl ? (
                         <div className="relative w-full" style={{ aspectRatio: '9/16', maxHeight: '400px' }}>
-                          <img
+                          {
+                          // eslint-disable-next-line @next/next/no-img-element, @next/next/no-img-element
+                          }<img
                             src={generatedImageUrl}
                             alt="Generated review image"
                             className="w-full h-full object-contain rounded-lg border border-gray-200 dark:border-gray-700"
@@ -368,6 +371,7 @@ export default function ShareReviewModal({
                       </Dialog.Title>
                       <button
                         onClick={onClose}
+                        title="Close"
                         className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
                       >
                         <XMarkIcon className="h-6 w-6" />
@@ -407,6 +411,7 @@ export default function ShareReviewModal({
                           <input
                             type="text"
                             value={shareUrl}
+                            title="Share URL"
                             readOnly
                             className="flex-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm shadow-sm focus:border-orange-500 focus:ring-orange-500"
                           />

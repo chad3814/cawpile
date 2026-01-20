@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const { dashboardLayout } = body
+    const { dashboardLayout, librarySortBy, librarySortOrder } = body
 
     // Validate the layout value
     if (dashboardLayout && !['GRID', 'TABLE'].includes(dashboardLayout)) {
@@ -24,14 +24,33 @@ export async function PATCH(request: Request) {
       )
     }
 
+    // Validate sort preferences
+    if (librarySortBy && !['END_DATE', 'START_DATE', 'TITLE', 'DATE_ADDED'].includes(librarySortBy)) {
+      return NextResponse.json(
+        { error: 'Invalid library sort by value' },
+        { status: 400 }
+      )
+    }
+
+    if (librarySortOrder && !['ASC', 'DESC'].includes(librarySortOrder)) {
+      return NextResponse.json(
+        { error: 'Invalid library sort order value' },
+        { status: 400 }
+      )
+    }
+
     // Update user preferences
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         ...(dashboardLayout && { dashboardLayout }),
+        ...(librarySortBy && { librarySortBy }),
+        ...(librarySortOrder && { librarySortOrder }),
       },
       select: {
         dashboardLayout: true,
+        librarySortBy: true,
+        librarySortOrder: true,
       },
     })
 
