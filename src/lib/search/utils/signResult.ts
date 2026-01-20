@@ -14,10 +14,16 @@ if (!SEARCH_SIGNING_SECRET) {
 /**
  * Deterministically stringify an object with sorted keys
  * Ensures the same input always produces the same string output
+ * Skips undefined values to match JSON.stringify behavior (JSON has no undefined)
  */
 function stableStringify(obj: unknown): string {
-  if (obj === null || obj === undefined) {
-    return JSON.stringify(obj)
+  if (obj === null) {
+    return "null"
+  }
+
+  if (obj === undefined) {
+    // This shouldn't happen at top level, but handle it
+    return "null"
   }
 
   if (Array.isArray(obj)) {
@@ -26,10 +32,15 @@ function stableStringify(obj: unknown): string {
 
   if (typeof obj === "object") {
     const sortedKeys = Object.keys(obj as Record<string, unknown>).sort()
-    const pairs = sortedKeys.map((key) => {
+    const pairs: string[] = []
+    for (const key of sortedKeys) {
       const value = (obj as Record<string, unknown>)[key]
-      return JSON.stringify(key) + ":" + stableStringify(value)
-    })
+      // Skip undefined values - they don't survive JSON round-trip
+      if (value === undefined) {
+        continue
+      }
+      pairs.push(JSON.stringify(key) + ":" + stableStringify(value))
+    }
     return "{" + pairs.join(",") + "}"
   }
 
@@ -78,11 +89,13 @@ export function signResults(
  */
 export function verifySignature(result: SignedBookSearchResult): boolean {
   if (!SEARCH_SIGNING_SECRET || SEARCH_SIGNING_SECRET.length < 32) {
+    console.error("Signature verification failed: SEARCH_SIGNING_SECRET not configured or too short")
     return false
   }
 
   // Check if signature is present
   if (!result.signature) {
+    console.error("Signature verification failed: No signature present")
     return false
   }
 
