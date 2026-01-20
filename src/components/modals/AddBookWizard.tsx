@@ -42,7 +42,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<BookFormData>({
     status: 'WANT_TO_READ',
-    format: [BookFormat.PAPERBACK],
+    format: [],
   })
 
   // Set default finish date when reaching completion step
@@ -77,7 +77,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     setCurrentStep(1)
     setFormData({
       status: 'WANT_TO_READ',
-      format: [BookFormat.PAPERBACK],
+      format: [],
     })
     onClose()
   }, [onClose])
@@ -342,6 +342,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                         max="100"
                         value={formData.progress || 0}
                         onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value, 10) })}
+                        onFocus={(e) => e.target.select()}
                         title="Progress"
                         className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                       />
@@ -410,7 +411,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                     <button
                       type="button"
                       onClick={handleNext}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || (currentStep === 1 && formData.format.length === 0)}
                       className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
                     >
                       {currentStep === getTotalSteps()
