@@ -2,47 +2,13 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { BookStatus, BookFormat } from '@prisma/client'
+import { BookStatus } from '@prisma/client'
 import { convertToStars } from '@/types/cawpile'
 import EmptyLibrary from './EmptyLibrary'
-
-interface BookData {
-  id: string
-  status: BookStatus
-  format: BookFormat[]
-  progress: number
-  startDate: Date | null
-  finishDate: Date | null
-  createdAt: Date
-  edition: {
-    id: string
-    title: string | null
-    book: {
-      title: string
-      authors: string[]
-      bookType?: 'FICTION' | 'NONFICTION'
-    }
-    googleBook: {
-      imageUrl: string | null
-      description: string | null
-      pageCount: number | null
-    } | null
-  }
-  cawpileRating?: {
-    id: string
-    average: number
-    characters: number | null
-    atmosphere: number | null
-    writing: number | null
-    plot: number | null
-    intrigue: number | null
-    logic: number | null
-    enjoyment: number | null
-  } | null
-}
+import type { DashboardBookData } from '@/types/dashboard'
 
 interface BookTableProps {
-  books: BookData[]
+  books: DashboardBookData[]
 }
 
 export default function BookTable({ books }: BookTableProps) {
@@ -99,14 +65,14 @@ export default function BookTable({ books }: BookTableProps) {
     return monthYear
   }
 
-  const renderRating = (rating: BookData['cawpileRating']) => {
+  const renderRating = (rating: DashboardBookData['cawpileRating']) => {
     if (!rating) return '--'
     const stars = convertToStars(rating.average)
     if (stars === 0) return '--'
     return '⭐'.repeat(stars)
   }
 
-  const renderBookRow = (book: BookData) => {
+  const renderBookRow = (book: DashboardBookData) => {
     const displayTitle = book.edition.title || book.edition.book.title
     const authors = book.edition.book.authors.join(', ')
     const imageUrl = book.edition.googleBook?.imageUrl

@@ -68,7 +68,17 @@ export default async function DashboardPage() {
           googleBook: true
         }
       },
-      cawpileRating: true
+      cawpileRating: true,
+      sharedReview: {
+        select: {
+          id: true,
+          shareToken: true,
+          showDates: true,
+          showBookClubs: true,
+          showReadathons: true,
+          showReview: true,
+        }
+      }
     },
     orderBy: buildOrderBy(sortBy, sortOrder)
   })

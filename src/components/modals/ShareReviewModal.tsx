@@ -57,7 +57,7 @@ interface ShareReviewModalProps {
     cawpileRating?: CawpileRating | null
   }
   existingShare: SharedReview | null
-  setShareData: (data: SharedReview | null) => void
+  setShareData?: (data: SharedReview | null) => void
 }
 
 export default function ShareReviewModal({
@@ -135,7 +135,7 @@ export default function ShareReviewModal({
         await copyToClipboard(data.shareUrl)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
-        setShareData(data);
+        setShareData?.(data);
       }
 
       router.refresh()
@@ -168,7 +168,7 @@ export default function ShareReviewModal({
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update share settings')
       }
-      setShareData(data);
+      setShareData?.(data);
       router.refresh()
       onClose()
     } catch (err) {
@@ -195,7 +195,7 @@ export default function ShareReviewModal({
         const data = await response.json()
         throw new Error(data.error || 'Failed to delete share link')
       }
-      setShareData(null);
+      setShareData?.(null);
       router.refresh()
       onClose()
     } catch (err) {

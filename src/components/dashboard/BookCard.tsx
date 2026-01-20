@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import { BookStatus, BookFormat } from '@prisma/client'
+import { BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
 import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
 import ChangeFormatModal from '@/components/modals/ChangeFormatModal'
@@ -16,70 +16,14 @@ import CawpileFacetDisplay from '@/components/rating/CawpileFacetDisplay'
 import TrackingBadges from '@/components/book/TrackingBadges'
 import { BookType, convertToStars } from '@/types/cawpile'
 import { RepresentationValue } from '@/types/book'
+import type { DashboardBookData } from '@/types/dashboard'
 import { useRouter } from 'next/navigation'
 import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 
-interface SharedReview {
-  id: string
-  shareToken: string
-  showDates: boolean
-  showBookClubs: boolean
-  showReadathons: boolean
-  showReview: boolean
-}
-
 interface BookCardProps {
-  book: {
-    id: string
-    status: BookStatus
-    format: BookFormat[]
-    progress: number
-    startDate: Date | null
-    finishDate: Date | null
-    createdAt: Date
-    review?: string | null
-    acquisitionMethod?: string | null
-    acquisitionOther?: string | null
-    bookClubName?: string | null
-    readathonName?: string | null
-    isReread?: boolean | null
-    dnfReason?: string | null
-    lgbtqRepresentation?: string | null
-    lgbtqDetails?: string | null
-    disabilityRepresentation?: string | null
-    disabilityDetails?: string | null
-    isNewAuthor?: boolean | null
-    authorPoc?: string | null
-    authorPocDetails?: string | null
-    notes?: string | null
-    edition: {
-      id: string
-      title: string | null
-      book: {
-        title: string
-        authors: string[]
-        bookType?: 'FICTION' | 'NONFICTION'
-      }
-      googleBook: {
-        imageUrl: string | null
-        description: string | null
-        pageCount: number | null
-      } | null
-    }
-    cawpileRating?: {
-      id: string
-      average: number
-      characters: number | null
-      atmosphere: number | null
-      writing: number | null
-      plot: number | null
-      intrigue: number | null
-      logic: number | null
-      enjoyment: number | null
-    } | null
-  }
+  book: DashboardBookData
 }
 
 const statusColors = {
@@ -114,7 +58,6 @@ export default function BookCard({ book }: BookCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
-  const [shareData, setShareData] = useState<SharedReview | null>(null)
   const [selectedFormat, setSelectedFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
@@ -134,27 +77,6 @@ export default function BookCard({ book }: BookCardProps) {
     authorPoc: book.authorPoc as RepresentationValue | null,
     authorPocDetails: book.authorPocDetails
   }
-
-  // Fetch existing share data if book is eligible
-  useEffect(() => {
-    if (canShare) {
-      fetch(`/api/user/books/${book.id}/share`)
-        .then(res => {
-          if (res.ok) {
-            return res.json()
-          }
-          return null
-        })
-        .then(data => {
-          if (data) {
-            setShareData(data)
-          }
-        })
-        .catch(() => {
-          // Silently fail - share doesn't exist
-        })
-    }
-  }, [book.id, canShare])
 
   const handleUpdateProgress = async (bookId: string, progress: number) => {
     try {
@@ -690,8 +612,7 @@ export default function BookCard({ book }: BookCardProps) {
           edition: book.edition,
           cawpileRating: book.cawpileRating,
         }}
-        existingShare={shareData}
-        setShareData={setShareData}
+        existingShare={book.sharedReview ?? null}
       />
     )}
     </>

@@ -2,45 +2,10 @@
 
 import BookCard from './BookCard'
 import EmptyLibrary from './EmptyLibrary'
-import { BookStatus, BookFormat } from '@prisma/client'
-
-interface BookData {
-  id: string
-  status: BookStatus
-  format: BookFormat[]
-  progress: number
-  startDate: Date | null
-  finishDate: Date | null
-  createdAt: Date
-  edition: {
-    id: string
-    title: string | null
-    book: {
-      title: string
-      authors: string[]
-      bookType?: 'FICTION' | 'NONFICTION'
-    }
-    googleBook: {
-      imageUrl: string | null
-      description: string | null
-      pageCount: number | null
-    } | null
-  }
-  cawpileRating?: {
-    id: string
-    average: number
-    characters: number | null
-    atmosphere: number | null
-    writing: number | null
-    plot: number | null
-    intrigue: number | null
-    logic: number | null
-    enjoyment: number | null
-  } | null
-}
+import type { DashboardBookData } from '@/types/dashboard'
 
 interface BookGridProps {
-  books: BookData[]
+  books: DashboardBookData[]
 }
 
 export default function BookGrid({ books }: BookGridProps) {
