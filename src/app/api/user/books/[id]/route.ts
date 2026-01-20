@@ -142,6 +142,10 @@ export async function PATCH(
     if (status === 'READING' && !userBook.startDate && !startDate) {
       updateData.startDate = new Date()
     }
+    // Auto-set finishDate when status changes to DNF and no finishDate is provided
+    if (status === 'DNF' && !userBook.finishDate && finishDate === undefined) {
+      updateData.finishDate = new Date()
+    }
     // Clear DNF reason if status changes from DNF to something else
     if (status && status !== 'DNF' && userBook.status === 'DNF') {
       updateData.dnfReason = null

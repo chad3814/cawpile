@@ -27,6 +27,7 @@ interface BookFormData {
   format: BookFormat[]
   startDate?: string
   finishDate?: string
+  dnfDate?: string
   progress?: number
   didFinish?: boolean
   // New tracking fields
@@ -45,7 +46,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     format: [],
   })
 
-  // Set default finish date when reaching completion step
+  // Set default finish date when reaching completion step (for COMPLETED)
   useEffect(() => {
     if (currentStep === 4 && formData.status === 'COMPLETED' && formData.didFinish === true && !formData.finishDate) {
       if (formData.startDate) {
@@ -72,6 +73,33 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
       }
     }
   }, [currentStep, formData.status, formData.didFinish, formData.startDate, formData.finishDate])
+
+  // Set default DNF date when didFinish is false
+  useEffect(() => {
+    if (currentStep === 4 && formData.status === 'COMPLETED' && formData.didFinish === false && !formData.dnfDate) {
+      if (formData.startDate) {
+        const startDate = new Date(formData.startDate)
+        const today = new Date()
+
+        // Use the start date's month and year, but today's day
+        const defaultDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          Math.max(startDate.getDate(), Math.min(today.getDate(), new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate()))
+        )
+
+        // If the default date is in the future, use today
+        if (defaultDate > today) {
+          setFormData(prev => ({ ...prev, dnfDate: today.toISOString().split('T')[0] }))
+        } else {
+          setFormData(prev => ({ ...prev, dnfDate: defaultDate.toISOString().split('T')[0] }))
+        }
+      } else {
+        // No start date, default to today
+        setFormData(prev => ({ ...prev, dnfDate: new Date().toISOString().split('T')[0] }))
+      }
+    }
+  }, [currentStep, formData.status, formData.didFinish, formData.startDate, formData.dnfDate])
 
   const handleClose = useCallback(() => {
     setCurrentStep(1)
@@ -122,9 +150,19 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
     setIsSubmitting(true)
 
     try {
+      // Determine actual status and finishDate
+      let actualStatus: 'WANT_TO_READ' | 'READING' | 'COMPLETED' | 'DNF' = formData.status
+      let actualFinishDate = formData.finishDate
+
+      // If user selected Completed but chose "No, I did not finish" -> DNF
+      if (formData.status === 'COMPLETED' && formData.didFinish === false) {
+        actualStatus = 'DNF'
+        actualFinishDate = formData.dnfDate
+      }
+
       // Calculate progress if needed
       let progress = 0
-      if (formData.status === 'COMPLETED') {
+      if (actualStatus === 'COMPLETED') {
         progress = 100
       } else if (formData.status === 'READING' && formData.progress) {
         progress = formData.progress
@@ -137,10 +175,10 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
         },
         body: JSON.stringify({
           signedResult: book,
-          status: formData.status,
+          status: actualStatus,
           format: formData.format,
           startDate: formData.startDate,
-          finishDate: formData.finishDate,
+          finishDate: actualFinishDate,
           progress,
           // New tracking fields
           acquisitionMethod: formData.acquisitionMethod,
@@ -166,6 +204,9 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
   }
 
   if (!book) return null
+
+  const minDate = formData.startDate || undefined
+  const maxDate = new Date().toISOString().split('T')[0]
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -386,10 +427,33 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                             type="date"
                             value={formData.finishDate || ''}
                             onChange={(e) => setFormData({ ...formData, finishDate: e.target.value })}
-                            max={new Date().toISOString().split('T')[0]}
+                            min={minDate}
+                            max={maxDate}
                             title="End Date"
                             className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
                           />
+                        </div>
+                      )}
+
+                      {formData.didFinish === false && (
+                        <div className="mt-4">
+                          <label className="text-sm font-semibold text-card-foreground">
+                            When did you stop reading?
+                          </label>
+                          <input
+                            type="date"
+                            value={formData.dnfDate || ''}
+                            onChange={(e) => setFormData({ ...formData, dnfDate: e.target.value })}
+                            min={minDate}
+                            max={maxDate}
+                            title="DNF Date"
+                            className="mt-2 block w-full rounded-md border border-border bg-input px-3 py-2 text-sm text-card-foreground focus-ring"
+                          />
+                          {formData.startDate && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Started on {new Date(formData.startDate).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

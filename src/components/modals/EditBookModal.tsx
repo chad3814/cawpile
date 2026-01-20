@@ -23,6 +23,7 @@ interface EditBookModalProps {
     title: string
     status: BookStatus
     format: BookFormat[]
+    finishDate?: Date | null
     acquisitionMethod?: string | null
     acquisitionOther?: string | null
     bookClubName?: string | null
@@ -53,6 +54,11 @@ export default function EditBookModal({
   const [status, setStatus] = useState(book.status)
   const [format, setFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const [dnfReason, setDnfReason] = useState(book.dnfReason || '')
+  const [dnfDate, setDnfDate] = useState(
+    book.finishDate && book.status === BookStatus.DNF
+      ? new Date(book.finishDate).toISOString().split('T')[0]
+      : ''
+  )
   const [notes, setNotes] = useState(book.notes || '')
 
   // Tracking fields
@@ -79,12 +85,16 @@ export default function EditBookModal({
   )
   const [authorPocDetails, setAuthorPocDetails] = useState(book.authorPocDetails || '')
 
-  // Clear DNF reason if status changes from DNF
+  // Clear DNF reason and set default date when status changes to DNF
   useEffect(() => {
+    if (status === BookStatus.DNF && !dnfDate) {
+      // Default to today's date
+      setDnfDate(new Date().toISOString().split('T')[0])
+    }
     if (status !== BookStatus.DNF) {
       setDnfReason('')
     }
-  }, [status])
+  }, [status, dnfDate])
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -116,6 +126,7 @@ export default function EditBookModal({
           status,
           format,
           dnfReason: status === BookStatus.DNF ? dnfReason : undefined,
+          finishDate: status === BookStatus.DNF && dnfDate ? dnfDate : undefined,
           notes: notes || undefined,
           ...trackingData,
           ...additionalData
@@ -134,6 +145,8 @@ export default function EditBookModal({
       setIsSubmitting(false)
     }
   }
+
+  const maxDate = new Date().toISOString().split('T')[0]
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -241,23 +254,39 @@ export default function EditBookModal({
                       </div>
 
                       {status === BookStatus.DNF && (
-                        <div>
-                          <label htmlFor="dnf-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            DNF Reason (optional)
-                          </label>
-                          <textarea
-                            id="dnf-reason"
-                            value={dnfReason}
-                            onChange={(e) => setDnfReason(e.target.value)}
-                            maxLength={500}
-                            rows={4}
-                            placeholder="Why did you not finish this book?"
-                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                          />
-                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            {dnfReason.length}/500 characters
-                          </p>
-                        </div>
+                        <>
+                          <div>
+                            <label htmlFor="dnf-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              When did you stop reading?
+                            </label>
+                            <input
+                              id="dnf-date"
+                              type="date"
+                              value={dnfDate}
+                              onChange={(e) => setDnfDate(e.target.value)}
+                              max={maxDate}
+                              className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label htmlFor="dnf-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              DNF Reason (optional)
+                            </label>
+                            <textarea
+                              id="dnf-reason"
+                              value={dnfReason}
+                              onChange={(e) => setDnfReason(e.target.value)}
+                              maxLength={500}
+                              rows={4}
+                              placeholder="Why did you not finish this book?"
+                              className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                            />
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              {dnfReason.length}/500 characters
+                            </p>
+                          </div>
+                        </>
                       )}
 
                       <div>

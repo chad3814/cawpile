@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     // Get all books completed or DNF'd in the specified year
     // Include page count from GoogleBook - we'll filter out audiobooks in JS
+    // Also include status and progress for DNF page calculation
     const userBooks = await prisma.userBook.findMany({
       where: {
         userId: user.id,
@@ -30,6 +31,8 @@ export async function GET(request: Request) {
       select: {
         finishDate: true,
         format: true,
+        status: true,
+        progress: true,
         edition: {
           select: {
             googleBook: {
@@ -55,7 +58,23 @@ export async function GET(request: Request) {
 
       if (book.finishDate && book.edition?.googleBook?.pageCount) {
         const monthIndex = new Date(book.finishDate).getMonth();
-        const pages = book.edition.googleBook.pageCount;
+        const basePageCount = book.edition.googleBook.pageCount;
+
+        let pages: number;
+
+        // For DNF books, calculate pages based on progress
+        if (book.status === 'DNF') {
+          // Skip DNF books with 0% progress
+          if (book.progress === 0) {
+            return;
+          }
+          // Calculate proportional pages based on progress
+          pages = Math.round(basePageCount * (book.progress / 100));
+        } else {
+          // COMPLETED books use full page count
+          pages = basePageCount;
+        }
+
         monthlyData[monthIndex].value += pages;
         totalPages += pages;
       }

@@ -210,7 +210,7 @@ export default function BookCard({ book }: BookCardProps) {
     }
   }
 
-  const handleMarkDNF = async (bookId: string, reason?: string) => {
+  const handleMarkDNF = async (bookId: string, reason?: string, finishDate?: string) => {
     try {
       const response = await fetch(`/api/user/books/${bookId}`, {
         method: 'PATCH',
@@ -219,7 +219,8 @@ export default function BookCard({ book }: BookCardProps) {
         },
         body: JSON.stringify({
           status: 'DNF',
-          dnfReason: reason
+          dnfReason: reason,
+          finishDate: finishDate
         }),
       })
 
@@ -608,6 +609,7 @@ export default function BookCard({ book }: BookCardProps) {
         book={{
           id: book.id,
           title: displayTitle,
+          startDate: book.startDate,
         }}
         onDNF={handleMarkDNF}
       />
@@ -622,6 +624,7 @@ export default function BookCard({ book }: BookCardProps) {
         title: displayTitle,
         status: book.status,
         format: book.format,
+        finishDate: book.finishDate,
         acquisitionMethod: book.acquisitionMethod,
         acquisitionOther: book.acquisitionOther,
         bookClubName: book.bookClubName,
