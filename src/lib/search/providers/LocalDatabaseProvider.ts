@@ -2,6 +2,23 @@ import { BaseSearchProvider } from "../BaseSearchProvider"
 import type { BookSearchResult } from "@/types/book"
 import { prisma } from "@/lib/prisma"
 
+/**
+ * Get cover image URL from edition provider relations with fallback logic
+ * Priority: Hardcover > Google > IBDB
+ */
+function getEditionCoverUrl(edition: {
+  hardcoverBook?: { imageUrl: string | null } | null
+  googleBook?: { imageUrl: string | null } | null
+  ibdbBook?: { imageUrl: string | null } | null
+}): string | undefined {
+  return (
+    edition.hardcoverBook?.imageUrl ||
+    edition.googleBook?.imageUrl ||
+    edition.ibdbBook?.imageUrl ||
+    undefined
+  ) ?? undefined
+}
+
 export class LocalDatabaseProvider extends BaseSearchProvider {
   constructor() {
     super({
@@ -29,7 +46,7 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
         }
       })
 
-      // Search Editions table
+      // Search Editions table with provider relations for cover images
       const editionsPromise = prisma.edition.findMany({
         where: {
           OR: [
@@ -44,7 +61,16 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
           authors: true,
           isbn10: true,
           isbn13: true,
-          googleBooksId: true
+          googleBooksId: true,
+          googleBook: {
+            select: { imageUrl: true }
+          },
+          hardcoverBook: {
+            select: { imageUrl: true }
+          },
+          ibdbBook: {
+            select: { imageUrl: true }
+          }
         }
       })
 
@@ -86,7 +112,7 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
             title: edition.title || "Unknown Title",
             authors: edition.authors,
             categories: [],
-            imageUrl: undefined,
+            imageUrl: getEditionCoverUrl(edition),
             subtitle: undefined,
             description: undefined,
             publishedDate: undefined,

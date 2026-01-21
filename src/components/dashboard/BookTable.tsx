@@ -6,6 +6,7 @@ import { BookStatus } from '@prisma/client'
 import { convertToStars } from '@/types/cawpile'
 import EmptyLibrary from './EmptyLibrary'
 import type { DashboardBookData } from '@/types/dashboard'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface BookTableProps {
   books: DashboardBookData[]
@@ -75,7 +76,7 @@ export default function BookTable({ books }: BookTableProps) {
   const renderBookRow = (book: DashboardBookData) => {
     const displayTitle = book.edition.title || book.edition.book.title
     const authors = book.edition.book.authors.join(', ')
-    const imageUrl = book.edition.googleBook?.imageUrl
+    const imageUrl = getCoverImageUrl(book.edition)
 
     return (
       <tr

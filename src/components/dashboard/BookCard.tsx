@@ -21,6 +21,7 @@ import { useRouter } from 'next/navigation'
 import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface BookCardProps {
   book: DashboardBookData
@@ -61,7 +62,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [selectedFormat, setSelectedFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
-  const imageUrl = book.edition.googleBook?.imageUrl
+  const imageUrl = getCoverImageUrl(book.edition)
   const bookType = (book.edition.book.bookType || 'FICTION') as BookType
 
   // Determine if share button should be visible

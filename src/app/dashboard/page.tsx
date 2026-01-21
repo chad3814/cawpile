@@ -65,7 +65,9 @@ export default async function DashboardPage() {
       edition: {
         include: {
           book: true,
-          googleBook: true
+          googleBook: true,
+          hardcoverBook: true,
+          ibdbBook: true
         }
       },
       cawpileRating: true,

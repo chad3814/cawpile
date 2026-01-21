@@ -57,6 +57,12 @@ export interface DashboardBookData {
       description: string | null
       pageCount: number | null
     } | null
+    hardcoverBook: {
+      imageUrl: string | null
+    } | null
+    ibdbBook: {
+      imageUrl: string | null
+    } | null
   }
   cawpileRating?: CawpileRatingData | null
   sharedReview?: SharedReviewData | null
