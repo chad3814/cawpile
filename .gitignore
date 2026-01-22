@@ -49,3 +49,5 @@ next-env.d.ts
 # AWS credentials
 aws_id
 aws_secret
+
+agent-os
