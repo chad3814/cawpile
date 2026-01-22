@@ -3,7 +3,9 @@ import { Metadata } from 'next'
 import { getUserByUsername } from '@/lib/db/getUserProfile'
 import { getProfileCurrentlyReading } from '@/lib/db/getProfileCurrentlyReading'
 import { getProfileSharedReviews } from '@/lib/db/getProfileSharedReviews'
+import { getProfileTbr } from '@/lib/db/getProfileTbr'
 import ProfilePageClient from '@/components/profile/ProfilePageClient'
+import { ProfileTbrData } from '@/types/profile'
 
 interface PageProps {
   params: Promise<{
@@ -19,7 +21,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const user = await getUserByUsername(username)
 
-  if (!user) {
+  // Return noindex for non-existent or disabled profiles
+  if (!user || !user.profileEnabled) {
     return {
       title: 'Profile Not Found | Cawpile',
       robots: 'noindex, nofollow'
@@ -53,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 /**
  * Public profile page server component
- * Fetches user data, currently reading books, and shared reviews
+ * Fetches user data, currently reading books, TBR books, and shared reviews
  */
 export default async function ProfilePage({ params }: PageProps) {
   const { username } = await params
@@ -61,7 +64,8 @@ export default async function ProfilePage({ params }: PageProps) {
   // Fetch user profile with case-insensitive lookup
   const user = await getUserByUsername(username)
 
-  if (!user) {
+  // Return 404 if user doesn't exist or has disabled their profile
+  if (!user || !user.profileEnabled) {
     notFound()
   }
 
@@ -69,6 +73,12 @@ export default async function ProfilePage({ params }: PageProps) {
   let currentlyReading: Awaited<ReturnType<typeof getProfileCurrentlyReading>> = []
   if (user.showCurrentlyReading) {
     currentlyReading = await getProfileCurrentlyReading(user.id)
+  }
+
+  // Fetch TBR books if user has enabled this setting
+  let tbr: ProfileTbrData | null = null
+  if (user.showTbr) {
+    tbr = await getProfileTbr(user.id)
   }
 
   // Fetch all shared reviews
@@ -80,6 +90,7 @@ export default async function ProfilePage({ params }: PageProps) {
         user={user}
         currentlyReading={currentlyReading}
         sharedReviews={sharedReviews}
+        tbr={tbr}
       />
     </div>
   )

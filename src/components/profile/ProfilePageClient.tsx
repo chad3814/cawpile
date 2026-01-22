@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react'
 import ProfileHeader from './ProfileHeader'
 import ProfileViewSwitcher from './ProfileViewSwitcher'
 import SharedReviewsSection from './SharedReviewsSection'
+import TbrSection from './TbrSection'
 import ProfileEmptyState from './ProfileEmptyState'
 import LayoutToggle from '@/components/dashboard/LayoutToggle'
-import { ProfileUserData, ProfileBookData, ProfileSharedReview } from '@/types/profile'
+import { ProfileUserData, ProfileBookData, ProfileSharedReview, ProfileTbrData } from '@/types/profile'
 
 interface ProfilePageClientProps {
   user: ProfileUserData
   currentlyReading: ProfileBookData[]
   sharedReviews: ProfileSharedReview[]
+  tbr: ProfileTbrData | null
 }
 
 const LAYOUT_STORAGE_KEY = 'profile-view-layout'
@@ -23,7 +25,8 @@ const LAYOUT_STORAGE_KEY = 'profile-view-layout'
 export default function ProfilePageClient({
   user,
   currentlyReading,
-  sharedReviews
+  sharedReviews,
+  tbr
 }: ProfilePageClientProps) {
   const [layout, setLayout] = useState<'GRID' | 'TABLE'>('GRID')
   const [isHydrated, setIsHydrated] = useState(false)
@@ -46,8 +49,10 @@ export default function ProfilePageClient({
   // Check if there's any public content to show
   const hasCurrentlyReading = user.showCurrentlyReading && currentlyReading.length > 0
   const hasEmptyCurrentlyReading = user.showCurrentlyReading && currentlyReading.length === 0
+  const hasTbr = user.showTbr && tbr && tbr.books.length > 0
+  const hasEmptyTbr = user.showTbr && (!tbr || tbr.books.length === 0)
   const hasSharedReviews = sharedReviews.length > 0
-  const hasNoContent = !hasCurrentlyReading && !hasEmptyCurrentlyReading && !hasSharedReviews
+  const hasNoContent = !hasCurrentlyReading && !hasEmptyCurrentlyReading && !hasTbr && !hasEmptyTbr && !hasSharedReviews
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -74,6 +79,20 @@ export default function ProfilePageClient({
             <ProfileViewSwitcher books={currentlyReading} layout={layout} />
           ) : (
             <ProfileEmptyState variant="currently-reading" />
+          )}
+        </div>
+      )}
+
+      {/* TBR Section */}
+      {user.showTbr && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            Want to Read
+          </h2>
+          {tbr && tbr.books.length > 0 ? (
+            <TbrSection tbr={tbr} />
+          ) : (
+            <ProfileEmptyState variant="tbr" />
           )}
         </div>
       )}

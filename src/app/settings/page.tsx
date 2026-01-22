@@ -20,6 +20,8 @@ export default async function SettingsPage() {
       profilePictureUrl: true,
       readingGoal: true,
       showCurrentlyReading: true,
+      profileEnabled: true,
+      showTbr: true,
       image: true, // Google OAuth image as fallback
       email: true,
     },

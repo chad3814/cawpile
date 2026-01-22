@@ -6,6 +6,8 @@ import { Switch } from '@headlessui/react'
 interface PreferencesData {
   readingGoal: number
   showCurrentlyReading: boolean
+  profileEnabled: boolean
+  showTbr: boolean
   username?: string | null
 }
 
@@ -23,7 +25,9 @@ export default function PreferencesSection({
   onError,
 }: PreferencesSectionProps) {
   const [readingGoal, setReadingGoal] = useState(data.readingGoal)
+  const [profileEnabled, setProfileEnabled] = useState(data.profileEnabled)
   const [showCurrentlyReading, setShowCurrentlyReading] = useState(data.showCurrentlyReading)
+  const [showTbr, setShowTbr] = useState(data.showTbr)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +46,9 @@ export default function PreferencesSection({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           readingGoal,
+          profileEnabled,
           showCurrentlyReading,
+          showTbr,
         }),
       })
 
@@ -54,7 +60,9 @@ export default function PreferencesSection({
 
       onUpdate({
         readingGoal: result.readingGoal,
+        profileEnabled: result.profileEnabled,
         showCurrentlyReading: result.showCurrentlyReading,
+        showTbr: result.showTbr,
       })
       onSuccess('Preferences updated successfully')
     } catch (err) {
@@ -101,45 +109,111 @@ export default function PreferencesSection({
           </p>
         </div>
 
-        {/* Public Currently Reading Toggle */}
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <label
-              htmlFor="showCurrentlyReading"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Show my currently reading books publicly
-            </label>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              When enabled, your currently reading books will be visible on your{' '}
-              {profileUrl ? (
-                <a
-                  href={profileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline"
-                >
-                  public profile
-                </a>
-              ) : (
-                'public profile'
-              )}
-            </p>
-          </div>
-          <Switch
-            checked={showCurrentlyReading}
-            onChange={setShowCurrentlyReading}
-            className={`${
-              showCurrentlyReading ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'
-            } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800`}
-          >
-            <span className="sr-only">Show currently reading publicly</span>
-            <span
+        {/* Profile Settings Section */}
+        <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Public Profile Settings
+          </h3>
+
+          {/* Enable Public Profile Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label
+                htmlFor="profileEnabled"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Enable public profile page
+              </label>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                When enabled, your profile will be visible at{' '}
+                {profileUrl ? (
+                  <a
+                    href={profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline"
+                  >
+                    {profileUrl}
+                  </a>
+                ) : (
+                  'your public profile URL'
+                )}
+                . SharedReviews will continue to work even when your profile is disabled.
+              </p>
+            </div>
+            <Switch
+              checked={profileEnabled}
+              onChange={setProfileEnabled}
               className={`${
-                showCurrentlyReading ? 'translate-x-5' : 'translate-x-0'
-              } pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-            />
-          </Switch>
+                profileEnabled ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'
+              } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800`}
+            >
+              <span className="sr-only">Enable public profile page</span>
+              <span
+                className={`${
+                  profileEnabled ? 'translate-x-5' : 'translate-x-0'
+                } pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+              />
+            </Switch>
+          </div>
+
+          {/* Show Currently Reading Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label
+                htmlFor="showCurrentlyReading"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Show my currently reading books publicly
+              </label>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                When enabled, your currently reading books will be visible on your public profile
+              </p>
+            </div>
+            <Switch
+              checked={showCurrentlyReading}
+              onChange={setShowCurrentlyReading}
+              className={`${
+                showCurrentlyReading ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'
+              } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800`}
+            >
+              <span className="sr-only">Show currently reading publicly</span>
+              <span
+                className={`${
+                  showCurrentlyReading ? 'translate-x-5' : 'translate-x-0'
+                } pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+              />
+            </Switch>
+          </div>
+
+          {/* Show TBR Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label
+                htmlFor="showTbr"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Show my TBR books publicly
+              </label>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                When enabled, your want-to-read list will be visible on your public profile
+              </p>
+            </div>
+            <Switch
+              checked={showTbr}
+              onChange={setShowTbr}
+              className={`${
+                showTbr ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'
+              } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800`}
+            >
+              <span className="sr-only">Show TBR books publicly</span>
+              <span
+                className={`${
+                  showTbr ? 'translate-x-5' : 'translate-x-0'
+                } pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+              />
+            </Switch>
+          </div>
         </div>
 
         {/* Submit Button */}

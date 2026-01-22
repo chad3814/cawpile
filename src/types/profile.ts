@@ -11,6 +11,8 @@ export interface ProfileUserData {
   profilePictureUrl: string | null
   image: string | null // OAuth fallback image
   showCurrentlyReading: boolean
+  profileEnabled: boolean
+  showTbr: boolean
 }
 
 /**
@@ -51,6 +53,14 @@ export interface ProfileBookData {
     logic: number | null
     enjoyment: number | null
   } | null
+}
+
+/**
+ * TBR (Want to Read) books result with total count
+ */
+export interface ProfileTbrData {
+  books: ProfileBookData[]
+  totalCount: number
 }
 
 /**
@@ -97,4 +107,5 @@ export interface ProfilePageData {
   user: ProfileUserData
   currentlyReading: ProfileBookData[]
   sharedReviews: ProfileSharedReview[]
+  tbr?: ProfileTbrData
 }

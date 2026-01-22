@@ -29,6 +29,8 @@ export async function GET() {
         profilePictureUrl: true,
         readingGoal: true,
         showCurrentlyReading: true,
+        profileEnabled: true,
+        showTbr: true,
         image: true, // Google OAuth image as fallback
         email: true,
       },
@@ -54,7 +56,7 @@ export async function GET() {
 /**
  * PATCH /api/user/settings
  * Updates the user's profile and preference settings
- * Accepts partial updates for: name, username, bio, readingGoal, showCurrentlyReading
+ * Accepts partial updates for: name, username, bio, readingGoal, showCurrentlyReading, profileEnabled, showTbr
  */
 export async function PATCH(request: Request) {
   try {
@@ -68,7 +70,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json()
-    const { name, username, bio, readingGoal, showCurrentlyReading } = body
+    const { name, username, bio, readingGoal, showCurrentlyReading, profileEnabled, showTbr } = body
 
     // Build update data object with only provided fields
     const updateData: {
@@ -77,6 +79,8 @@ export async function PATCH(request: Request) {
       bio?: string | null
       readingGoal?: number
       showCurrentlyReading?: boolean
+      profileEnabled?: boolean
+      showTbr?: boolean
     } = {}
 
     // Validate and set name (optional, max 255 chars)
@@ -164,6 +168,16 @@ export async function PATCH(request: Request) {
       updateData.showCurrentlyReading = Boolean(showCurrentlyReading)
     }
 
+    // Validate and set profileEnabled (boolean)
+    if (profileEnabled !== undefined) {
+      updateData.profileEnabled = Boolean(profileEnabled)
+    }
+
+    // Validate and set showTbr (boolean)
+    if (showTbr !== undefined) {
+      updateData.showTbr = Boolean(showTbr)
+    }
+
     // If no fields to update, return current data
     if (Object.keys(updateData).length === 0) {
       const currentData = await prisma.user.findUnique({
@@ -175,6 +189,8 @@ export async function PATCH(request: Request) {
           profilePictureUrl: true,
           readingGoal: true,
           showCurrentlyReading: true,
+          profileEnabled: true,
+          showTbr: true,
           image: true,
           email: true,
         },
@@ -193,6 +209,8 @@ export async function PATCH(request: Request) {
         profilePictureUrl: true,
         readingGoal: true,
         showCurrentlyReading: true,
+        profileEnabled: true,
+        showTbr: true,
         image: true,
         email: true,
       },

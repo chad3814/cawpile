@@ -12,6 +12,8 @@ interface SettingsData {
   profilePictureUrl: string | null
   readingGoal: number
   showCurrentlyReading: boolean
+  profileEnabled: boolean
+  showTbr: boolean
   image: string | null
   email: string
 }

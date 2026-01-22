@@ -19,6 +19,8 @@ model User {
   readingGoal   Int              @default(12)
   profilePictureUrl String?
   showCurrentlyReading Boolean   @default(false)
+  profileEnabled Boolean         @default(false)
+  showTbr        Boolean         @default(false)
   dashboardLayout DashboardLayout @default(GRID)
   librarySortBy   LibrarySortBy    @default(END_DATE)
   librarySortOrder LibrarySortOrder @default(DESC)

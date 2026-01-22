@@ -20,7 +20,9 @@ export async function getUserByUsername(username: string): Promise<ProfileUserDa
       bio: true,
       profilePictureUrl: true,
       image: true,
-      showCurrentlyReading: true
+      showCurrentlyReading: true,
+      profileEnabled: true,
+      showTbr: true
     }
   })
 
@@ -35,6 +37,8 @@ export async function getUserByUsername(username: string): Promise<ProfileUserDa
     bio: user.bio,
     profilePictureUrl: user.profilePictureUrl,
     image: user.image,
-    showCurrentlyReading: user.showCurrentlyReading
+    showCurrentlyReading: user.showCurrentlyReading,
+    profileEnabled: user.profileEnabled,
+    showTbr: user.showTbr
   }
 }
