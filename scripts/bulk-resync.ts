@@ -158,7 +158,7 @@ async function resyncIbdbBooks(): Promise<ResyncStats['ibdb']> {
     console.log(`  Searching IBDB: ${edition.book.title} (ISBN: ${isbn})`)
 
     try {
-      const results = await ibdbProvider.search(isbn)
+      const results = await ibdbProvider.search(isbn, 10)
 
       if (results.length === 0) {
         console.log(`    ⚠️ No IBDB results found`)
