@@ -10,6 +10,7 @@ import { BookType } from '@/types/cawpile'
 import ReviewImageTemplate from '@/components/share/ReviewImageTemplate'
 import { downloadImage, generateImageFilename, imageUrlToDataUrl } from '@/lib/image/generateReviewImage'
 import { IMAGE_WIDTH, IMAGE_HEIGHT } from '@/lib/image/imageTheme'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface SharedReview {
   id: string
@@ -42,6 +43,7 @@ interface ShareReviewModalProps {
     review?: string | null
     startDate?: Date | null
     finishDate?: Date | null
+    preferredCoverProvider?: string | null
     edition: {
       title: string | null
       book: {
@@ -52,6 +54,12 @@ interface ShareReviewModalProps {
       googleBook: {
         imageUrl: string | null
         description?: string | null
+      } | null
+      hardcoverBook?: {
+        imageUrl: string | null
+      } | null
+      ibdbBook?: {
+        imageUrl: string | null
       } | null
     }
     cawpileRating?: CawpileRating | null
@@ -85,7 +93,8 @@ export default function ShareReviewModal({
   const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null)
 
   const displayTitle = userBook.edition.title || userBook.edition.book.title
-  const imageUrl = userBook.edition.googleBook?.imageUrl
+  // Use centralized cover image selection
+  const imageUrl = getCoverImageUrl(userBook.edition, userBook.preferredCoverProvider)
   const shareUrl = existingShare
     ? `${window.location.origin}/share/reviews/${existingShare.shareToken}`
     : null
@@ -212,7 +221,7 @@ export default function ShareReviewModal({
     setImageError(null)
 
     try {
-      // Use proxied image URL to avoid CORS issues with Google Books
+      // Use proxied image URL to avoid CORS issues with external image sources
       if (imageUrl && !coverDataUrl) {
         const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
         // Pre-load the proxied image and convert to data URL

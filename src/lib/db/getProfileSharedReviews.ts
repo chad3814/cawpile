@@ -4,6 +4,7 @@ import { ProfileSharedReview } from '@/types/profile'
 /**
  * Fetch all shared reviews for a user's public profile
  * Ordered by most recently created first
+ * Includes multi-provider cover images (hardcoverBook, googleBook, ibdbBook)
  */
 export async function getProfileSharedReviews(userId: string): Promise<ProfileSharedReview[]> {
   const sharedReviews = await prisma.sharedReview.findMany({
@@ -17,6 +18,16 @@ export async function getProfileSharedReviews(userId: string): Promise<ProfileSh
             include: {
               book: true,
               googleBook: {
+                select: {
+                  imageUrl: true
+                }
+              },
+              hardcoverBook: {
+                select: {
+                  imageUrl: true
+                }
+              },
+              ibdbBook: {
                 select: {
                   imageUrl: true
                 }
@@ -52,6 +63,7 @@ export async function getProfileSharedReviews(userId: string): Promise<ProfileSh
       bookClubName: review.userBook.bookClubName,
       readathonName: review.userBook.readathonName,
       review: review.userBook.review,
+      preferredCoverProvider: review.userBook.preferredCoverProvider,
       edition: {
         id: review.userBook.edition.id,
         title: review.userBook.edition.title,
@@ -62,6 +74,12 @@ export async function getProfileSharedReviews(userId: string): Promise<ProfileSh
         },
         googleBook: review.userBook.edition.googleBook ? {
           imageUrl: review.userBook.edition.googleBook.imageUrl
+        } : null,
+        hardcoverBook: review.userBook.edition.hardcoverBook ? {
+          imageUrl: review.userBook.edition.hardcoverBook.imageUrl
+        } : null,
+        ibdbBook: review.userBook.edition.ibdbBook ? {
+          imageUrl: review.userBook.edition.ibdbBook.imageUrl
         } : null
       },
       cawpileRating: review.userBook.cawpileRating

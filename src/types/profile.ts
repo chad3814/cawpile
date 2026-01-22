@@ -28,6 +28,7 @@ export interface ProfileBookData {
   finishDate: Date | null
   createdAt: Date
   currentPage: number
+  preferredCoverProvider?: string | null
   edition: {
     id: string
     title: string | null
@@ -40,6 +41,12 @@ export interface ProfileBookData {
       imageUrl: string | null
       description: string | null
       pageCount: number | null
+    } | null
+    hardcoverBook: {
+      imageUrl: string | null
+    } | null
+    ibdbBook: {
+      imageUrl: string | null
     } | null
   }
   cawpileRating?: {
@@ -81,6 +88,7 @@ export interface ProfileSharedReview {
     bookClubName: string | null
     readathonName: string | null
     review: string | null
+    preferredCoverProvider?: string | null
     edition: {
       id: string
       title: string | null
@@ -90,6 +98,12 @@ export interface ProfileSharedReview {
         bookType?: 'FICTION' | 'NONFICTION'
       }
       googleBook: {
+        imageUrl: string | null
+      } | null
+      hardcoverBook: {
+        imageUrl: string | null
+      } | null
+      ibdbBook: {
         imageUrl: string | null
       } | null
     }

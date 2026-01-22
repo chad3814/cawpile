@@ -12,6 +12,7 @@ export interface ProfileTbrResult {
 /**
  * Fetch TBR (Want to Read) books for a user's public profile
  * Returns up to 5 books ordered by most recently added, plus total count
+ * Includes multi-provider cover images (hardcoverBook, googleBook, ibdbBook)
  */
 export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
   // Get total count of TBR books
@@ -32,7 +33,17 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
       edition: {
         include: {
           book: true,
-          googleBook: true
+          googleBook: true,
+          hardcoverBook: {
+            select: {
+              imageUrl: true
+            }
+          },
+          ibdbBook: {
+            select: {
+              imageUrl: true
+            }
+          }
         }
       },
       cawpileRating: true
@@ -52,6 +63,7 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
     finishDate: book.finishDate,
     createdAt: book.createdAt,
     currentPage: book.currentPage,
+    preferredCoverProvider: book.preferredCoverProvider,
     edition: {
       id: book.edition.id,
       title: book.edition.title,
@@ -64,6 +76,12 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
         imageUrl: book.edition.googleBook.imageUrl,
         description: book.edition.googleBook.description,
         pageCount: book.edition.googleBook.pageCount
+      } : null,
+      hardcoverBook: book.edition.hardcoverBook ? {
+        imageUrl: book.edition.hardcoverBook.imageUrl
+      } : null,
+      ibdbBook: book.edition.ibdbBook ? {
+        imageUrl: book.edition.ibdbBook.imageUrl
       } : null
     },
     cawpileRating: book.cawpileRating ? {

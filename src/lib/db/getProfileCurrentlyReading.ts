@@ -4,6 +4,7 @@ import { ProfileBookData } from '@/types/profile'
 /**
  * Fetch currently reading books for a user's public profile
  * Returns books with status READING, including all necessary relations
+ * including multi-provider cover images (hardcoverBook, googleBook, ibdbBook)
  */
 export async function getProfileCurrentlyReading(userId: string): Promise<ProfileBookData[]> {
   const userBooks = await prisma.userBook.findMany({
@@ -15,7 +16,17 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
       edition: {
         include: {
           book: true,
-          googleBook: true
+          googleBook: true,
+          hardcoverBook: {
+            select: {
+              imageUrl: true
+            }
+          },
+          ibdbBook: {
+            select: {
+              imageUrl: true
+            }
+          }
         }
       },
       cawpileRating: true
@@ -34,6 +45,7 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
     finishDate: book.finishDate,
     createdAt: book.createdAt,
     currentPage: book.currentPage,
+    preferredCoverProvider: book.preferredCoverProvider,
     edition: {
       id: book.edition.id,
       title: book.edition.title,
@@ -46,6 +58,12 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
         imageUrl: book.edition.googleBook.imageUrl,
         description: book.edition.googleBook.description,
         pageCount: book.edition.googleBook.pageCount
+      } : null,
+      hardcoverBook: book.edition.hardcoverBook ? {
+        imageUrl: book.edition.hardcoverBook.imageUrl
+      } : null,
+      ibdbBook: book.edition.ibdbBook ? {
+        imageUrl: book.edition.ibdbBook.imageUrl
       } : null
     },
     cawpileRating: book.cawpileRating ? {

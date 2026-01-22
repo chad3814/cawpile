@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ProfileSharedReview } from '@/types/profile'
 import { convertToStars } from '@/types/cawpile'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface SharedReviewCardProps {
   review: ProfileSharedReview
@@ -17,7 +18,7 @@ export default function SharedReviewCard({ review }: SharedReviewCardProps) {
   const { userBook, shareToken, showDates, showBookClubs, showReadathons } = review
   const displayTitle = userBook.edition.title || userBook.edition.book.title
   const authors = userBook.edition.book.authors
-  const imageUrl = userBook.edition.googleBook?.imageUrl
+  const imageUrl = getCoverImageUrl(userBook.edition, userBook.preferredCoverProvider)
   const rating = userBook.cawpileRating
 
   const formatDate = (date: Date | null) => {

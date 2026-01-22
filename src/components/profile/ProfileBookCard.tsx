@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { ProfileBookData } from '@/types/profile'
 import { convertToStars } from '@/types/cawpile'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface ProfileBookCardProps {
   book: ProfileBookData
@@ -36,7 +37,7 @@ const formatIcons: Record<string, string> = {
 export default function ProfileBookCard({ book }: ProfileBookCardProps) {
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
-  const imageUrl = book.edition.googleBook?.imageUrl
+  const imageUrl = getCoverImageUrl(book.edition, book.preferredCoverProvider)
   const pageCount = book.edition.googleBook?.pageCount
 
   return (

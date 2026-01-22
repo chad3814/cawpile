@@ -5,6 +5,7 @@ import PublicCawpileFacetDisplay from '@/components/share/PublicCawpileFacetDisp
 import StarRating from '@/components/rating/StarRating'
 import { BookType } from '@/types/cawpile'
 import { sanitizeHtml } from '@/lib/utils/sanitize'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface PublicReviewDisplayProps {
   sharedReview: {
@@ -19,6 +20,7 @@ interface PublicReviewDisplayProps {
       bookClubName: string | null
       readathonName: string | null
       review: string | null
+      preferredCoverProvider?: string | null
       edition: {
         title: string | null
         book: {
@@ -29,6 +31,12 @@ interface PublicReviewDisplayProps {
         googleBook: {
           imageUrl: string | null
           description: string | null
+        } | null
+        hardcoverBook?: {
+          imageUrl: string | null
+        } | null
+        ibdbBook?: {
+          imageUrl: string | null
         } | null
       }
       cawpileRating: {
@@ -52,7 +60,7 @@ export default function PublicReviewDisplay({ sharedReview }: PublicReviewDispla
 
   const displayTitle = edition.title || edition.book.title
   const authors = edition.book.authors
-  const imageUrl = edition.googleBook?.imageUrl
+  const imageUrl = getCoverImageUrl(edition, userBook.preferredCoverProvider)
   const description = edition.googleBook?.description
   const bookType = (edition.book.bookType || 'FICTION') as BookType
 

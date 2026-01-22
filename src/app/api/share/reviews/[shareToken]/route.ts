@@ -10,6 +10,7 @@ export async function GET(
     const { shareToken } = await params
 
     // Query SharedReview by shareToken with all necessary includes
+    // including multi-provider cover images (hardcoverBook, googleBook, ibdbBook)
     const sharedReview = await prisma.sharedReview.findUnique({
       where: {
         shareToken
@@ -20,7 +21,17 @@ export async function GET(
             edition: {
               include: {
                 book: true,
-                googleBook: true
+                googleBook: true,
+                hardcoverBook: {
+                  select: {
+                    imageUrl: true
+                  }
+                },
+                ibdbBook: {
+                  select: {
+                    imageUrl: true
+                  }
+                }
               }
             },
             cawpileRating: true
@@ -56,6 +67,16 @@ export async function GET(
         pageCount: sharedReview.userBook.edition.googleBook.pageCount,
         publisher: sharedReview.userBook.edition.googleBook.publisher
       } : null,
+      // Hardcover Book data (if available)
+      hardcoverBook: sharedReview.userBook.edition.hardcoverBook ? {
+        imageUrl: sharedReview.userBook.edition.hardcoverBook.imageUrl
+      } : null,
+      // IBDB Book data (if available)
+      ibdbBook: sharedReview.userBook.edition.ibdbBook ? {
+        imageUrl: sharedReview.userBook.edition.ibdbBook.imageUrl
+      } : null,
+      // User's preferred cover provider
+      preferredCoverProvider: sharedReview.userBook.preferredCoverProvider,
       // CAWPILE rating (all facets + computed scores)
       cawpileRating: sharedReview.userBook.cawpileRating ? {
         characters: sharedReview.userBook.cawpileRating.characters,

@@ -1,8 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
+ * Allowed domains for image proxying.
+ * These domains are trusted sources for book cover images.
+ */
+const ALLOWED_DOMAINS = [
+  // Google Books domains
+  'books.google.com',
+  'books.googleusercontent.com',
+  'lh3.googleusercontent.com',
+  // Hardcover domains
+  'cdn.hardcover.app',
+  'hardcover.app',
+  'storage.googleapis.com',
+  // IBDB and external book image sources
+  'images-na.ssl-images-amazon.com',
+  'covers.openlibrary.org',
+  'm.media-amazon.com',
+]
+
+/**
+ * Check if a hostname matches an allowed domain.
+ * Uses exact match or subdomain match (hostname ends with .domain).
+ */
+function isAllowedHostname(hostname: string): boolean {
+  return ALLOWED_DOMAINS.some(domain => {
+    // Exact match
+    if (hostname === domain) {
+      return true
+    }
+    // Subdomain match (e.g., cdn.hardcover.app matches hardcover.app)
+    if (hostname.endsWith('.' + domain)) {
+      return true
+    }
+    return false
+  })
+}
+
+/**
  * Proxies external images to avoid CORS issues with html2canvas.
  * Used specifically for generating shareable review images.
+ * Supports Google Books, Hardcover, and IBDB image sources.
  */
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get('url')
@@ -11,16 +49,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 })
   }
 
-  // Validate URL is from allowed domains (Google Books)
-  const allowedDomains = [
-    'books.google.com',
-    'books.googleusercontent.com',
-    'lh3.googleusercontent.com',
-  ]
-
+  // Validate URL is from allowed domains
   try {
     const parsedUrl = new URL(url)
-    if (!allowedDomains.some(domain => parsedUrl.hostname.includes(domain))) {
+    if (!isAllowedHostname(parsedUrl.hostname)) {
       return NextResponse.json({ error: 'Domain not allowed' }, { status: 403 })
     }
   } catch {

@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { ProfileBookData } from '@/types/profile'
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface TbrBookCardProps {
   book: ProfileBookData
@@ -14,7 +15,7 @@ interface TbrBookCardProps {
 export default function TbrBookCard({ book }: TbrBookCardProps) {
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
-  const imageUrl = book.edition.googleBook?.imageUrl
+  const imageUrl = getCoverImageUrl(book.edition, book.preferredCoverProvider)
 
   return (
     <div className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow border border-border">
