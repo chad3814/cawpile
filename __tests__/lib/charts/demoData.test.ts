@@ -81,7 +81,7 @@ describe('Demo Data', () => {
       expect(formatNames).toContain('Physical');
       expect(formatNames).toContain('Ebook');
       expect(formatNames).toContain('Audiobook');
-      expect(formatNames).toContain('Graphic Novel');
+      expect(formatNames).toContain('Double Dorking');
     });
 
     test('should have format values sum to reasonable total', () => {

@@ -59,11 +59,11 @@ export const DEMO_PAGES_PER_MONTH: DemoPagesPerMonthData[] = [
 
 /**
  * Demo data for Book Format pie chart
- * Distribution across Physical, Ebook, Audiobook, Graphic Novel
+ * Distribution across Physical, Ebook, Audiobook, Double Dorking
  */
 export const DEMO_BOOK_FORMAT: DemoBookFormatData[] = [
   { name: 'Physical', value: 28 },
   { name: 'Ebook', value: 22 },
   { name: 'Audiobook', value: 12 },
-  { name: 'Graphic Novel', value: 6 },
+  { name: 'Double Dorking', value: 6 },
 ];
