@@ -302,8 +302,8 @@ enum LibrarySortOrder {
 // Admin audit log for tracking all admin actions
 model AdminAuditLog {
   id         String   @id @default(cuid())
-  adminId    String
-  admin      User     @relation("AdminUser", fields: [adminId], references: [id], onDelete: SetNull)
+  adminId    String?
+  admin      User?     @relation("AdminUser", fields: [adminId], references: [id], onDelete: SetNull)
   entityType String   // e.g., "Book", "Edition", "User"
   entityId   String   // ID of the entity being modified
   fieldName  String?  // Column/field that was changed
