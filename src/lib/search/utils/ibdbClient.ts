@@ -12,10 +12,51 @@ interface IbdbBook {
   [key: string]: unknown
 }
 
+interface IbdbRawBook {
+  id?: string
+  title?: string
+  authors?: unknown[]
+  isbn10?: string
+  isbn13?: string
+  description?: string
+  publishedDate?: string
+  pageCount?: number
+  imageUrl?: string
+  categories?: unknown[]
+  [key: string]: unknown
+}
+
 interface IbdbResponse {
   status: 'ok' | 'error'
-  books?: IbdbBook[]
+  books?: IbdbRawBook[]
   message?: string
+}
+
+function normalizeStringArray(items: unknown[] | undefined): string[] {
+  if (!items || !Array.isArray(items)) return []
+
+  return items.map(item => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object' && 'name' in item) {
+      return String((item as { name: unknown }).name)
+    }
+    return ''
+  }).filter(Boolean)
+}
+
+function normalizeBook(raw: IbdbRawBook): IbdbBook {
+  return {
+    id: raw.id,
+    title: raw.title,
+    authors: normalizeStringArray(raw.authors),
+    isbn10: raw.isbn10,
+    isbn13: raw.isbn13,
+    description: raw.description,
+    publishedDate: raw.publishedDate,
+    pageCount: raw.pageCount,
+    imageUrl: raw.imageUrl,
+    categories: normalizeStringArray(raw.categories),
+  }
 }
 
 export class IbdbClient {
@@ -45,7 +86,7 @@ export class IbdbClient {
         return []
       }
 
-      return data.books || []
+      return (data.books || []).map(normalizeBook)
     } catch (error) {
       console.error('IBDB client error:', error)
       return []
