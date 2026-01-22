@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
-import { logFieldChanges } from '@/lib/audit/logger'
+import { logFieldChanges, logAdminAction } from '@/lib/audit/logger'
 import { Prisma } from '@prisma/client'
 
 export async function GET(
@@ -11,7 +11,7 @@ export async function GET(
   try {
     const { id } = await params
     const user = await getCurrentUser()
-    
+
     if (!user || !user.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -44,7 +44,7 @@ export async function GET(
 
     // Calculate total user count
     const userCount = book.editions.reduce(
-      (acc, edition) => acc + edition._count.userBooks, 
+      (acc, edition) => acc + edition._count.userBooks,
       0
     )
 
@@ -68,7 +68,7 @@ export async function PATCH(
   try {
     const { id } = await params
     const user = await getCurrentUser()
-    
+
     if (!user || !user.isAdmin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -77,7 +77,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    
+
     // Validate editable fields only
     const editableFields = [
       'title',
@@ -85,22 +85,22 @@ export async function PATCH(
       'bookType',
       'language'
     ]
-    
+
     const updates: Prisma.BookUpdateInput = {}
     const changes: Record<string, { old: unknown; new: unknown }> = {}
-    
+
     // Get current book data for audit logging
     const currentBook = await prisma.book.findUnique({
       where: { id }
     })
-    
+
     if (!currentBook) {
       return NextResponse.json(
         { error: 'Book not found' },
         { status: 404 }
       )
     }
-    
+
     // Process updates and track changes
     for (const field of editableFields) {
       if (field in body && body[field] !== currentBook[field as keyof typeof currentBook]) {
@@ -111,7 +111,7 @@ export async function PATCH(
         }
       }
     }
-    
+
     // Only update if there are changes
     if (Object.keys(updates).length > 0) {
       const updatedBook = await prisma.book.update({
@@ -130,7 +130,7 @@ export async function PATCH(
           }
         }
       })
-      
+
       // Log the changes
       await logFieldChanges(
         user.id,
@@ -138,13 +138,13 @@ export async function PATCH(
         id,
         changes
       )
-      
+
       // Calculate total user count
       const userCount = updatedBook.editions.reduce(
-        (acc, edition) => acc + edition._count.userBooks, 
+        (acc, edition) => acc + edition._count.userBooks,
         0
       )
-      
+
       return NextResponse.json({
         ...updatedBook,
         userCount
@@ -160,6 +160,70 @@ export async function PATCH(
     console.error('Error updating book:', error)
     return NextResponse.json(
       { error: 'Failed to update book' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await getCurrentUser()
+
+    if (!user || !user.isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    // Fetch book data before deletion for audit logging
+    const book = await prisma.book.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        authors: true,
+        bookType: true,
+      }
+    })
+
+    if (!book) {
+      return NextResponse.json(
+        { error: 'Book not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete the book - Prisma cascade handles cleanup of:
+    // - Editions -> UserBooks -> CawpileRatings, ReadingSessions, SharedReviews
+    // - GoogleBook, HardcoverBook, IbdbBook
+    await prisma.book.delete({
+      where: { id }
+    })
+
+    // Log the deletion
+    await logAdminAction(user.id, {
+      entityType: 'Book',
+      entityId: id,
+      actionType: 'DELETE',
+      oldValue: {
+        title: book.title,
+        authors: book.authors,
+        bookType: book.bookType,
+      },
+    })
+
+    return NextResponse.json({
+      message: 'Book deleted successfully'
+    })
+  } catch (error) {
+    console.error('Error deleting book:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete book' },
       { status: 500 }
     )
   }

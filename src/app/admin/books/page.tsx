@@ -13,7 +13,7 @@ import { BookWithEditions } from '@/types/book'
 export default function AdminBooksPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
+
   // State from URL params
   const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'))
   const [limit, setLimit] = useState(parseInt(searchParams.get('limit') || '25'))
@@ -23,7 +23,7 @@ export default function AdminBooksPage() {
   const [language, setLanguage] = useState(searchParams.get('language') || '')
   const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'title')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>((searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc')
-  
+
   // Local state
   const [books, setBooks] = useState<BookWithEditions[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -52,7 +52,7 @@ export default function AdminBooksPage() {
     try {
       const queryString = buildQueryString()
       const response = await fetch(`/api/admin/books?${queryString}`)
-      
+
       if (response.ok) {
         const data = await response.json()
         setBooks(data.books)
@@ -158,7 +158,7 @@ export default function AdminBooksPage() {
       if (response.ok) {
         const result = await response.json()
         console.log(`Updated ${result.updated} books`)
-        
+
         // Clear selection and refresh the list
         setSelectedBooks(new Set())
         await fetchBooks()
@@ -169,6 +169,10 @@ export default function AdminBooksPage() {
       console.error('Error updating books:', error)
     }
   }
+
+  const handleRefresh = useCallback(() => {
+    fetchBooks()
+  }, [fetchBooks])
 
   return (
     <div className="space-y-6">
@@ -221,6 +225,7 @@ export default function AdminBooksPage() {
             selectedBooks={selectedBooks}
             onSelectionChange={handleSelectionChange}
             onSelectAll={handleSelectAll}
+            onRefresh={handleRefresh}
           />
 
           {totalPages > 1 && (

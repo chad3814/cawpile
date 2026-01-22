@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import Link from 'next/link'
-import { PencilIcon, ChevronUpIcon, ChevronDownIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { PencilIcon, ChevronUpIcon, ChevronDownIcon, ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { BookWithEditions } from '@/types/book'
 import { useToast, ToastContainer } from './Toast'
+import DeleteBookModal from './DeleteBookModal'
 
 interface ResyncResponse {
   success: boolean
@@ -31,6 +32,7 @@ interface BookTableProps {
   selectedBooks: Set<string>
   onSelectionChange: (bookId: string, selected: boolean) => void
   onSelectAll: (selected: boolean) => void
+  onRefresh?: () => void
 }
 
 export default function BookTable({
@@ -40,10 +42,12 @@ export default function BookTable({
   sortOrder,
   selectedBooks,
   onSelectionChange,
-  onSelectAll
+  onSelectAll,
+  onRefresh
 }: BookTableProps) {
   const [allChecked, setAllChecked] = useState(false)
   const [resyncingEditions, setResyncingEditions] = useState<Set<string>>(new Set())
+  const [deletingBook, setDeletingBook] = useState<{ id: string; title: string } | null>(null)
   const { messages, showToast, removeToast } = useToast()
 
   const handleSelectAll = (checked: boolean) => {
@@ -107,6 +111,28 @@ export default function BookTable({
       })
     }
   }, [showToast])
+
+  const handleDelete = useCallback(async () => {
+    if (!deletingBook) return
+
+    try {
+      const response = await fetch(`/api/admin/books/${deletingBook.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        showToast('error', data.error || 'Failed to delete book')
+        return
+      }
+
+      showToast('success', `"${deletingBook.title}" has been deleted`)
+      onRefresh?.()
+    } catch (error) {
+      console.error('Delete error:', error)
+      showToast('error', `Failed to delete "${deletingBook.title}"`)
+    }
+  }, [deletingBook, showToast, onRefresh])
 
   const SortIcon = ({ field }: { field: string }) => {
     if (sortBy !== field) return null
@@ -233,6 +259,14 @@ export default function BookTable({
                           {isResyncing ? 'Syncing...' : 'Re-sync'}
                         </button>
                       )}
+                      <button
+                        onClick={() => setDeletingBook({ id: book.id, title: book.title })}
+                        className="text-red-600 hover:text-red-900 inline-flex items-center"
+                        title="Delete book"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -241,6 +275,16 @@ export default function BookTable({
           </tbody>
         </table>
       </div>
+
+      {/* Delete Book Modal */}
+      <DeleteBookModal
+        isOpen={deletingBook !== null}
+        onClose={() => setDeletingBook(null)}
+        bookTitle={deletingBook?.title || ''}
+        bookId={deletingBook?.id || ''}
+        onConfirm={handleDelete}
+      />
+
       <ToastContainer messages={messages} onClose={removeToast} />
     </>
   )
