@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SessionProvider from "@/lib/auth-client";
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
 import "./globals.css";
 
@@ -48,9 +49,10 @@ export default async function RootLayout({
       >
         <SessionProvider session={session}>
           <Header />
-          <main className="min-h-screen pt-16">
+          <main className="min-h-screen pt-16 pb-14">
             {children}
           </main>
+          <Footer />
         </SessionProvider>
       </body>
     </html>

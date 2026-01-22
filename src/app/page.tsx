@@ -1,8 +1,10 @@
 import Link from "next/link"
+import CawpileFacetsDisplay from "@/components/homepage/CawpileFacetsDisplay"
+import HomepageCharts from "@/components/homepage/HomepageCharts"
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col items-center">
       {/* Hero Section */}
       <section className="text-center px-6 py-16 max-w-4xl mx-auto">
         <div className="flex justify-center mb-8">
@@ -50,8 +52,34 @@ export default function Home() {
         </Link>
       </section>
 
+      {/* CAWPILE Rating System Section */}
+      <section className="w-full max-w-6xl mx-auto px-6 py-16 border-t border-border">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-4">
+            The CAWPILE Rating System
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Rate books using 7 key facets for a more nuanced and thoughtful evaluation of your reading experience.
+          </p>
+        </div>
+        <CawpileFacetsDisplay />
+      </section>
+
+      {/* Demo Charts Section */}
+      <section className="w-full max-w-6xl mx-auto px-6 py-16 border-t border-border">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-4">
+            Track Your Reading Statistics
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Visualize your reading habits with interactive charts. See how many books you read, pages you turn, and formats you prefer.
+          </p>
+        </div>
+        <HomepageCharts />
+      </section>
+
       {/* Features Section */}
-      <section className="w-full max-w-6xl mx-auto px-6 py-16">
+      <section className="w-full max-w-6xl mx-auto px-6 py-16 border-t border-border">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
           <div className="text-center p-6">
