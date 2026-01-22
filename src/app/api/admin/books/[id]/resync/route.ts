@@ -7,18 +7,19 @@ import { LocalDatabaseProvider } from '@/lib/search/providers/LocalDatabaseProvi
 import { GoogleBooksProvider } from '@/lib/search/providers/GoogleBooksProvider'
 import { IbdbProvider } from '@/lib/search/providers/IbdbProvider'
 import { HardcoverProvider } from '@/lib/search/providers/HardcoverProvider'
-import { signResults, verifySignature } from '@/lib/search/utils/signResult'
-import { upsertProviderRecords } from '@/lib/db/books'
+import { upsertAllProviderRecords } from '@/lib/db/books'
 import type { SourceEntry } from '@/lib/search/types'
 
 interface ResyncResult {
   editionId: string
   title: string
   summary: {
+    google: 'created' | 'updated' | 'unchanged' | 'not_found' | null
     hardcover: 'created' | 'updated' | 'unchanged' | 'not_found' | null
     ibdb: 'created' | 'updated' | 'unchanged' | 'not_found' | null
   }
   providerFieldCounts: {
+    google: { before: number; after: number }
     hardcover: { before: number; after: number }
     ibdb: { before: number; after: number }
   }
@@ -72,6 +73,9 @@ export async function POST(
 
     // Capture before state for audit logging
     const beforeState = {
+      googleBook: existingEdition.googleBook
+        ? { ...existingEdition.googleBook }
+        : null,
       hardcoverBook: existingEdition.hardcoverBook
         ? { ...existingEdition.hardcoverBook }
         : null,
@@ -102,6 +106,7 @@ export async function POST(
         title,
         message: 'No search results found for this book',
         summary: {
+          google: 'not_found',
           hardcover: 'not_found',
           ibdb: 'not_found'
         },
@@ -137,6 +142,7 @@ export async function POST(
         title,
         message: 'Search result does not include multi-provider data',
         summary: {
+          google: 'not_found',
           hardcover: 'not_found',
           ibdb: 'not_found'
         },
@@ -144,32 +150,14 @@ export async function POST(
       })
     }
 
-    // Sign the result
-    const signedResults = signResults([resultWithSources as typeof bestMatch & { sources: SourceEntry[] }])
-    const signedResult = signedResults[0]
-
-    // Verify the signature
-    if (!signedResult.signature || !verifySignature(signedResult)) {
-      return NextResponse.json({
-        success: false,
-        editionId,
-        title,
-        message: 'Failed to verify signed search result',
-        summary: {
-          hardcover: null,
-          ibdb: null
-        },
-        errors: ['Signature verification failed']
-      })
-    }
-
-    // Upsert provider records
-    const upsertResult = await upsertProviderRecords(editionId, signedResult.sources)
+    // Upsert all provider records directly - no signature verification needed for server-side operations
+    const upsertResult = await upsertAllProviderRecords(editionId, resultWithSources.sources)
 
     // Fetch updated edition with provider relations
     const updatedEdition = await prisma.edition.findUnique({
       where: { id: editionId },
       include: {
+        googleBook: true,
         hardcoverBook: true,
         ibdbBook: true
       }
@@ -177,6 +165,9 @@ export async function POST(
 
     // Capture after state for audit logging
     const afterState = {
+      googleBook: updatedEdition?.googleBook
+        ? { ...updatedEdition.googleBook }
+        : null,
       hardcoverBook: updatedEdition?.hardcoverBook
         ? { ...updatedEdition.hardcoverBook }
         : null,
@@ -185,8 +176,12 @@ export async function POST(
         : null
     }
 
-    // Calculate field counts
+    // Calculate field counts for all three providers
     const providerFieldCounts = {
+      google: {
+        before: countNonNullFields(beforeState.googleBook as Record<string, unknown>),
+        after: countNonNullFields(afterState.googleBook as Record<string, unknown>)
+      },
       hardcover: {
         before: countNonNullFields(beforeState.hardcoverBook as Record<string, unknown>),
         after: countNonNullFields(afterState.hardcoverBook as Record<string, unknown>)
@@ -211,6 +206,7 @@ export async function POST(
       editionId,
       title,
       summary: {
+        google: upsertResult.google || (afterState.googleBook ? 'unchanged' : 'not_found'),
         hardcover: upsertResult.hardcover || (afterState.hardcoverBook ? 'unchanged' : 'not_found'),
         ibdb: upsertResult.ibdb || (afterState.ibdbBook ? 'unchanged' : 'not_found')
       },

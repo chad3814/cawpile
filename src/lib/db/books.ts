@@ -5,6 +5,20 @@ import { detectBookType } from '@/lib/bookTypeDetection'
 import type { SignedBookSearchResult, SourceEntry, SearchProviderResult } from '@/lib/search/types'
 import { verifySignature } from '@/lib/search/utils/signResult'
 
+/**
+ * Status returned for each provider after upsert operation
+ */
+export type ProviderUpsertStatus = 'created' | 'updated' | 'unchanged' | null
+
+/**
+ * Result of upserting all provider records
+ */
+export interface UpsertAllProvidersResult {
+  google: ProviderUpsertStatus
+  hardcover: ProviderUpsertStatus
+  ibdb: ProviderUpsertStatus
+}
+
 export async function findOrCreateBook(
   title: string,
   authors: string[],
@@ -519,11 +533,18 @@ export async function findOrCreateEditionFromSignedResult(
 
 /**
  * Create or update all provider records (Google, Hardcover, IBDB) for an edition
+ * Returns status for each provider indicating if the record was created, updated, unchanged, or not found
  */
-async function upsertAllProviderRecords(
+export async function upsertAllProviderRecords(
   editionId: string,
   sources: SourceEntry[]
-): Promise<void> {
+): Promise<UpsertAllProvidersResult> {
+  const result: UpsertAllProvidersResult = {
+    google: null,
+    hardcover: null,
+    ibdb: null
+  }
+
   for (const source of sources) {
     try {
       if (source.provider === 'google') {
@@ -546,10 +567,12 @@ async function upsertAllProviderRecords(
               categories: data.categories,
             }
           })
+          result.google = 'updated'
         } else {
           await prisma.googleBook.create({
             data: mapGoogleSource(source, editionId)
           })
+          result.google = 'created'
         }
       } else if (source.provider === 'hardcover') {
         const existing = await prisma.hardcoverBook.findUnique({
@@ -576,10 +599,12 @@ async function upsertAllProviderRecords(
               goodReadsId: data.goodReadsId,
             }
           })
+          result.hardcover = 'updated'
         } else {
           await prisma.hardcoverBook.create({
             data: mapHardcoverSource(source, editionId)
           })
+          result.hardcover = 'created'
         }
       } else if (source.provider === 'ibdb') {
         const existing = await prisma.ibdbBook.findUnique({
@@ -602,10 +627,12 @@ async function upsertAllProviderRecords(
               isbn13: data.isbn13,
             }
           })
+          result.ibdb = 'updated'
         } else {
           await prisma.ibdbBook.create({
             data: mapIbdbSource(source, editionId)
           })
+          result.ibdb = 'created'
         }
       }
       // Skip 'local' provider - it's already in our database
@@ -613,6 +640,8 @@ async function upsertAllProviderRecords(
       console.error(`Failed to upsert ${source.provider} record:`, error)
     }
   }
+
+  return result
 }
 
 /**
