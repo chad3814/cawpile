@@ -76,7 +76,7 @@ export default function BookTable({ books }: BookTableProps) {
   const renderBookRow = (book: DashboardBookData) => {
     const displayTitle = book.edition.title || book.edition.book.title
     const authors = book.edition.book.authors.join(', ')
-    const imageUrl = getCoverImageUrl(book.edition)
+    const imageUrl = getCoverImageUrl(book.edition, book.preferredCoverProvider)
 
     return (
       <tr

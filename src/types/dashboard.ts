@@ -44,6 +44,7 @@ export interface DashboardBookData {
   authorPoc?: string | null
   authorPocDetails?: string | null
   notes?: string | null
+  preferredCoverProvider?: string | null
   edition: {
     id: string
     title: string | null

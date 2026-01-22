@@ -2,7 +2,7 @@
 
 import { Fragment, useState, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
 import BookClubField from '@/components/forms/BookClubField'
 import ReadathonField from '@/components/forms/ReadathonField'
@@ -14,6 +14,19 @@ import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 import { BookStatus, BookFormat } from '@prisma/client'
 import { AcquisitionMethod, RepresentationValue, BookTrackingData } from '@/types/book'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+
+interface EditionWithProviders {
+  hardcoverBook?: {
+    imageUrl: string | null
+  } | null
+  googleBook?: {
+    imageUrl: string | null
+  } | null
+  ibdbBook?: {
+    imageUrl: string | null
+  } | null
+}
 
 interface EditBookModalProps {
   isOpen: boolean
@@ -38,16 +51,21 @@ interface EditBookModalProps {
     authorPoc?: string | null
     authorPocDetails?: string | null
     notes?: string | null
+    preferredCoverProvider?: string | null
   }
+  edition?: EditionWithProviders
 }
+
+type CoverProvider = 'hardcover' | 'google' | 'ibdb'
 
 export default function EditBookModal({
   isOpen,
   onClose,
-  book
+  book,
+  edition
 }: EditBookModalProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'basic' | 'tracking' | 'additional'>('basic')
+  const [activeTab, setActiveTab] = useState<'basic' | 'tracking' | 'additional' | 'cover'>('basic')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Basic fields
@@ -85,6 +103,11 @@ export default function EditBookModal({
   )
   const [authorPocDetails, setAuthorPocDetails] = useState(book.authorPocDetails || '')
 
+  // Cover preference
+  const [preferredCoverProvider, setPreferredCoverProvider] = useState<CoverProvider | null>(
+    (book.preferredCoverProvider as CoverProvider) || null
+  )
+
   // Clear DNF reason and set default date when status changes to DNF
   useEffect(() => {
     if (status === BookStatus.DNF && !dnfDate) {
@@ -95,6 +118,40 @@ export default function EditBookModal({
       setDnfReason('')
     }
   }, [status, dnfDate])
+
+  // Get available covers from edition
+  const availableCovers: { provider: CoverProvider; imageUrl: string }[] = []
+  if (edition?.hardcoverBook?.imageUrl) {
+    availableCovers.push({ provider: 'hardcover', imageUrl: edition.hardcoverBook.imageUrl })
+  }
+  if (edition?.googleBook?.imageUrl) {
+    availableCovers.push({ provider: 'google', imageUrl: edition.googleBook.imageUrl })
+  }
+  if (edition?.ibdbBook?.imageUrl) {
+    availableCovers.push({ provider: 'ibdb', imageUrl: edition.ibdbBook.imageUrl })
+  }
+
+  // Determine which cover is currently selected (either preferred or default)
+  const getSelectedProvider = (): CoverProvider | null => {
+    if (preferredCoverProvider && availableCovers.some(c => c.provider === preferredCoverProvider)) {
+      return preferredCoverProvider
+    }
+    // Default to first available (hardcover > google > ibdb order)
+    if (availableCovers.length > 0) {
+      return availableCovers[0].provider
+    }
+    return null
+  }
+
+  const handleCoverSelect = (provider: CoverProvider) => {
+    // If clicking the same provider that's already default (first available), clear preference
+    if (preferredCoverProvider === null && availableCovers[0]?.provider === provider) {
+      return // Already showing this one by default
+    }
+    // If clicking the currently preferred provider, keep it selected
+    // If clicking a different provider, set it as preferred
+    setPreferredCoverProvider(provider)
+  }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -128,6 +185,7 @@ export default function EditBookModal({
           dnfReason: status === BookStatus.DNF ? dnfReason : undefined,
           finishDate: status === BookStatus.DNF && dnfDate ? dnfDate : undefined,
           notes: notes || undefined,
+          preferredCoverProvider,
           ...trackingData,
           ...additionalData
         }),
@@ -228,6 +286,16 @@ export default function EditBookModal({
                       }`}
                     >
                       Additional Details
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('cover')}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        activeTab === 'cover'
+                          ? 'border-orange-500 text-orange-600 dark:text-orange-400'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      Cover
                     </button>
                   </nav>
                 </div>
@@ -384,6 +452,80 @@ export default function EditBookModal({
                         onValueChange={setAuthorPoc}
                         onDetailsChange={setAuthorPocDetails}
                       />
+                    </div>
+                  )}
+
+                  {activeTab === 'cover' && (
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Select Cover Image
+                        </label>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                          Choose which cover image to display for this book in your library.
+                        </p>
+
+                        {availableCovers.length === 0 ? (
+                          <div className="text-center py-8">
+                            <div className="mx-auto w-16 h-20 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center mb-3">
+                              <svg
+                                className="w-8 h-10 text-gray-400 dark:text-gray-500"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={1.5}
+                                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                />
+                              </svg>
+                            </div>
+                            <p className="text-gray-500 dark:text-gray-400">
+                              No cover images available for this book.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-4">
+                            {availableCovers.map(({ provider, imageUrl }) => {
+                              const isSelected = getSelectedProvider() === provider
+                              const isPreferred = preferredCoverProvider === provider
+
+                              return (
+                                <button
+                                  key={provider}
+                                  type="button"
+                                  onClick={() => handleCoverSelect(provider)}
+                                  className={`relative aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all ${
+                                    isSelected
+                                      ? 'border-orange-500 ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-gray-800'
+                                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                                  }`}
+                                >
+                                  <Image
+                                    src={imageUrl}
+                                    alt={`Cover from ${provider}`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 33vw, 200px"
+                                  />
+                                  {isSelected && (
+                                    <div className="absolute top-2 right-2 bg-orange-500 rounded-full p-1">
+                                      <CheckIcon className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                  {isPreferred && (
+                                    <div className="absolute bottom-0 left-0 right-0 bg-orange-500/90 text-white text-xs py-1 text-center">
+                                      Selected
+                                    </div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

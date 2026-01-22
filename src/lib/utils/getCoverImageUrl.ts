@@ -18,10 +18,36 @@ export interface EditionWithProviders {
  * across multiple providers: Hardcover > Google > IBDB
  *
  * @param edition - Edition object with provider relations
+ * @param preferredProvider - Optional preferred provider ('hardcover' | 'google' | 'ibdb')
  * @returns The first non-null imageUrl found, or undefined if none available
  */
-export function getCoverImageUrl(edition: EditionWithProviders): string | undefined {
-  // Priority: Hardcover > Google > IBDB
+export function getCoverImageUrl(
+  edition: EditionWithProviders,
+  preferredProvider?: string | null
+): string | undefined {
+  // If a preferred provider is specified and has a valid image, use it
+  if (preferredProvider) {
+    let preferredImage: string | null | undefined
+
+    switch (preferredProvider) {
+      case 'hardcover':
+        preferredImage = edition.hardcoverBook?.imageUrl
+        break
+      case 'google':
+        preferredImage = edition.googleBook?.imageUrl
+        break
+      case 'ibdb':
+        preferredImage = edition.ibdbBook?.imageUrl
+        break
+    }
+
+    // Return preferred provider's image if it exists
+    if (preferredImage) {
+      return preferredImage
+    }
+  }
+
+  // Default fallback priority: Hardcover > Google > IBDB
   const imageUrl =
     edition.hardcoverBook?.imageUrl ||
     edition.googleBook?.imageUrl ||

@@ -4,6 +4,9 @@ import prisma from '@/lib/prisma'
 import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
 
+// Valid cover provider values
+const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb']
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,7 +47,9 @@ export async function PATCH(
       disabilityDetails,
       isNewAuthor,
       authorPoc,
-      authorPocDetails
+      authorPocDetails,
+      // Cover preference
+      preferredCoverProvider
     } = body
 
     // Validate format array if provided
@@ -82,6 +87,16 @@ export async function PATCH(
         { error: 'Review must not exceed 5,000 characters' },
         { status: 400 }
       )
+    }
+
+    // Validate preferredCoverProvider if provided
+    if (preferredCoverProvider !== undefined && preferredCoverProvider !== null) {
+      if (!VALID_COVER_PROVIDERS.includes(preferredCoverProvider)) {
+        return NextResponse.json(
+          { error: `Invalid cover provider: ${preferredCoverProvider}. Must be one of: ${VALID_COVER_PROVIDERS.join(', ')}` },
+          { status: 400 }
+        )
+      }
     }
 
     // Check if user owns this book
@@ -134,6 +149,11 @@ export async function PATCH(
     if (isNewAuthor !== undefined) updateData.isNewAuthor = isNewAuthor
     if (authorPoc !== undefined) updateData.authorPoc = authorPoc
     if (authorPocDetails !== undefined) updateData.authorPocDetails = authorPocDetails
+
+    // Cover preference - allow setting to null to clear preference
+    if (preferredCoverProvider !== undefined) {
+      updateData.preferredCoverProvider = preferredCoverProvider
+    }
 
     // Handle status changes
     if (status === 'COMPLETED' && !userBook.finishDate && !finishDate) {
@@ -206,7 +226,9 @@ export async function PATCH(
         edition: {
           include: {
             book: true,
-            googleBook: true
+            googleBook: true,
+            hardcoverBook: true,
+            ibdbBook: true
           }
         },
         cawpileRating: true
@@ -253,7 +275,9 @@ export async function PATCH(
         edition: {
           include: {
             book: true,
-            googleBook: true
+            googleBook: true,
+            hardcoverBook: true,
+            ibdbBook: true
           }
         },
         cawpileRating: true

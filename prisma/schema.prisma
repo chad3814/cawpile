@@ -191,6 +191,9 @@ model UserBook {
   authorPoc               String?          // Yes, No, Unknown
   authorPocDetails        String?          @db.VarChar(200)
 
+  // Cover image preference
+  preferredCoverProvider  String?          // 'hardcover' | 'google' | 'ibdb' | null
+
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   edition        Edition          @relation(fields: [editionId], references: [id])
   cawpileRating  CawpileRating?

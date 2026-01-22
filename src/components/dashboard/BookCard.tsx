@@ -62,7 +62,7 @@ export default function BookCard({ book }: BookCardProps) {
   const [selectedFormat, setSelectedFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const displayTitle = book.edition.title || book.edition.book.title
   const authors = book.edition.book.authors
-  const imageUrl = getCoverImageUrl(book.edition)
+  const imageUrl = getCoverImageUrl(book.edition, book.preferredCoverProvider)
   const bookType = (book.edition.book.bookType || 'FICTION') as BookType
 
   // Determine if share button should be visible
@@ -562,7 +562,9 @@ export default function BookCard({ book }: BookCardProps) {
         authorPoc: book.authorPoc,
         authorPocDetails: book.authorPocDetails,
         notes: book.notes,
+        preferredCoverProvider: book.preferredCoverProvider,
       }}
+      edition={book.edition}
     />
 
     {/* Book Details Modal */}
