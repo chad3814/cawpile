@@ -90,7 +90,7 @@ model Edition {
   authors       String[]       // Edition-specific authors if different
   format        BookFormat?
   googleBooksId String?        @unique
-  book          Book           @relation(fields: [bookId], references: [id])
+  book          Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
   userBooks     UserBook[]
   googleBook    GoogleBook?
   hardcoverBook HardcoverBook?
@@ -117,7 +117,7 @@ model GoogleBook {
   categories       String[]
   publisher        String?  // For charts
   audiobookDuration Int?     // Duration in minutes for audiobook calculations
-  edition          Edition  @relation(fields: [editionId], references: [id])
+  edition          Edition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now())
 }
 
@@ -140,7 +140,7 @@ model HardcoverBook {
   hardcoverSlug   String?
   openLibraryId   String?
   goodReadsId     String?
-  edition         Edition  @relation(fields: [editionId], references: [id])
+  edition         Edition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
 }
 
@@ -158,7 +158,7 @@ model IbdbBook {
   categories    String[]
   isbn10        String?
   isbn13        String?
-  edition       Edition  @relation(fields: [editionId], references: [id])
+  edition       Edition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
 }
 
@@ -195,7 +195,7 @@ model UserBook {
   preferredCoverProvider  String?          // 'hardcover' | 'google' | 'ibdb' | null
 
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  edition        Edition          @relation(fields: [editionId], references: [id])
+  edition        Edition          @relation(fields: [editionId], references: [id], onDelete: Cascade)
   cawpileRating  CawpileRating?
   readingSessions ReadingSession[]
   sharedReview   SharedReview?
@@ -301,7 +301,7 @@ enum LibrarySortOrder {
 model AdminAuditLog {
   id         String   @id @default(cuid())
   adminId    String
-  admin      User     @relation("AdminUser", fields: [adminId], references: [id])
+  admin      User     @relation("AdminUser", fields: [adminId], references: [id], onDelete: SetNull)
   entityType String   // e.g., "Book", "Edition", "User"
   entityId   String   // ID of the entity being modified
   fieldName  String?  // Column/field that was changed
