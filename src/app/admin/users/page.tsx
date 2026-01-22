@@ -10,6 +10,7 @@ async function getUsers() {
       id: true,
       email: true,
       name: true,
+      username: true,
       isAdmin: true,
       isSuperAdmin: true,
       createdAt: true,

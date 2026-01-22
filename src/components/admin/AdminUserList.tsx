@@ -7,6 +7,7 @@ interface User {
   id: string
   email: string
   name: string | null
+  username: string | null
   isAdmin: boolean
   isSuperAdmin: boolean
   createdAt: Date
@@ -27,7 +28,8 @@ export default function AdminUserList({ users, currentUserId }: AdminUserListPro
 
   const filteredUsers = users.filter(user =>
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.username?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const handleToggleAdmin = async (userId: string, newAdminStatus: boolean) => {
@@ -77,7 +79,7 @@ export default function AdminUserList({ users, currentUserId }: AdminUserListPro
       <div className="px-4 py-3 border-b border-gray-200">
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder="Search by name, email, or username..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
@@ -100,6 +102,9 @@ export default function AdminUserList({ users, currentUserId }: AdminUserListPro
                 <div className="ml-4">
                   <div className="text-sm font-medium text-gray-900">
                     {user.name || 'No name'}
+                    {user.username && (
+                      <span className="ml-2 text-gray-500 font-normal">@{user.username}</span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">{user.email}</div>
                   <div className="text-xs text-gray-400">
