@@ -49,7 +49,7 @@ export async function logFieldChanges(
 
 interface RawAuditEntry {
   id: string
-  adminId: string
+  adminId: string | null
   entityType: string
   entityId: string
   fieldName: string | null
@@ -60,7 +60,7 @@ interface RawAuditEntry {
   admin?: {
     name: string | null
     email: string
-  }
+  } | null
 }
 
 export function formatAuditEntry(entry: RawAuditEntry) {
