@@ -144,4 +144,47 @@ export class IbdbClient {
       return null
     }
   }
+
+  /**
+   * Fetches a single book by its ISBN from the IBDb API
+   *
+   * @param isbn - The ISBN (10 or 13 digits, hyphens allowed)
+   * @returns The normalized book data or null if not found/error
+   */
+  async getBookByIsbn(isbn: string): Promise<IbdbBook | null> {
+    if (!isbn) {
+      return null
+    }
+
+    // Strip hyphens for the API call
+    const cleanIsbn = isbn.replace(/-/g, '')
+
+    try {
+      const url = `${this.baseUrl}/api/isbn-json/${cleanIsbn}`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        console.error(`IBDB ISBN API error: ${response.status}`)
+        return null
+      }
+
+      const data: IbdbBookResponse = await response.json()
+
+      if (data.status !== 'ok' || !data.book) {
+        console.error('IBDB book not found by ISBN:', data.message)
+        return null
+      }
+
+      return normalizeBook(data.book)
+    } catch (error) {
+      console.error('IBDB client error:', error)
+      return null
+    }
+  }
 }

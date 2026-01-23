@@ -181,6 +181,36 @@ async function searchGoogleById(googleId: string): Promise<TaggedSearchResponse>
 }
 
 /**
+ * Check if a book matches the searched ISBN
+ */
+function bookMatchesIsbn(book: { isbn10?: string; isbn13?: string }, searchedIsbn: string): boolean {
+  const normalizedSearch = searchedIsbn.replace(/-/g, '')
+
+  if (book.isbn13 && book.isbn13.replace(/-/g, '') === normalizedSearch) {
+    return true
+  }
+  if (book.isbn10 && book.isbn10.replace(/-/g, '') === normalizedSearch) {
+    return true
+  }
+
+  // Handle ISBN-10 to ISBN-13 conversion (978 prefix)
+  if (normalizedSearch.length === 13 && normalizedSearch.startsWith('978')) {
+    const isbn10Part = normalizedSearch.slice(3, 12)
+    if (book.isbn10 && book.isbn10.replace(/-/g, '').slice(0, 9) === isbn10Part) {
+      return true
+    }
+  }
+  if (normalizedSearch.length === 10 && book.isbn13) {
+    const isbn13 = book.isbn13.replace(/-/g, '')
+    if (isbn13.startsWith('978') && isbn13.slice(3, 12) === normalizedSearch.slice(0, 9)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
  * Search all providers by ISBN
  */
 async function searchByIsbn(rawIsbn: string): Promise<TaggedSearchResponse> {
@@ -196,11 +226,12 @@ async function searchByIsbn(rawIsbn: string): Promise<TaggedSearchResponse> {
   }
 
   // Search all providers in parallel
+  // Use direct ISBN lookup for IBDB, text search with filtering for others
   const ibdbClient = new IbdbClient()
   const hardcoverClient = new HardcoverClient()
 
-  const [ibdbResults, hardcoverResults, googleResults] = await Promise.allSettled([
-    ibdbClient.search(normalizedIsbn),
+  const [ibdbResult, hardcoverResults, googleResults] = await Promise.allSettled([
+    ibdbClient.getBookByIsbn(normalizedIsbn),  // Direct ISBN lookup
     hardcoverClient.search(normalizedIsbn, 10),
     searchGoogleBooks(`isbn:${normalizedIsbn}`, 10)
   ])
@@ -208,25 +239,34 @@ async function searchByIsbn(rawIsbn: string): Promise<TaggedSearchResponse> {
   // Collect results from all providers
   const providerResults: SearchProviderResult[][] = []
 
-  // Process IBDb results
-  if (ibdbResults.status === 'fulfilled' && ibdbResults.value.length > 0) {
-    providerResults.push(
-      ibdbResults.value.map(book => toProviderResult(ibdbBookToSearchResult(book), 'ibdb', 4))
-    )
+  // Process IBDb result - direct ISBN lookup returns single book or null
+  if (ibdbResult.status === 'fulfilled' && ibdbResult.value) {
+    providerResults.push([
+      toProviderResult(ibdbBookToSearchResult(ibdbResult.value), 'ibdb', 4)
+    ])
   }
 
-  // Process Hardcover results
+  // Process Hardcover results - filter to only books with matching ISBN
   if (hardcoverResults.status === 'fulfilled' && hardcoverResults.value.length > 0) {
-    providerResults.push(
-      hardcoverResults.value.map(doc => toProviderResult(hardcoverDocToSearchResult(doc), 'hardcover', 6))
-    )
+    const matchingDocs = hardcoverResults.value
+      .filter(doc => {
+        const result = hardcoverDocToSearchResult(doc)
+        return bookMatchesIsbn(result, normalizedIsbn)
+      })
+      .map(doc => toProviderResult(hardcoverDocToSearchResult(doc), 'hardcover', 6))
+    if (matchingDocs.length > 0) {
+      providerResults.push(matchingDocs)
+    }
   }
 
-  // Process Google results
+  // Process Google results - filter to only books with matching ISBN
   if (googleResults.status === 'fulfilled' && googleResults.value.length > 0) {
-    providerResults.push(
-      googleResults.value.map(book => toProviderResult(book, 'google', 5))
-    )
+    const matchingBooks = googleResults.value
+      .filter(book => bookMatchesIsbn(book, normalizedIsbn))
+      .map(book => toProviderResult(book, 'google', 5))
+    if (matchingBooks.length > 0) {
+      providerResults.push(matchingBooks)
+    }
   }
 
   // Merge results from all providers
