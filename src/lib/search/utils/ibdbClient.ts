@@ -19,16 +19,25 @@ interface IbdbRawBook {
   isbn10?: string
   isbn13?: string
   description?: string
+  synopsis?: string  // API returns synopsis, not description
   publishedDate?: string
+  publicationDate?: string  // API returns publicationDate, not publishedDate
   pageCount?: number
   imageUrl?: string
+  image?: { url?: string }  // API returns image object, not imageUrl
   categories?: unknown[]
   [key: string]: unknown
 }
 
-interface IbdbResponse {
+interface IbdbSearchResponse {
   status: 'ok' | 'error'
   books?: IbdbRawBook[]
+  message?: string
+}
+
+interface IbdbBookResponse {
+  status: 'ok' | 'error'
+  book?: IbdbRawBook
   message?: string
 }
 
@@ -51,10 +60,13 @@ function normalizeBook(raw: IbdbRawBook): IbdbBook {
     authors: normalizeStringArray(raw.authors),
     isbn10: raw.isbn10,
     isbn13: raw.isbn13,
-    description: raw.description,
-    publishedDate: raw.publishedDate,
+    // API returns synopsis, not description
+    description: raw.description || raw.synopsis,
+    // API returns publicationDate, not publishedDate
+    publishedDate: raw.publishedDate || raw.publicationDate,
     pageCount: raw.pageCount,
-    imageUrl: raw.imageUrl,
+    // API returns image object, not imageUrl
+    imageUrl: raw.imageUrl || raw.image?.url,
     categories: normalizeStringArray(raw.categories),
   }
 }
@@ -79,7 +91,7 @@ export class IbdbClient {
         return []
       }
 
-      const data: IbdbResponse = await response.json()
+      const data: IbdbSearchResponse = await response.json()
 
       if (data.status === 'error') {
         console.error('IBDB search error:', data.message)
@@ -119,8 +131,14 @@ export class IbdbClient {
         return null
       }
 
-      const data: IbdbRawBook = await response.json()
-      return normalizeBook(data)
+      const data: IbdbBookResponse = await response.json()
+
+      if (data.status !== 'ok' || !data.book) {
+        console.error('IBDB book not found or error:', data.message)
+        return null
+      }
+
+      return normalizeBook(data.book)
     } catch (error) {
       console.error('IBDB client error:', error)
       return null

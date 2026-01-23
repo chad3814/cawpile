@@ -17,17 +17,21 @@ describe('IbdbClient.getBookById', () => {
   })
 
   test('should return normalized IbdbBook for successful lookup', async () => {
+    // API returns { status: 'ok', book: { ... } } format
     const mockBookResponse = {
-      id: '610f49ed-f674-4689-93fb-e0215d4bb2c7',
-      title: 'Test Book',
-      authors: [{ name: 'Test Author' }],
-      isbn10: '0123456789',
-      isbn13: '9780123456789',
-      description: 'A test book description',
-      publishedDate: '2024-01-15',
-      pageCount: 350,
-      imageUrl: 'https://example.com/cover.jpg',
-      categories: ['Fiction', 'Fantasy']
+      status: 'ok',
+      book: {
+        id: '610f49ed-f674-4689-93fb-e0215d4bb2c7',
+        title: 'Test Book',
+        authors: [{ name: 'Test Author' }],
+        isbn10: '0123456789',
+        isbn13: '9780123456789',
+        synopsis: 'A test book description',  // API uses synopsis, not description
+        publicationDate: '2024-01-15',        // API uses publicationDate, not publishedDate
+        pageCount: 350,
+        image: { url: 'https://example.com/cover.jpg' },  // API uses image.url, not imageUrl
+        categories: ['Fiction', 'Fantasy']
+      }
     }
 
     mockFetch.mockResolvedValueOnce({
