@@ -25,8 +25,8 @@ export class HardcoverProvider extends BaseSearchProvider {
         const isbn13 = book.isbns?.find(isbn => isbn.length === 13)
 
         return {
-          id: book.id || `hardcover-${Date.now()}-${Math.random()}`,
-          googleId: book.id || "",
+          id: book.id ? String(book.id) : `hardcover-${Date.now()}-${Math.random()}`,
+          googleId: book.id ? String(book.id) : "",
           title: book.title || "Unknown Title",
           authors: book.author_names || [],
           description: book.description,
