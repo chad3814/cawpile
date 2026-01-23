@@ -38,6 +38,13 @@ interface HardcoverBookByPkResponse {
   errors?: Array<{ message: string }>
 }
 
+interface HardcoverBooksByIsbnResponse {
+  data?: {
+    books?: HardcoverDocument[]
+  }
+  errors?: Array<{ message: string }>
+}
+
 export class HardcoverClient {
   private endpoint = 'https://api.hardcover.app/v1/graphql'
   private token = process.env.HARDCOVER_TOKEN
@@ -173,6 +180,77 @@ export class HardcoverClient {
       }
 
       return data.data?.books_by_pk || null
+    } catch (error) {
+      console.error('Hardcover client error:', error)
+      return null
+    }
+  }
+
+  /**
+   * Fetches a book by its ISBN from the Hardcover GraphQL API
+   *
+   * @param isbn - The ISBN (10 or 13 digits)
+   * @returns The book document or null if not found/error
+   */
+  async getBookByIsbn(isbn: string): Promise<HardcoverDocument | null> {
+    if (!isbn) {
+      return null
+    }
+
+    if (!this.token) {
+      console.error('HARDCOVER_TOKEN not configured')
+      return null
+    }
+
+    // Strip hyphens
+    const cleanIsbn = isbn.replace(/-/g, '')
+
+    try {
+      // Use isbn_13 or isbn_10 based on length
+      const isbnField = cleanIsbn.length === 13 ? 'isbn_13' : 'isbn_10'
+
+      const graphqlQuery = `
+        query GetBookByIsbn($isbn: String!) {
+          books(where: {editions: {${isbnField}: {_eq: $isbn}}}) {
+            id
+            title
+            description
+            author_names
+            release_date
+            pages
+            image
+            isbns
+            genres
+          }
+        }
+      `
+
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: JSON.stringify({
+          query: graphqlQuery,
+          variables: { isbn: cleanIsbn }
+        })
+      })
+
+      if (!response.ok) {
+        console.error(`Hardcover API error: ${response.status}`)
+        return null
+      }
+
+      const data: HardcoverBooksByIsbnResponse = await response.json()
+
+      if (data.errors && data.errors.length > 0) {
+        console.error('Hardcover GraphQL errors:', data.errors)
+        return null
+      }
+
+      // Return the first matching book or null
+      return data.data?.books?.[0] || null
     } catch (error) {
       console.error('Hardcover client error:', error)
       return null

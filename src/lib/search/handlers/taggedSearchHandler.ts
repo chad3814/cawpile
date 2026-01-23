@@ -225,14 +225,13 @@ async function searchByIsbn(rawIsbn: string): Promise<TaggedSearchResponse> {
     }
   }
 
-  // Search all providers in parallel
-  // Use direct ISBN lookup for IBDB, text search with filtering for others
+  // Search all providers in parallel using direct ISBN lookups
   const ibdbClient = new IbdbClient()
   const hardcoverClient = new HardcoverClient()
 
-  const [ibdbResult, hardcoverResults, googleResults] = await Promise.allSettled([
-    ibdbClient.getBookByIsbn(normalizedIsbn),  // Direct ISBN lookup
-    hardcoverClient.search(normalizedIsbn, 10),
+  const [ibdbResult, hardcoverResult, googleResults] = await Promise.allSettled([
+    ibdbClient.getBookByIsbn(normalizedIsbn),      // Direct ISBN lookup
+    hardcoverClient.getBookByIsbn(normalizedIsbn), // Direct ISBN lookup via GraphQL
     searchGoogleBooks(`isbn:${normalizedIsbn}`, 10)
   ])
 
@@ -246,17 +245,11 @@ async function searchByIsbn(rawIsbn: string): Promise<TaggedSearchResponse> {
     ])
   }
 
-  // Process Hardcover results - filter to only books with matching ISBN
-  if (hardcoverResults.status === 'fulfilled' && hardcoverResults.value.length > 0) {
-    const matchingDocs = hardcoverResults.value
-      .filter(doc => {
-        const result = hardcoverDocToSearchResult(doc)
-        return bookMatchesIsbn(result, normalizedIsbn)
-      })
-      .map(doc => toProviderResult(hardcoverDocToSearchResult(doc), 'hardcover', 6))
-    if (matchingDocs.length > 0) {
-      providerResults.push(matchingDocs)
-    }
+  // Process Hardcover result - direct ISBN lookup returns single book or null
+  if (hardcoverResult.status === 'fulfilled' && hardcoverResult.value) {
+    providerResults.push([
+      toProviderResult(hardcoverDocToSearchResult(hardcoverResult.value), 'hardcover', 6)
+    ])
   }
 
   // Process Google results - filter to only books with matching ISBN
