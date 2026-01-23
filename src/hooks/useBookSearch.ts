@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { SignedBookSearchResult } from '@/lib/search/types'
 
 /**
@@ -40,8 +40,13 @@ export function useBookSearch() {
   const [error, setError] = useState<string | null>(null)
   const [searchType, setSearchType] = useState<SearchType>('standard')
   const [taggedProvider, setTaggedProvider] = useState<string | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const searchBooks = useCallback(async (searchQuery: string) => {
+    // Cancel any in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
     if (!searchQuery.trim()) {
       setResults([])
       setSearchType('standard')
@@ -60,11 +65,17 @@ export function useBookSearch() {
       setTaggedProvider(null)
     }
 
+    // Create new AbortController for this request
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await fetch(`/api/books/search?q=${encodeURIComponent(searchQuery)}`)
+      const response = await fetch(`/api/books/search?q=${encodeURIComponent(searchQuery)}`, {
+        signal: abortController.signal
+      })
 
       if (!response.ok) {
         throw new Error('Failed to search books')
@@ -89,17 +100,24 @@ export function useBookSearch() {
         setError(data.error)
       }
     } catch (err) {
+      // Ignore aborted requests - they're expected when a new search starts
+      if (err instanceof Error && err.name === 'AbortError') {
+        return
+      }
       setError(err instanceof Error ? err.message : 'An error occurred')
       setResults([])
     } finally {
-      setIsLoading(false)
+      // Only clear loading if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setIsLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       searchBooks(query)
-    }, 300) // 300ms debounce
+    }, 600) // 600ms debounce
 
     return () => clearTimeout(timeoutId)
   }, [query, searchBooks])

@@ -37,9 +37,9 @@ describe('useBookSearch hook tagged search functionality', () => {
       result.current.setQuery('ibdb:test-uuid')
     })
 
-    // Fast-forward debounce timer
+    // Fast-forward debounce timer (600ms)
     act(() => {
-      jest.advanceTimersByTime(300)
+      jest.advanceTimersByTime(600)
     })
 
     await waitFor(() => {
@@ -69,8 +69,9 @@ describe('useBookSearch hook tagged search functionality', () => {
       result.current.setQuery('hard:12345')
     })
 
+    // Fast-forward debounce timer (600ms)
     act(() => {
-      jest.advanceTimersByTime(300)
+      jest.advanceTimersByTime(600)
     })
 
     await waitFor(() => {
@@ -97,8 +98,9 @@ describe('useBookSearch hook tagged search functionality', () => {
       result.current.setQuery('lord of the rings')
     })
 
+    // Fast-forward debounce timer (600ms)
     act(() => {
-      jest.advanceTimersByTime(300)
+      jest.advanceTimersByTime(600)
     })
 
     await waitFor(() => {
@@ -128,8 +130,9 @@ describe('useBookSearch hook tagged search functionality', () => {
       result.current.setQuery('ibdb:test-uuid')
     })
 
+    // Fast-forward debounce timer (600ms)
     act(() => {
-      jest.advanceTimersByTime(300)
+      jest.advanceTimersByTime(600)
     })
 
     await waitFor(() => {
