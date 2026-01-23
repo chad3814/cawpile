@@ -29,6 +29,7 @@ describe('PublicReviewDisplay', () => {
       bookClubName: 'Test Book Club',
       readathonName: 'Test Readathon',
       review: 'This is a test review of the book.',
+      preferredCoverProvider: null,
       edition: {
         title: 'Test Book Title',
         book: {
@@ -38,7 +39,10 @@ describe('PublicReviewDisplay', () => {
         },
         googleBook: {
           imageUrl: 'https://example.com/cover.jpg',
+          description: 'A great test book',
         },
+        hardcoverBook: null,
+        ibdbBook: null,
       },
       cawpileRating: {
         id: 'rating-id',

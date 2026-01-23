@@ -38,10 +38,13 @@ global.fetch = jest.fn(() =>
 describe('AddBookWizard DNF Date Handling', () => {
   const mockBook = {
     id: 'test-id',
+    googleId: 'google-test-id',
     title: 'Test Book',
     authors: ['Test Author'],
     imageUrl: 'https://example.com/cover.jpg',
     isbn: '1234567890',
+    categories: [],
+    sources: [],
     signature: 'test-signature',
   }
 

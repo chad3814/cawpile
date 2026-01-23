@@ -36,13 +36,10 @@ describe('BookTable Delete Functionality', () => {
           format: null,
           googleBooksId: null,
           googleBook: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         }
       ],
       createdAt: new Date(),
       updatedAt: new Date(),
-      primaryGenre: null,
     },
     {
       id: 'book-2',
@@ -62,13 +59,10 @@ describe('BookTable Delete Functionality', () => {
           format: null,
           googleBooksId: null,
           googleBook: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         }
       ],
       createdAt: new Date(),
       updatedAt: new Date(),
-      primaryGenre: null,
     },
   ]
 

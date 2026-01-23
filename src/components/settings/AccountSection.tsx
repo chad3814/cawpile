@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import DeleteAccountModal from './DeleteAccountModal'
+import DataPrivacySection from './DataPrivacySection'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 interface AccountSectionProps {
@@ -29,6 +30,9 @@ export default function AccountSection({ email, onError }: AccountSectionProps) 
           </p>
         </div>
       </div>
+
+      {/* Data & Privacy */}
+      <DataPrivacySection onError={onError} />
 
       {/* Danger Zone */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-red-200 dark:border-red-800 p-6">

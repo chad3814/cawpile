@@ -59,7 +59,9 @@ describe('ProfilePageClient TBR Section', () => {
           imageUrl: 'https://example.com/cover1.jpg',
           description: 'A great book',
           pageCount: 300
-        }
+        },
+        hardcoverBook: null,
+        ibdbBook: null
       },
       cawpileRating: null
     }
