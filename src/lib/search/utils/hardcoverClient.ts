@@ -1,5 +1,5 @@
-interface HardcoverDocument {
-  id?: string
+export interface HardcoverDocument {
+  id?: number | string
   title?: string
   description?: string
   author_names?: string[]
@@ -27,6 +27,13 @@ interface HardcoverSearchResponse {
       results?: string | HardcoverSearchResults
       error?: string
     }
+  }
+  errors?: Array<{ message: string }>
+}
+
+interface HardcoverBookByPkResponse {
+  data?: {
+    books_by_pk?: HardcoverDocument | null
   }
   errors?: Array<{ message: string }>
 }
@@ -105,6 +112,70 @@ export class HardcoverClient {
     } catch (error) {
       console.error('Hardcover client error:', error)
       return []
+    }
+  }
+
+  /**
+   * Fetches a single book by its ID from the Hardcover GraphQL API
+   *
+   * @param id - The Hardcover book ID (numeric)
+   * @returns The book document or null if not found/error
+   */
+  async getBookById(id: number): Promise<HardcoverDocument | null> {
+    if (!id || id <= 0) {
+      return null
+    }
+
+    if (!this.token) {
+      console.error('HARDCOVER_TOKEN not configured')
+      return null
+    }
+
+    try {
+      const graphqlQuery = `
+        query GetBookById($id: Int!) {
+          books_by_pk(id: $id) {
+            id
+            title
+            description
+            author_names
+            release_date
+            pages
+            image
+            isbns
+            genres
+          }
+        }
+      `
+
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.token}`
+        },
+        body: JSON.stringify({
+          query: graphqlQuery,
+          variables: { id }
+        })
+      })
+
+      if (!response.ok) {
+        console.error(`Hardcover API error: ${response.status}`)
+        return null
+      }
+
+      const data: HardcoverBookByPkResponse = await response.json()
+
+      if (data.errors && data.errors.length > 0) {
+        console.error('Hardcover GraphQL errors:', data.errors)
+        return null
+      }
+
+      return data.data?.books_by_pk || null
+    } catch (error) {
+      console.error('Hardcover client error:', error)
+      return null
     }
   }
 }

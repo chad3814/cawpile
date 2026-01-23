@@ -5,6 +5,8 @@ import { LocalDatabaseProvider } from "@/lib/search/providers/LocalDatabaseProvi
 import { GoogleBooksProvider } from "@/lib/search/providers/GoogleBooksProvider"
 import { IbdbProvider } from "@/lib/search/providers/IbdbProvider"
 import { HardcoverProvider } from "@/lib/search/providers/HardcoverProvider"
+import { parseTaggedSearch } from "@/lib/search/utils/tagParser"
+import { handleTaggedSearch } from "@/lib/search/handlers/taggedSearchHandler"
 
 export async function GET(request: NextRequest) {
   // Check authentication
@@ -31,7 +33,16 @@ export async function GET(request: NextRequest) {
   try {
     const maxResults = limit ? parseInt(limit, 10) : 10
 
-    // Create and configure the search orchestrator
+    // Check for tagged search syntax before orchestrator invocation
+    const taggedSearch = parseTaggedSearch(query)
+
+    if (taggedSearch) {
+      // Handle tagged search directly
+      const result = await handleTaggedSearch(taggedSearch.tag, taggedSearch.value)
+      return NextResponse.json(result)
+    }
+
+    // Standard search: use orchestrator
     const orchestrator = new SearchOrchestrator()
 
     // Register all providers in order of weight (highest to lowest)
@@ -43,7 +54,7 @@ export async function GET(request: NextRequest) {
     // Search across all providers
     const books = await orchestrator.search(query, maxResults)
 
-    return NextResponse.json({ books })
+    return NextResponse.json({ books, taggedSearch: false })
   } catch (error) {
     console.error("Search error:", error)
     return NextResponse.json(

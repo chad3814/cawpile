@@ -13,8 +13,41 @@ interface BookSearchModalProps {
   onSelectBook: (book: SignedBookSearchResult) => void
 }
 
+/**
+ * Get display name for tagged search providers
+ */
+function getProviderDisplayName(provider: string | null): string {
+  switch (provider) {
+    case 'ibdb':
+      return 'IBDb'
+    case 'hardcover':
+      return 'Hardcover'
+    case 'gbid':
+    case 'google':
+      return 'Google Books'
+    case 'isbn':
+      return 'ISBN'
+    default:
+      return provider || 'provider'
+  }
+}
+
+/**
+ * Get loading text for search type
+ */
+function getLoadingText(searchType: 'standard' | 'tagged', taggedProvider: string | null): string {
+  if (searchType === 'tagged' && taggedProvider) {
+    const providerName = getProviderDisplayName(taggedProvider)
+    if (taggedProvider === 'isbn') {
+      return 'Searching by ISBN...'
+    }
+    return `Searching ${providerName} by ID...`
+  }
+  return 'Searching...'
+}
+
 export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookSearchModalProps) {
-  const { query, setQuery, results, isLoading, error } = useBookSearch()
+  const { query, setQuery, results, isLoading, error, searchType, taggedProvider } = useBookSearch()
 
   const handleSelectBook = (book: SignedBookSearchResult) => {
     onSelectBook(book)
@@ -85,8 +118,11 @@ export default function BookSearchModal({ isOpen, onClose, onSelectBook }: BookS
                 {/* Search Results */}
                 <div className="mt-4 max-h-96 overflow-y-auto">
                   {isLoading && (
-                    <div className="flex justify-center py-8">
+                    <div className="flex flex-col items-center justify-center py-8">
                       <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {getLoadingText(searchType, taggedProvider)}
+                      </p>
                     </div>
                   )}
 

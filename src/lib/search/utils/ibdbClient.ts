@@ -1,4 +1,4 @@
-interface IbdbBook {
+export interface IbdbBook {
   id?: string
   title?: string
   authors?: string[]
@@ -90,6 +90,40 @@ export class IbdbClient {
     } catch (error) {
       console.error('IBDB client error:', error)
       return []
+    }
+  }
+
+  /**
+   * Fetches a single book by its UUID from the IBDb API
+   *
+   * @param uuid - The IBDb book UUID
+   * @returns The normalized book data or null if not found/error
+   */
+  async getBookById(uuid: string): Promise<IbdbBook | null> {
+    if (!uuid) {
+      return null
+    }
+
+    try {
+      const url = `${this.baseUrl}/api/book-json/${uuid}`
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        console.error(`IBDB API error: ${response.status}`)
+        return null
+      }
+
+      const data: IbdbRawBook = await response.json()
+      return normalizeBook(data)
+    } catch (error) {
+      console.error('IBDB client error:', error)
+      return null
     }
   }
 }
