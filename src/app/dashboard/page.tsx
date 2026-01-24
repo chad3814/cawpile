@@ -115,6 +115,7 @@ export default async function DashboardPage() {
         initialSortBy={sortBy}
         initialSortOrder={sortOrder}
         userName={user?.name?.split(" ")[0]}
+        isAdmin={user?.isAdmin || user?.isSuperAdmin || false}
       />
 
       {/* Statistics */}
