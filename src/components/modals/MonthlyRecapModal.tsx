@@ -136,21 +136,30 @@ export default function MonthlyRecapModal({
         setExportData(data)
       }
 
-      // For now, show a message about the video generation feature
-      // In the future, this will POST to the Remotion server
-      setError(
-        'Video generation requires the cawpile-video-gen Remotion server to be running. ' +
-          'Use "Export JSON" to download the data for manual video creation.'
-      )
-      setRenderStatus('idle')
+      // Call the Remotion render server
+      const videoResponse = await fetch('http://localhost:3001/render', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
 
-      // Future implementation:
-      // const videoResponse = await fetch('http://localhost:3001/render', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data),
-      // })
-      // ... handle video download
+      if (!videoResponse.ok) {
+        const errorData = await videoResponse.json()
+        throw new Error(errorData.message || 'Video render failed')
+      }
+
+      const result = await videoResponse.json()
+
+      // Download the rendered video
+      const downloadUrl = `http://localhost:3001/download/${result.filename}`
+      const a = document.createElement('a')
+      a.href = downloadUrl
+      a.download = result.filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+      setRenderStatus('success')
     } catch (err) {
       console.error('Error generating video:', err)
       setError(
