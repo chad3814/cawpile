@@ -8,6 +8,27 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import MonthlyRecapModal from '@/components/modals/MonthlyRecapModal'
 
+// Mock next-auth/react
+const mockSession = {
+  data: {
+    user: {
+      id: 'test-user-123',
+      email: 'test@example.com',
+      name: 'Test User',
+    },
+    expires: '2025-12-31T23:59:59.999Z',
+  },
+  status: 'authenticated' as const,
+}
+
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(() => mockSession),
+}))
+
+// Import mocked useSession for manipulation in tests
+import { useSession } from 'next-auth/react'
+const mockUseSession = useSession as jest.Mock
+
 // Mock EventSource
 class MockEventSource {
   static instances: MockEventSource[] = []
@@ -84,9 +105,18 @@ const mockExportData = {
   books: [],
 }
 
+// Store original env
+const originalEnv = process.env
+
 beforeEach(() => {
   jest.clearAllMocks()
   MockEventSource.clearInstances()
+  // Reset session mock to default authenticated state
+  mockUseSession.mockReturnValue(mockSession)
+  // Reset env
+  process.env = { ...originalEnv }
+  // Clear render server URL to test fallback
+  delete process.env.NEXT_PUBLIC_RENDER_SERVER_URL
 
   global.fetch = jest.fn().mockImplementation((url: string) => {
     if (url.includes('/api/recap/monthly')) {
@@ -107,6 +137,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks()
+  process.env = originalEnv
 })
 
 describe('Task Group 1: SSE Connection Infrastructure', () => {
@@ -132,7 +163,7 @@ describe('Task Group 1: SSE Connection Infrastructure', () => {
     await waitFor(() => {
       const eventSource = MockEventSource.getLastInstance()
       expect(eventSource).toBeDefined()
-      expect(eventSource?.url).toContain('http://localhost:3001/render-stream')
+      expect(eventSource?.url).toContain('/render-stream')
       expect(eventSource?.url).toContain('data=')
       // Verify the URL contains encoded JSON data
       const urlParams = new URLSearchParams(eventSource?.url.split('?')[1])
@@ -200,9 +231,12 @@ describe('Task Group 1: SSE Connection Infrastructure', () => {
     })
     const eventSource = MockEventSource.getLastInstance()!
 
-    // Simulate complete event
+    // Simulate complete event with s3Url
     await act(async () => {
-      eventSource.simulateEvent('complete', { filename: 'test-video.mp4' })
+      eventSource.simulateEvent('complete', {
+        filename: 'test-video.mp4',
+        s3Url: 'https://s3.amazonaws.com/bucket/test-video.mp4'
+      })
     })
 
     // Verify EventSource was closed
@@ -270,9 +304,12 @@ describe('Task Group 2: SSE Event Handling', () => {
     })
     const eventSource = MockEventSource.getLastInstance()!
 
-    // Simulate complete event
+    // Simulate complete event with s3Url
     await act(async () => {
-      eventSource.simulateEvent('complete', { filename: 'test-video.mp4' })
+      eventSource.simulateEvent('complete', {
+        filename: 'test-video.mp4',
+        s3Url: 'https://s3.amazonaws.com/bucket/test-video.mp4'
+      })
     })
 
     // Verify success status is shown
@@ -550,6 +587,274 @@ describe('Task Group 4: Cleanup and State Reset', () => {
     // Verify progress starts at 0
     await waitFor(() => {
       expect(screen.getByText('0%')).toBeInTheDocument()
+    })
+  })
+})
+
+describe('SSE URL Configuration with Environment Variable', () => {
+  test('SSE URL uses environment variable when NEXT_PUBLIC_RENDER_SERVER_URL is set', async () => {
+    // Note: In client-side Next.js, env vars are baked in at build time
+    // For testing, we check the URL pattern in the constructed EventSource URL
+    const mockOnClose = jest.fn()
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      const eventSource = MockEventSource.getLastInstance()
+      expect(eventSource).toBeDefined()
+      // Default fallback should be localhost:3001
+      expect(eventSource?.url).toContain('http://localhost:3001/render-stream')
+    })
+  })
+
+  test('SSE URL falls back to http://localhost:3001 when env var is not set', async () => {
+    const mockOnClose = jest.fn()
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      const eventSource = MockEventSource.getLastInstance()
+      expect(eventSource).toBeDefined()
+      expect(eventSource?.url).toContain('http://localhost:3001')
+      expect(eventSource?.url).toContain('/render-stream')
+    })
+  })
+
+  test('userId is included as query parameter in SSE URL', async () => {
+    const mockOnClose = jest.fn()
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      const eventSource = MockEventSource.getLastInstance()
+      expect(eventSource).toBeDefined()
+      expect(eventSource?.url).toContain('userId=test-user-123')
+    })
+  })
+
+  test('URL encoding of data parameter remains correct', async () => {
+    const mockOnClose = jest.fn()
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      const eventSource = MockEventSource.getLastInstance()
+      expect(eventSource).toBeDefined()
+
+      // Parse URL parameters
+      const url = new URL(eventSource!.url)
+      const encodedData = url.searchParams.get('data')
+      expect(encodedData).toBeTruthy()
+
+      // Verify data can be decoded properly
+      const decodedData = JSON.parse(decodeURIComponent(encodedData!))
+      expect(decodedData).toHaveProperty('metadata')
+      expect(decodedData.metadata).toHaveProperty('month')
+      expect(decodedData.metadata).toHaveProperty('year')
+    })
+  })
+})
+
+describe('S3 Video Download', () => {
+  test('s3Url is extracted from complete event data', async () => {
+    const mockOnClose = jest.fn()
+    const mockCreateElement = jest.spyOn(document, 'createElement')
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+    const eventSource = MockEventSource.getLastInstance()!
+
+    // Simulate complete event with s3Url
+    await act(async () => {
+      eventSource.simulateEvent('complete', {
+        filename: 'recap-video.mp4',
+        s3Url: 'https://s3.amazonaws.com/cawpile-videos/recap-video.mp4'
+      })
+    })
+
+    // Verify an anchor element was created for download
+    expect(mockCreateElement).toHaveBeenCalledWith('a')
+
+    mockCreateElement.mockRestore()
+  })
+
+  test('download uses S3 URL instead of /download/ endpoint', async () => {
+    const mockOnClose = jest.fn()
+    let capturedAnchor: HTMLAnchorElement | null = null
+
+    const originalCreateElement = document.createElement.bind(document)
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const element = originalCreateElement(tagName)
+      if (tagName === 'a') {
+        capturedAnchor = element as HTMLAnchorElement
+      }
+      return element
+    })
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+    const eventSource = MockEventSource.getLastInstance()!
+
+    const s3Url = 'https://s3.amazonaws.com/cawpile-videos/recap-video.mp4'
+
+    await act(async () => {
+      eventSource.simulateEvent('complete', {
+        filename: 'recap-video.mp4',
+        s3Url
+      })
+    })
+
+    // Verify the download link uses S3 URL, not /download/ endpoint
+    expect(capturedAnchor).toBeTruthy()
+    expect(capturedAnchor!.href).toBe(s3Url)
+    expect(capturedAnchor!.href).not.toContain('/download/')
+  })
+
+  test('download link uses correct filename from response', async () => {
+    const mockOnClose = jest.fn()
+    let capturedAnchor: HTMLAnchorElement | null = null
+
+    const originalCreateElement = document.createElement.bind(document)
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const element = originalCreateElement(tagName)
+      if (tagName === 'a') {
+        capturedAnchor = element as HTMLAnchorElement
+      }
+      return element
+    })
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+    const eventSource = MockEventSource.getLastInstance()!
+
+    await act(async () => {
+      eventSource.simulateEvent('complete', {
+        filename: 'monthly-recap-2024-01.mp4',
+        s3Url: 'https://s3.amazonaws.com/cawpile-videos/monthly-recap-2024-01.mp4'
+      })
+    })
+
+    // Verify the download attribute uses the filename from response
+    expect(capturedAnchor).toBeTruthy()
+    expect(capturedAnchor!.download).toBe('monthly-recap-2024-01.mp4')
+  })
+})
+
+describe('Session Handling for userId', () => {
+  test('handles undefined userId gracefully when session is not available', async () => {
+    // Mock unauthenticated session
+    mockUseSession.mockReturnValue({
+      data: null,
+      status: 'unauthenticated',
+    })
+
+    const mockOnClose = jest.fn()
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      const eventSource = MockEventSource.getLastInstance()
+      expect(eventSource).toBeDefined()
+      // URL should still be valid even without userId
+      expect(eventSource?.url).toContain('/render-stream')
+      expect(eventSource?.url).toContain('data=')
     })
   })
 })

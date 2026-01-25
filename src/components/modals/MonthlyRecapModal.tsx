@@ -9,6 +9,7 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline'
+import { useSession } from 'next-auth/react'
 import type { MonthlyRecapExport, MonthlyRecapPreview } from '@/lib/recap/types'
 import { MONTH_NAMES } from '@/lib/recap/types'
 
@@ -20,11 +21,15 @@ interface MonthlyRecapModalProps {
 
 type RenderStatus = 'idle' | 'loading' | 'rendering' | 'success' | 'error'
 
+// Render server URL with fallback for local development
+const RENDER_SERVER_URL = process.env.NEXT_PUBLIC_RENDER_SERVER_URL || 'http://localhost:3001'
+
 export default function MonthlyRecapModal({
   isOpen,
   onClose,
   initialYear,
 }: MonthlyRecapModalProps) {
+  const { data: session } = useSession()
   const currentDate = new Date()
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(
@@ -147,9 +152,10 @@ export default function MonthlyRecapModal({
         setExportData(data)
       }
 
-      // Build SSE URL with encoded data
+      // Build SSE URL with encoded data and userId
       const encodedData = encodeURIComponent(JSON.stringify(data))
-      const sseUrl = `http://localhost:3001/render-stream?data=${encodedData}`
+      const userId = session?.user?.id || ''
+      const sseUrl = `${RENDER_SERVER_URL}/render-stream?data=${encodedData}&userId=${userId}`
 
       // Create EventSource connection
       const eventSource = new EventSource(sseUrl)
@@ -163,12 +169,11 @@ export default function MonthlyRecapModal({
 
       // Complete event handler
       eventSource.addEventListener('complete', (event: MessageEvent) => {
-        const eventData = JSON.parse(event.data) as { filename: string }
+        const eventData = JSON.parse(event.data) as { filename: string; s3Url: string }
 
-        // Download the rendered video
-        const downloadUrl = `http://localhost:3001/download/${eventData.filename}`
+        // Download the rendered video from S3
         const a = document.createElement('a')
-        a.href = downloadUrl
+        a.href = eventData.s3Url
         a.download = eventData.filename
         document.body.appendChild(a)
         a.click()
