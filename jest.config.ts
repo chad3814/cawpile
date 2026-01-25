@@ -2,6 +2,8 @@ import type { Config } from 'jest'
 
 const config: Config = {
   preset: 'ts-jest',
+  // Limit workers to prevent database connection contention in parallel tests
+  maxWorkers: 1,
   // Use jsdom for component tests, node for API/database tests
   testEnvironment: 'jest-environment-jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],

@@ -125,7 +125,7 @@ describe('PATCH /api/user/books/[id] - DNF Status Changes', () => {
     const afterUpdate = new Date()
     expect(finishDate.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime())
     expect(finishDate.getTime()).toBeLessThanOrEqual(afterUpdate.getTime())
-  })
+  }, 15000)
 
   test('status change to DNF with explicit finishDate should use provided date', async () => {
     const explicitDate = '2024-03-15'

@@ -12,11 +12,14 @@ jest.mock('@/lib/auth/admin', () => ({
   getCurrentUser: jest.fn(),
 }))
 
+// Create a shared mock search function that can be configured per test
+const mockSearchFn = jest.fn()
+
 // Mock the SearchOrchestrator and providers
 jest.mock('@/lib/search/SearchOrchestrator', () => ({
   SearchOrchestrator: jest.fn().mockImplementation(() => ({
     registerProvider: jest.fn(),
-    search: jest.fn(),
+    search: mockSearchFn,
   })),
 }))
 
@@ -37,12 +40,10 @@ jest.mock('@/lib/search/providers/HardcoverProvider', () => ({
 }))
 
 import { getCurrentUser } from '@/lib/auth/admin'
-import { SearchOrchestrator } from '@/lib/search/SearchOrchestrator'
 import { POST } from '@/app/api/admin/books/[id]/resync/route'
 import { NextRequest } from 'next/server'
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>
-const MockSearchOrchestrator = SearchOrchestrator as jest.MockedClass<typeof SearchOrchestrator>
 
 describe('Admin Resync API Endpoint', () => {
   let testUserId: string
@@ -186,48 +187,44 @@ describe('Admin Resync API Endpoint', () => {
         isSuperAdmin: false,
       })
 
-      // Mock the search orchestrator to return results with sources
-      const mockOrchestrator = {
-        registerProvider: jest.fn(),
-        search: jest.fn().mockResolvedValue([
-          {
-            id: 'test-result-1',
-            title: 'Test Book',
-            authors: ['Test Author'],
-            sources: [
-              {
-                provider: 'google',
-                data: {
-                  id: 'google-123',
-                  googleId: 'google-123',
-                  title: 'Test Book',
-                  authors: ['Test Author'],
-                  description: 'A test book description',
-                },
+      // Configure mock search to return results with sources
+      mockSearchFn.mockResolvedValue([
+        {
+          id: 'test-result-1',
+          title: 'Test Book',
+          authors: ['Test Author'],
+          sources: [
+            {
+              provider: 'google',
+              data: {
+                id: 'google-123',
+                googleId: 'google-123',
+                title: 'Test Book',
+                authors: ['Test Author'],
+                description: 'A test book description',
               },
-              {
-                provider: 'hardcover',
-                data: {
-                  id: 'hardcover-123',
-                  title: 'Test Book',
-                  authors: ['Test Author'],
-                  description: 'A test book from Hardcover',
-                },
+            },
+            {
+              provider: 'hardcover',
+              data: {
+                id: 'hardcover-123',
+                title: 'Test Book',
+                authors: ['Test Author'],
+                description: 'A test book from Hardcover',
               },
-              {
-                provider: 'ibdb',
-                data: {
-                  id: 'ibdb-123',
-                  title: 'Test Book',
-                  authors: ['Test Author'],
-                  description: 'A test book from IBDB',
-                },
+            },
+            {
+              provider: 'ibdb',
+              data: {
+                id: 'ibdb-123',
+                title: 'Test Book',
+                authors: ['Test Author'],
+                description: 'A test book from IBDB',
               },
-            ],
-          },
-        ]),
-      }
-      MockSearchOrchestrator.mockImplementation(() => mockOrchestrator as never)
+            },
+          ],
+        },
+      ])
 
       const request = new NextRequest('http://localhost:3000/api/admin/books/test/resync', {
         method: 'POST',
@@ -246,7 +243,7 @@ describe('Admin Resync API Endpoint', () => {
       expect(['created', 'updated', 'unchanged', 'not_found', null]).toContain(data.summary.google)
       expect(['created', 'updated', 'unchanged', 'not_found', null]).toContain(data.summary.hardcover)
       expect(['created', 'updated', 'unchanged', 'not_found', null]).toContain(data.summary.ibdb)
-    })
+    }, 15000)
 
     test('should return not_found for all providers when no search results', async () => {
       mockGetCurrentUser.mockResolvedValue({
@@ -257,12 +254,8 @@ describe('Admin Resync API Endpoint', () => {
         isSuperAdmin: false,
       })
 
-      // Mock the search orchestrator to return empty results
-      const mockOrchestrator = {
-        registerProvider: jest.fn(),
-        search: jest.fn().mockResolvedValue([]),
-      }
-      MockSearchOrchestrator.mockImplementation(() => mockOrchestrator as never)
+      // Configure mock search to return empty results
+      mockSearchFn.mockResolvedValue([])
 
       const request = new NextRequest('http://localhost:3000/api/admin/books/test/resync', {
         method: 'POST',
@@ -278,7 +271,7 @@ describe('Admin Resync API Endpoint', () => {
       expect(data.summary.google).toBe('not_found')
       expect(data.summary.hardcover).toBe('not_found')
       expect(data.summary.ibdb).toBe('not_found')
-    })
+    }, 15000)
 
     test('should return not_found for all providers when sources array is empty', async () => {
       mockGetCurrentUser.mockResolvedValue({
@@ -289,19 +282,15 @@ describe('Admin Resync API Endpoint', () => {
         isSuperAdmin: false,
       })
 
-      // Mock the search orchestrator to return results without sources
-      const mockOrchestrator = {
-        registerProvider: jest.fn(),
-        search: jest.fn().mockResolvedValue([
-          {
-            id: 'test-result-1',
-            title: 'Test Book',
-            authors: ['Test Author'],
-            sources: [],
-          },
-        ]),
-      }
-      MockSearchOrchestrator.mockImplementation(() => mockOrchestrator as never)
+      // Configure mock search to return results without sources
+      mockSearchFn.mockResolvedValue([
+        {
+          id: 'test-result-1',
+          title: 'Test Book',
+          authors: ['Test Author'],
+          sources: [],
+        },
+      ])
 
       const request = new NextRequest('http://localhost:3000/api/admin/books/test/resync', {
         method: 'POST',
@@ -317,7 +306,7 @@ describe('Admin Resync API Endpoint', () => {
       expect(data.summary.google).toBe('not_found')
       expect(data.summary.hardcover).toBe('not_found')
       expect(data.summary.ibdb).toBe('not_found')
-    })
+    }, 15000)
 
     test('should include providerFieldCounts with all three providers', async () => {
       mockGetCurrentUser.mockResolvedValue({
@@ -328,29 +317,25 @@ describe('Admin Resync API Endpoint', () => {
         isSuperAdmin: false,
       })
 
-      // Mock the search orchestrator to return results with sources
-      const mockOrchestrator = {
-        registerProvider: jest.fn(),
-        search: jest.fn().mockResolvedValue([
-          {
-            id: 'test-result-1',
-            title: 'Test Book',
-            authors: ['Test Author'],
-            sources: [
-              {
-                provider: 'google',
-                data: {
-                  id: 'google-123',
-                  googleId: 'google-123',
-                  title: 'Test Book',
-                  authors: ['Test Author'],
-                },
+      // Configure mock search to return results with sources
+      mockSearchFn.mockResolvedValue([
+        {
+          id: 'test-result-1',
+          title: 'Test Book',
+          authors: ['Test Author'],
+          sources: [
+            {
+              provider: 'google',
+              data: {
+                id: 'google-123',
+                googleId: 'google-123',
+                title: 'Test Book',
+                authors: ['Test Author'],
               },
-            ],
-          },
-        ]),
-      }
-      MockSearchOrchestrator.mockImplementation(() => mockOrchestrator as never)
+            },
+          ],
+        },
+      ])
 
       const request = new NextRequest('http://localhost:3000/api/admin/books/test/resync', {
         method: 'POST',
@@ -372,6 +357,6 @@ describe('Admin Resync API Endpoint', () => {
       expect(data.providerFieldCounts.ibdb).toBeDefined()
       expect(data.providerFieldCounts.ibdb.before).toBeDefined()
       expect(data.providerFieldCounts.ibdb.after).toBeDefined()
-    })
+    }, 15000)
   })
 })

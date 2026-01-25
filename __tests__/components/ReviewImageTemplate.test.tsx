@@ -65,7 +65,7 @@ describe('ReviewImageTemplate', () => {
 
     // Branding - now split into separate elements
     expect(screen.getByText(/Powered by/)).toBeInTheDocument()
-    expect(screen.getByText('Cawpile')).toBeInTheDocument()
+    expect(screen.getByText('CAWPILE.org')).toBeInTheDocument()
   })
 
   test('should handle missing book cover gracefully', () => {

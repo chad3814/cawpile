@@ -28,18 +28,74 @@ describe('Social Sharing E2E Integration', () => {
   let testBookId: string
   let testBookTitle: string
 
+  // Generate unique identifiers for this test run to avoid collisions
+  const testRunId = nanoid(8)
+  const testIsbn13 = `978${testRunId}${nanoid(2)}`
+  const testEmail = `test-e2e-${testRunId}@test.com`
+
   beforeAll(async () => {
+    // Defensive cleanup: Remove any stale data from previous failed test runs
+    // First, find any users with our test email pattern and clean their data
+    const staleUsers = await prisma.user.findMany({
+      where: {
+        email: { startsWith: 'test-e2e-' },
+      },
+      select: { id: true },
+    })
+
+    for (const staleUser of staleUsers) {
+      await prisma.sharedReview.deleteMany({
+        where: { userId: staleUser.id },
+      })
+      await prisma.cawpileRating.deleteMany({
+        where: { userBook: { userId: staleUser.id } },
+      })
+      await prisma.userBook.deleteMany({
+        where: { userId: staleUser.id },
+      })
+    }
+
+    // Clean up stale books with E2E pattern
+    const staleBooks = await prisma.book.findMany({
+      where: {
+        title: { startsWith: 'E2E Test Book ' },
+      },
+      select: { id: true },
+    })
+
+    for (const staleBook of staleBooks) {
+      await prisma.googleBook.deleteMany({
+        where: { edition: { bookId: staleBook.id } },
+      })
+      await prisma.edition.deleteMany({
+        where: { bookId: staleBook.id },
+      })
+    }
+
+    await prisma.book.deleteMany({
+      where: {
+        title: { startsWith: 'E2E Test Book ' },
+      },
+    })
+
+    // Clean up stale users
+    await prisma.user.deleteMany({
+      where: {
+        email: { startsWith: 'test-e2e-' },
+      },
+    })
+
     // Create test user
     const user = await prisma.user.create({
       data: {
-        email: `test-e2e-${nanoid(6)}@test.com`,
+        email: testEmail,
         name: 'Test E2E User',
       },
     })
     testUserId = user.id
 
     // Create test book with all metadata
-    testBookTitle = `E2E Test Book ${nanoid(6)}`
+    testBookTitle = `E2E Test Book ${testRunId}`
     const book = await prisma.book.create({
       data: {
         title: testBookTitle,
@@ -52,12 +108,12 @@ describe('Social Sharing E2E Integration', () => {
     const edition = await prisma.edition.create({
       data: {
         bookId: book.id,
-        isbn13: `978${nanoid(10)}`,
+        isbn13: testIsbn13,
       },
     })
 
     // Create Google Book metadata with required googleId field
-    const googleId = `gb-${nanoid(10)}`
+    const googleId = `gb-${testRunId}`
     await prisma.googleBook.create({
       data: {
         editionId: edition.id,
