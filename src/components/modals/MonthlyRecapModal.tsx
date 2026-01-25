@@ -24,6 +24,19 @@ type RenderStatus = 'idle' | 'loading' | 'rendering' | 'success' | 'error'
 // Render server URL with fallback for local development
 const RENDER_SERVER_URL = process.env.NEXT_PUBLIC_RENDER_SERVER_URL || 'http://localhost:3001'
 
+/**
+ * Construct proxy URL for video download.
+ * Uses the /api/proxy/video endpoint to add Content-Disposition header
+ * for proper download behavior across all browsers.
+ */
+function buildProxyVideoUrl(s3Url: string, filename: string): string {
+  const params = new URLSearchParams({
+    url: s3Url,
+    filename: filename,
+  })
+  return `/api/proxy/video?${params.toString()}`
+}
+
 export default function MonthlyRecapModal({
   isOpen,
   onClose,
@@ -171,9 +184,11 @@ export default function MonthlyRecapModal({
       eventSource.addEventListener('complete', (event: MessageEvent) => {
         const eventData = JSON.parse(event.data) as { filename: string; s3Url: string }
 
-        // Download the rendered video from S3
+        // Download the rendered video via proxy endpoint
+        // The proxy adds Content-Disposition header for proper download behavior
+        const proxyUrl = buildProxyVideoUrl(eventData.s3Url, eventData.filename)
         const a = document.createElement('a')
-        a.href = eventData.s3Url
+        a.href = proxyUrl
         a.download = eventData.filename
         document.body.appendChild(a)
         a.click()

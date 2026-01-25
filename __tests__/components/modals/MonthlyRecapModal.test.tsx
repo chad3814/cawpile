@@ -235,7 +235,7 @@ describe('Task Group 1: SSE Connection Infrastructure', () => {
     await act(async () => {
       eventSource.simulateEvent('complete', {
         filename: 'test-video.mp4',
-        s3Url: 'https://s3.amazonaws.com/bucket/test-video.mp4'
+        s3Url: 'https://cawpile-videos.s3.us-east-2.amazonaws.com/test-video.mp4'
       })
     })
 
@@ -308,7 +308,7 @@ describe('Task Group 2: SSE Event Handling', () => {
     await act(async () => {
       eventSource.simulateEvent('complete', {
         filename: 'test-video.mp4',
-        s3Url: 'https://s3.amazonaws.com/bucket/test-video.mp4'
+        s3Url: 'https://cawpile-videos.s3.us-east-2.amazonaws.com/test-video.mp4'
       })
     })
 
@@ -699,44 +699,8 @@ describe('SSE URL Configuration with Environment Variable', () => {
   })
 })
 
-describe('S3 Video Download', () => {
-  test('s3Url is extracted from complete event data', async () => {
-    const mockOnClose = jest.fn()
-    const mockCreateElement = jest.spyOn(document, 'createElement')
-
-    await act(async () => {
-      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
-    })
-
-    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
-    await act(async () => {
-      fireEvent.click(generateButton)
-    })
-
-    await waitFor(() => {
-      expect(MockEventSource.getLastInstance()).toBeDefined()
-    })
-    const eventSource = MockEventSource.getLastInstance()!
-
-    // Simulate complete event with s3Url
-    await act(async () => {
-      eventSource.simulateEvent('complete', {
-        filename: 'recap-video.mp4',
-        s3Url: 'https://s3.amazonaws.com/cawpile-videos/recap-video.mp4'
-      })
-    })
-
-    // Verify an anchor element was created for download
-    expect(mockCreateElement).toHaveBeenCalledWith('a')
-
-    mockCreateElement.mockRestore()
-  })
-
-  test('download uses S3 URL instead of /download/ endpoint', async () => {
+describe('Video Proxy Download Behavior', () => {
+  test('download uses proxy URL instead of direct S3 URL', async () => {
     const mockOnClose = jest.fn()
     let capturedAnchor: HTMLAnchorElement | null = null
 
@@ -767,7 +731,7 @@ describe('S3 Video Download', () => {
     })
     const eventSource = MockEventSource.getLastInstance()!
 
-    const s3Url = 'https://s3.amazonaws.com/cawpile-videos/recap-video.mp4'
+    const s3Url = 'https://cawpile-videos.s3.us-east-2.amazonaws.com/recap-video.mp4'
 
     await act(async () => {
       eventSource.simulateEvent('complete', {
@@ -776,13 +740,71 @@ describe('S3 Video Download', () => {
       })
     })
 
-    // Verify the download link uses S3 URL, not /download/ endpoint
+    // Verify the download link uses proxy URL, not direct S3 URL
     expect(capturedAnchor).toBeTruthy()
-    expect(capturedAnchor!.href).toBe(s3Url)
-    expect(capturedAnchor!.href).not.toContain('/download/')
+    expect(capturedAnchor!.href).toContain('/api/proxy/video')
+    expect(capturedAnchor!.href).not.toBe(s3Url)
   })
 
-  test('download link uses correct filename from response', async () => {
+  test('proxy URL includes encoded s3Url and filename parameters', async () => {
+    const mockOnClose = jest.fn()
+    let capturedAnchor: HTMLAnchorElement | null = null
+
+    const originalCreateElement = document.createElement.bind(document)
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const element = originalCreateElement(tagName)
+      if (tagName === 'a') {
+        capturedAnchor = element as HTMLAnchorElement
+      }
+      return element
+    })
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+    const eventSource = MockEventSource.getLastInstance()!
+
+    const s3Url = 'https://cawpile-videos.s3.us-east-2.amazonaws.com/monthly-recap-2024-01.mp4'
+    const filename = 'monthly-recap-2024-01.mp4'
+
+    await act(async () => {
+      eventSource.simulateEvent('complete', {
+        filename,
+        s3Url
+      })
+    })
+
+    // Verify the proxy URL contains correctly encoded parameters
+    expect(capturedAnchor).toBeTruthy()
+    const href = capturedAnchor!.href
+
+    // Parse the URL to check parameters
+    const url = new URL(href)
+    expect(url.pathname).toBe('/api/proxy/video')
+
+    // Check that url parameter is encoded and contains the S3 URL
+    const urlParam = url.searchParams.get('url')
+    expect(urlParam).toBe(s3Url)
+
+    // Check that filename parameter is present
+    const filenameParam = url.searchParams.get('filename')
+    expect(filenameParam).toBe(filename)
+  })
+
+  test('download anchor has download attribute with correct filename', async () => {
     const mockOnClose = jest.fn()
     let capturedAnchor: HTMLAnchorElement | null = null
 
@@ -815,14 +837,64 @@ describe('S3 Video Download', () => {
 
     await act(async () => {
       eventSource.simulateEvent('complete', {
-        filename: 'monthly-recap-2024-01.mp4',
-        s3Url: 'https://s3.amazonaws.com/cawpile-videos/monthly-recap-2024-01.mp4'
+        filename: 'my-recap-video.mp4',
+        s3Url: 'https://cawpile-videos.s3.us-east-2.amazonaws.com/my-recap-video.mp4'
       })
     })
 
-    // Verify the download attribute uses the filename from response
+    // Verify the download attribute is set correctly
     expect(capturedAnchor).toBeTruthy()
-    expect(capturedAnchor!.download).toBe('monthly-recap-2024-01.mp4')
+    expect(capturedAnchor!.download).toBe('my-recap-video.mp4')
+  })
+
+  test('handles special characters in filename correctly', async () => {
+    const mockOnClose = jest.fn()
+    let capturedAnchor: HTMLAnchorElement | null = null
+
+    const originalCreateElement = document.createElement.bind(document)
+    jest.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
+      const element = originalCreateElement(tagName)
+      if (tagName === 'a') {
+        capturedAnchor = element as HTMLAnchorElement
+      }
+      return element
+    })
+
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+    const eventSource = MockEventSource.getLastInstance()!
+
+    // Filename with special characters that need encoding
+    const filename = "User's Recap (January 2024).mp4"
+    const s3Url = 'https://cawpile-videos.s3.us-east-2.amazonaws.com/recap.mp4'
+
+    await act(async () => {
+      eventSource.simulateEvent('complete', {
+        filename,
+        s3Url
+      })
+    })
+
+    expect(capturedAnchor).toBeTruthy()
+
+    // The URL should contain the encoded filename
+    const url = new URL(capturedAnchor!.href)
+    const filenameParam = url.searchParams.get('filename')
+    expect(filenameParam).toBe(filename)
   })
 })
 
