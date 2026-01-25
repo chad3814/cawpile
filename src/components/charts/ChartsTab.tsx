@@ -17,11 +17,7 @@ import { PocAuthorsChart } from './PocAuthorsChart';
 import { NewAuthorsChart } from './NewAuthorsChart';
 import MonthlyRecapModal from '@/components/modals/MonthlyRecapModal';
 
-interface ChartsTabProps {
-  isAdmin?: boolean;
-}
-
-export function ChartsTab({ isAdmin }: ChartsTabProps) {
+export function ChartsTab() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isRecapModalOpen, setIsRecapModalOpen] = useState(false);
 
@@ -31,15 +27,13 @@ export function ChartsTab({ isAdmin }: ChartsTabProps) {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Reading Analytics</h2>
         <div className="flex items-center gap-3">
-          {isAdmin && (
-            <button
-              onClick={() => setIsRecapModalOpen(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-            >
-              <FilmIcon className="h-4 w-4" />
-              Monthly Recap
-            </button>
-          )}
+          <button
+            onClick={() => setIsRecapModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          >
+            <FilmIcon className="h-4 w-4" />
+            Monthly Recap
+          </button>
           <YearSelector selectedYear={selectedYear} onYearChange={setSelectedYear} />
         </div>
       </div>

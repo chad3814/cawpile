@@ -16,10 +16,9 @@ interface DashboardClientProps {
   initialSortBy: LibrarySortBy
   initialSortOrder: LibrarySortOrder
   userName?: string
-  isAdmin?: boolean
 }
 
-export default function DashboardClient({ books, initialLayout, initialSortBy, initialSortOrder, userName, isAdmin }: DashboardClientProps) {
+export default function DashboardClient({ books, initialLayout, initialSortBy, initialSortOrder, userName }: DashboardClientProps) {
   const [layout, setLayout] = useState<'GRID' | 'TABLE'>(initialLayout)
   const [sortBy, setSortBy] = useState<LibrarySortBy>(initialSortBy)
   const [sortOrder, setSortOrder] = useState<LibrarySortOrder>(initialSortOrder)
@@ -109,7 +108,7 @@ export default function DashboardClient({ books, initialLayout, initialSortBy, i
         {activeTab === 'books' ? (
           <ViewSwitcher books={books} layout={layout} />
         ) : (
-          <ChartsTab isAdmin={isAdmin} />
+          <ChartsTab />
         )}
       </>
     </ChartDataProvider>
