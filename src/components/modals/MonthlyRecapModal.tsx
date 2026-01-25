@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import {
   XMarkIcon,
@@ -33,8 +33,12 @@ export default function MonthlyRecapModal({
   const [preview, setPreview] = useState<MonthlyRecapPreview | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [renderStatus, setRenderStatus] = useState<RenderStatus>('idle')
+  const [renderProgress, setRenderProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [exportData, setExportData] = useState<MonthlyRecapExport | null>(null)
+
+  // Ref for EventSource cleanup access
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   // Generate year options (5 years back from current year)
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentDate.getFullYear() - i)
@@ -70,10 +74,16 @@ export default function MonthlyRecapModal({
     }
   }, [isOpen, fetchPreview])
 
-  // Reset state when modal closes
+  // Reset state and cleanup EventSource when modal closes
   useEffect(() => {
     if (!isOpen) {
+      // Close any active EventSource connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
       setRenderStatus('idle')
+      setRenderProgress(0)
       setError(null)
       setExportData(null)
     }
@@ -118,6 +128,7 @@ export default function MonthlyRecapModal({
 
   const handleGenerateVideo = async () => {
     setRenderStatus('rendering')
+    setRenderProgress(0)
     setError(null)
 
     try {
@@ -136,30 +147,64 @@ export default function MonthlyRecapModal({
         setExportData(data)
       }
 
-      // Call the Remotion render server
-      const videoResponse = await fetch('http://localhost:3001/render', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      // Build SSE URL with encoded data
+      const encodedData = encodeURIComponent(JSON.stringify(data))
+      const sseUrl = `http://localhost:3001/render-stream?data=${encodedData}`
+
+      // Create EventSource connection
+      const eventSource = new EventSource(sseUrl)
+      eventSourceRef.current = eventSource
+
+      // Progress event handler
+      eventSource.addEventListener('progress', (event: MessageEvent) => {
+        const eventData = JSON.parse(event.data) as { progress: number }
+        setRenderProgress(eventData.progress)
       })
 
-      if (!videoResponse.ok) {
-        const errorData = await videoResponse.json()
-        throw new Error(errorData.message || 'Video render failed')
+      // Complete event handler
+      eventSource.addEventListener('complete', (event: MessageEvent) => {
+        const eventData = JSON.parse(event.data) as { filename: string }
+
+        // Download the rendered video
+        const downloadUrl = `http://localhost:3001/download/${eventData.filename}`
+        const a = document.createElement('a')
+        a.href = downloadUrl
+        a.download = eventData.filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+
+        // Close connection and set success status
+        eventSource.close()
+        eventSourceRef.current = null
+        setRenderStatus('success')
+      })
+
+      // Server error event handler
+      eventSource.addEventListener('error', (event: MessageEvent) => {
+        // This handles custom 'error' events sent by the server
+        if (event.data) {
+          const eventData = JSON.parse(event.data) as { message: string }
+          setError(eventData.message)
+        } else {
+          setError('An error occurred during rendering')
+        }
+        setRenderStatus('error')
+        eventSource.close()
+        eventSourceRef.current = null
+      })
+
+      // Connection error handler (onerror)
+      eventSource.onerror = () => {
+        // Only handle if we haven't already processed a server error or completion
+        // Check the ref to see if the connection is still active
+        if (eventSourceRef.current) {
+          setError('Connection to render server lost')
+          setRenderStatus('error')
+          eventSource.close()
+          eventSourceRef.current = null
+        }
       }
-
-      const result = await videoResponse.json()
-
-      // Download the rendered video
-      const downloadUrl = `http://localhost:3001/download/${result.filename}`
-      const a = document.createElement('a')
-      a.href = downloadUrl
-      a.download = result.filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-
-      setRenderStatus('success')
     } catch (err) {
       console.error('Error generating video:', err)
       setError(
@@ -307,11 +352,26 @@ export default function MonthlyRecapModal({
                 {/* Status Messages */}
                 {renderStatus === 'rendering' && (
                   <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        Generating video...
-                      </p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          Generating video...
+                        </p>
+                        <span className="text-xs text-blue-600 dark:text-blue-300">
+                          {renderProgress}%
+                        </span>
+                      </div>
+                      {/* Progress Bar */}
+                      <div
+                        data-testid="render-progress-bar"
+                        className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2"
+                      >
+                        <div
+                          data-testid="render-progress-fill"
+                          className="bg-blue-500 dark:bg-blue-400 h-2 rounded-full transition-all"
+                          style={{ width: `${renderProgress}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
