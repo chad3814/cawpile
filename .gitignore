@@ -57,3 +57,4 @@ services/video-gen/node_modules/
 services/video-gen/out/
 services/video-gen/.env*
 services/video-gen/secrets/
+services/video-gen/build/
