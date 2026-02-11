@@ -83,7 +83,10 @@ export default async function AdminDashboard() {
                       </p>
                       {activity.fieldName && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Changed {activity.fieldName}: {activity.oldValue} → {activity.newValue}
+                          Changed {activity.fieldName}:{' '}
+                          {typeof activity.oldValue === 'object' ? JSON.stringify(activity.oldValue) : activity.oldValue}
+                          {' → '}
+                          {typeof activity.newValue === 'object' ? JSON.stringify(activity.newValue) : activity.newValue}
                         </p>
                       )}
                       <p className="text-xs text-gray-400 mt-1">

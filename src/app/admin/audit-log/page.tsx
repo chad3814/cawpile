@@ -127,13 +127,13 @@ export default async function AuditLogPage({
                     <div className="mt-1 grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-gray-500">Old Value:</p>
-                        <pre className="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                        <pre className="mt-1 text-xs bg-gray-50 text-gray-900 p-2 rounded overflow-x-auto">
                           {formatValue(log.oldValue)}
                         </pre>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">New Value:</p>
-                        <pre className="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                        <pre className="mt-1 text-xs bg-gray-50 text-gray-900 p-2 rounded overflow-x-auto">
                           {formatValue(log.newValue)}
                         </pre>
                       </div>
