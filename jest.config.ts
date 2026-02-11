@@ -15,7 +15,7 @@ const config: Config = {
     '**/__tests__/**/*.test.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)'
   ],
-  testPathIgnorePatterns: ['/node_modules/', '/.next/'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/services/'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {

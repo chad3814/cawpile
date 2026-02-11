@@ -26,6 +26,22 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 
 Tests are in `__tests__/` with subdirectories: `components/`, `lib/`, `api/`, `database/`, `integration/`, `hooks/`, `app/`
 
+## Monorepo Structure
+
+This repo contains two independently deployable services:
+
+- **Root (Next.js app)** — Deployed to Vercel
+- **services/video-gen** — Remotion + Express video render server, deployed to EC2 via Docker/GHCR/Watchtower
+
+### Video Gen Service
+- Has its own `package.json`, `node_modules`, and `CLAUDE.md`
+- Uses React 18 (Remotion requirement) — NOT React 19
+- `cd services/video-gen && npm install` to install its dependencies
+- `npm run server` to start the Express server (port 3001)
+- `npm run dev` to start Remotion Studio
+- `npm run test` to run Vitest tests
+- Dockerfile builds and deploys independently
+
 ## Architecture
 
 ### Tech Stack
