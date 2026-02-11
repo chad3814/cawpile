@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+out/
+dist/
+
+# Git
+.git
+.gitignore
+
+# Development files
+*.md
+!README.md
+.env*
+.vscode/
+.idea/
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.spec.ts
+vitest.config.*
+coverage/
+
+# Docker files (don't need to copy into the image)
+docker-compose.yaml
+Dockerfile
+.dockerignore
+
+# Secrets (never include in image)
+secrets/
+
+# Spekka spec files
+spekka/
+
+# Misc
+*.log
+.DS_Store
