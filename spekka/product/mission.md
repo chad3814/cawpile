@@ -2,122 +2,97 @@
 
 ## Pitch
 
-Cawpile is a **book reading tracker** that helps **avid readers and book enthusiasts** track their reading journey with meaningful depth by providing a **unique 7-facet rating system, multi-source book discovery, detailed reading analytics, and social sharing capabilities**.
+Cawpile is a **privacy-first book reading tracker** that helps **avid readers and BookTok enthusiasts** understand exactly what they love (and don't love) about the books they read by providing a **7-facet CAWPILE rating system, multi-source book search, reading analytics, and shareable video recaps**.
 
 ## Users
 
 ### Primary Customers
 
-- **Avid Readers**: People who read 10+ books per year and want to track their reading habits systematically
-- **Book Club Members**: Readers participating in book clubs who need organized tracking of group reads
-- **Reading Challenge Participants**: Users participating in readathons or annual reading challenges (Goodreads, StoryGraph alternatives)
-- **Data-Driven Readers**: People who enjoy analyzing their reading patterns, genres, and progress over time
+- **BookTok Readers**: Active members of the BookTok community who read frequently, share reviews, and want visually engaging ways to showcase their reading life
+- **Privacy-Conscious Readers**: People who want to track their reading without surrendering their data to platforms that monetize their habits
+- **Analytical Readers**: Readers who want to understand their own taste in books with more granularity than a simple star rating provides
 
 ### User Personas
 
-**Sarah, The Analytical Reader** (28-45)
-- **Role:** Software engineer who reads 50+ books annually
-- **Context:** Wants data-driven insights into reading habits and detailed book analysis
-- **Pain Points:** Goodreads ratings feel shallow; no way to track nuanced opinions like pacing vs character development separately
-- **Goals:** Understand reading patterns, remember why she rated books certain ways, make informed reading choices
+**Jenna, The BookTok Creator** (18-28)
+- **Role:** Active BookTok creator who reads 40+ books per year and shares reviews with her audience
+- **Context:** Wants to rate books in a way that sparks conversation and creates shareable content for TikTok
+- **Pain Points:** Star ratings are boring content; no easy way to generate visually compelling recap videos of her reading month; Goodreads feels outdated and exposes too much personal data
+- **Goals:** Create engaging monthly recap content, track reading with meaningful detail, share visually polished reviews
 
-**Marcus, The Book Club Leader** (35-60)
-- **Role:** Runs monthly neighborhood book club with 12 active members
-- **Context:** Needs to organize reading schedules and track club selections
-- **Pain Points:** Hard to remember which books were club selections; no central tracking for group reads
-- **Goals:** Keep club reading history organized, avoid re-selecting books, share reading lists with members
+**David, The Privacy-First Reader** (25-45)
+- **Role:** Avid reader who left Goodreads over Amazon data collection concerns
+- **Context:** Reads 30+ books per year and wants a tracker that respects his privacy
+- **Pain Points:** Most book tracking platforms are owned by companies that mine and sell user data; alternatives like StoryGraph still lack rating depth
+- **Goals:** Track reading habits in a privacy-respecting tool, capture nuanced opinions about books, never worry about data exploitation
 
-**Emily, The Readathon Enthusiast** (22-35)
-- **Role:** Participates in 4-6 readathons yearly (Bout of Books, Dewey's 24-Hour, etc.)
-- **Context:** Tracks multiple concurrent reading challenges with specific goals
-- **Pain Points:** Cannot easily filter books by readathon or track progress toward challenge goals
-- **Goals:** Monitor readathon progress, celebrate achievements, plan future challenge strategies
+**Maya, The Book Club Organizer** (28-40)
+- **Role:** Runs two book clubs and participates in seasonal readathons
+- **Context:** Needs to track which books were read in which context and share recaps with club members
+- **Pain Points:** Cannot easily filter her reading by book club or readathon; has no way to generate monthly or quarterly recap summaries for her groups
+- **Goals:** Organize reading by social context, generate shareable recaps, maintain a clear record of club selections
 
 ## The Problem
 
-### Generic Ratings Do Not Capture Reading Complexity
+### Star Ratings Are Shallow
 
-Traditional 1-5 star ratings force readers to compress multi-dimensional reading experiences into a single number. A book might have excellent characters but poor pacing, or brilliant writing but a frustrating plot. Readers lose this nuance when forced to average everything into one rating, making it hard to remember why they rated a book 3 vs 4 stars months later.
+Traditional 1-5 star ratings force readers to compress a multi-dimensional reading experience into a single number. A book might have brilliant characters but terrible pacing. Readers lose this nuance and months later cannot remember why they rated something 3 stars versus 4.
 
-**Our Solution:** The CAWPILE system breaks ratings into 7 customizable facets (Characters, Atmosphere, Writing, Plot, Intrigue, Logic, Enjoyment), allowing readers to capture exactly what worked and what did not. Different facets adapt for fiction vs non-fiction, ensuring relevance across genres.
+**Our Solution:** The CAWPILE system breaks ratings into 7 distinct facets -- Characters, Atmosphere, Writing, Plot, Intrigue, Logic, Enjoyment -- so readers can be specific about which aspects of a book appealed to them and which did not. Different facets adapt for fiction versus non-fiction.
 
-### Reading Progress Tracking Lacks Granularity
+### Book Trackers Are Not Privacy-First
 
-Most platforms only track "started" and "finished" dates, missing the rich story of how a book was actually read. Readers have no way to see reading velocity, breaks taken, or pace changes throughout a book.
+Goodreads is owned by Amazon. StoryGraph and other alternatives still collect and monetize user data in ways that privacy-conscious readers find unacceptable.
 
-**Our Solution:** Page-by-page session tracking captures when and how fast books are read, enabling analytics like "books per month" and "reading pace" charts while preserving the complete reading journey.
+**Our Solution:** Cawpile is built with a privacy-first philosophy. Users control their data, sharing is opt-in and granular, and the platform does not exploit reading habits for advertising or recommendation sales.
 
-### No Organized Memory for Social Reading Context
+### Readers Lack Tools to Create Shareable Content
 
-Readers participate in book clubs, readathons, and reading challenges but have no central place to track which books were read in which context. This makes it impossible to answer questions like "What did we read in book club last spring?" or "How many readathon books did I complete this year?"
+BookTok creators spend significant effort manually assembling monthly recaps. There is no reading tracker that generates polished, shareable video recaps from the books a user has already logged.
 
-**Our Solution:** Built-in book club and readathon tracking with autocomplete memory stores social reading context alongside every book, making it easy to filter and analyze reading by community participation.
-
-### Fragmented Book Data
-
-Searching for books requires checking multiple sources. Local libraries, Google Books, Hardcover, and specialty databases all have different coverage and metadata quality.
-
-**Our Solution:** Multi-provider search orchestration queries all sources simultaneously, deduplicates results, and presents the best available metadata.
+**Our Solution:** Monthly recap video generation with a templating system that lets users produce shareable recap content directly from their reading data, without manual assembly.
 
 ## Differentiators
 
-### CAWPILE Rating System
+### Privacy-First Architecture
 
-Unlike Goodreads or StoryGraph which use simple star ratings or preset categories, we provide a structured 7-facet rating framework that adapts to book type. This results in more meaningful ratings that preserve the complexity of reading opinions while remaining actionable for future book selection.
+Unlike Goodreads (Amazon-owned) and other mainstream trackers, Cawpile does not monetize user reading data. Sharing is always opt-in with granular privacy controls over what is visible publicly. Users own their data.
 
-### Multi-Provider Search Orchestration
+### 7-Facet CAWPILE Rating System
 
-Unlike single-source book databases, we aggregate results from Google Books, Hardcover, IBDB, and local database simultaneously with intelligent result merging. This results in higher-quality metadata, better ISBN coverage, and fewer "book not found" scenarios.
+Unlike simple star ratings, the CAWPILE system lets readers rate 7 specific aspects of a book independently. This captures which dimensions of a book worked and which did not, producing ratings that are more meaningful, more memorable, and more useful for deciding what to read next.
 
-### Dual-Level Book Storage Architecture
+### Monthly Recap Video Generation
 
-Unlike platforms that duplicate entire book records for different editions, we separate Book (title + authors) from Edition (ISBN-specific metadata). This results in cleaner data management, better deduplication, and the ability to track multiple editions of the same book without confusion.
+Unlike any existing book tracker, Cawpile generates shareable video recaps from a user's reading data. With customizable templates, readers can produce polished recap content for BookTok and other social platforms without manual effort.
 
-### Representation Analytics
+### Multi-Provider Book Search
 
-Unlike generic stats, we track and visualize diversity metrics including LGBTQ+ representation, disability representation, POC authors, and new-to-user authors.
-
-### Social Sharing with Privacy Controls
-
-Unlike all-or-nothing sharing, users control exactly what appears in public reviews: dates, book clubs, readathons, and review text can be individually toggled.
+Unlike single-source book databases, Cawpile searches Google Books, Hardcover, IBDB, and its local database simultaneously, merging and deduplicating results for higher-quality metadata and fewer "book not found" scenarios.
 
 ## Key Features
 
 ### Core Features
 
-- **CAWPILE Rating System:** Rate books across 7 customizable facets with auto-computed averages, star ratings, and letter grades for nuanced opinion tracking
-- **Multi-Provider Book Search:** Find books instantly across Google Books, Hardcover, IBDB, and local database with deduplicated results
-- **Reading Progress Tracking:** Log current page, start/end dates, and page-by-page reading sessions to capture complete reading journey
-- **Multi-Status Management:** Organize books by Want to Read, Reading, Completed, or DNF status
-- **Format Support:** Track Physical, eBook, Audiobook, and Graphic Novel formats with acquisition method details
+- **CAWPILE Rating System:** Rate books across 7 facets with auto-computed averages, letting readers capture exactly what worked and what did not
+- **Multi-Provider Book Search:** Find books instantly across four sources with intelligent deduplication
+- **Reading Progress Tracking:** Log pages, sessions, start/end dates, and reading status (Want to Read, Reading, Completed, DNF)
+- **Privacy Controls:** Granular sharing settings so users choose exactly what is public and what stays private
+
+### Social and Sharing Features
+
+- **Monthly Video Recaps:** Auto-generated recap videos from reading data with customizable templates
+- **Shareable Review Images:** Auto-generated review images for social media
+- **Public Profiles:** Optional public reading profile pages with configurable visibility
 
 ### Organization Features
 
-- **Book Club Tracking:** Tag books with book club associations and maintain autocomplete history of past clubs
-- **Readathon Integration:** Track readathon participation with usage-based autocomplete for event names
-- **Smart Autocomplete:** System learns from your reading history to suggest previously used book clubs and readathons
-- **Dashboard Layouts:** Toggle between grid and table views based on personal preference with persistent settings
+- **Book Club and Readathon Tracking:** Tag books with club and readathon associations with smart autocomplete
+- **Dashboard Layouts:** Toggle between grid and table views with persistent sort preferences
+- **Diversity Tracking:** Track LGBTQ+ representation, disability representation, POC authors, and new-to-user authors
 
 ### Analytics Features
 
-- **Reading Volume Charts:** Visualize books completed per month with year-over-year comparisons
-- **Pages Per Month:** Track reading volume by pages (excludes audiobooks)
-- **Format Distribution:** See breakdown of physical vs digital vs audiobook reading habits
-- **Genre Distribution:** Fiction vs non-fiction breakdown
-- **Representation Stats:** LGBTQ+, disability representation, POC authors, new-to-user authors
-- **Year Filtering:** Analyze reading patterns across different years with available data detection
-- **Chart Data Caching:** 30-minute intelligent caching for fast analytics performance
-
-### Social Features
-
-- **Public Reviews:** Share individual reviews with customizable privacy controls
-- **Shareable Images:** Auto-generated review images for social media
-- **Public Profiles:** Optional public reading profile pages
-
-### Advanced Features
-
-- **Edition Management:** Track multiple editions (hardcover, paperback, international) of the same book without duplication
-- **Book Type Auto-Detection:** Automatically classify fiction vs non-fiction based on Google Books categories for appropriate rating facets
-- **Google Books Enrichment:** Automatically pull cover images, descriptions, page counts, and metadata from Google Books API
-- **Admin Panel:** User management and book data administration
-- **Admin Audit Trail:** Complete logging of all administrative actions with before/after values for accountability
+- **Reading Volume Charts:** Books and pages per month with year-over-year comparisons
+- **Format and Genre Distribution:** Breakdown of reading habits by format and fiction/non-fiction
+- **Representation Statistics:** Visualize diversity metrics across your reading
