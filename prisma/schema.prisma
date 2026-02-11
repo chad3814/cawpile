@@ -263,6 +263,17 @@ model SharedReview {
   @@index([userId])
 }
 
+// VideoTemplate model for storing reusable video template configurations
+model VideoTemplate {
+  id                  String   @id @default(cuid())
+  name                String
+  description         String?
+  previewThumbnailUrl String?
+  config              Json
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
 enum BookStatus {
   WANT_TO_READ
   READING
