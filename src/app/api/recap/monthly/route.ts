@@ -2,17 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
-
-/**
- * Convert a raw cover image URL to an absolute proxied URL.
- * This prevents the video-gen server from hitting Google Books directly
- * (which rate-limits EC2 IPs), routing requests through our image proxy instead.
- */
-function proxyImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null
-  const baseUrl = process.env.NEXTAUTH_URL || ''
-  return `${baseUrl}/api/proxy/image?url=${encodeURIComponent(url)}`
-}
+import { cacheCoverUrls } from '@/lib/cover-cache'
 import type {
   MonthlyRecapExport,
   MonthlyRecapPreview,
@@ -158,11 +148,28 @@ export async function GET(request: Request) {
       },
     })
 
+    // Collect all raw cover URLs and cache them to S3 in parallel
+    const allRawCoverUrls = [
+      ...userBooks.map((ub) =>
+        getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
+      ),
+      ...currentlyReadingBooks.map((ub) =>
+        getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
+      ),
+    ]
+    const cachedUrlMap = await cacheCoverUrls(allRawCoverUrls)
+
+    // Helper to look up cached URL, falling back to original
+    const getCachedUrl = (rawUrl: string | null | undefined): string | null => {
+      if (!rawUrl) return null
+      return cachedUrlMap.get(rawUrl) ?? rawUrl
+    }
+
     // Transform to export format
     const books: RecapBook[] = userBooks.map((ub) => {
       const displayTitle = ub.edition.title || ub.edition.book.title
       const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
-      const coverUrl = proxyImageUrl(rawCoverUrl)
+      const coverUrl = getCachedUrl(rawCoverUrl)
 
       // Get page count from any available provider
       const pageCount =
@@ -199,7 +206,7 @@ export async function GET(request: Request) {
       (ub) => {
         const displayTitle = ub.edition.title || ub.edition.book.title
         const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
-        const coverUrl = proxyImageUrl(rawCoverUrl)
+        const coverUrl = getCachedUrl(rawCoverUrl)
 
         return {
           id: ub.id,
