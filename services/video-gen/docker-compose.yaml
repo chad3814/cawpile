@@ -1,0 +1,18 @@
+services:
+  cawpile-video:
+    image: cawpile-video
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=us-east-2
+      - S3_BUCKET_NAME=cawpile-downloads
+    ports:
+      - 8014:3001
+    secrets:
+      - aws_client_id
+      - aws_client_secret
+
+secrets:
+  aws_client_id:
+    file: secrets/aws_client_id
+  aws_client_secret:
+    file: secrets/aws_client_secret

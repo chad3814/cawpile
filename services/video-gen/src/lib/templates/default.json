@@ -1,0 +1,67 @@
+{
+  "id": "default",
+  "name": "Default Dark Theme",
+  "description": "Dark, moody aesthetic with bold typography and orange accents (Cawpile brand)",
+  "version": "1.0.0",
+  "colors": {
+    "background": "#0a0a0a",
+    "backgroundSecondary": "#111111",
+    "backgroundTertiary": "#1a1a1a",
+    "textPrimary": "#ffffff",
+    "textSecondary": "#a1a1aa",
+    "textMuted": "#71717a",
+    "accent": "#f97316",
+    "accentSecondary": "#fb923c",
+    "accentMuted": "#c2410c",
+    "completed": "#22c55e",
+    "dnf": "#ef4444",
+    "ratingHigh": "#22c55e",
+    "ratingMedium": "#eab308",
+    "ratingLow": "#ef4444",
+    "overlay": "rgba(0, 0, 0, 0.7)",
+    "grain": "rgba(255, 255, 255, 0.02)"
+  },
+  "fonts": {
+    "heading": "Inter, system-ui, sans-serif",
+    "body": "Inter, system-ui, sans-serif",
+    "mono": "JetBrains Mono, monospace"
+  },
+  "timing": {
+    "introFadeIn": 15,
+    "introHold": 45,
+    "introFadeOut": 15,
+    "introTotal": 75,
+    "bookSlideIn": 12,
+    "bookTitleType": 20,
+    "bookRatingCount": 30,
+    "bookHold": 60,
+    "bookExit": 15,
+    "bookTotal": 150,
+    "statsCountUp": 45,
+    "statsHold": 60,
+    "statsFadeOut": 15,
+    "statsTotal": 120,
+    "comingSoonFadeIn": 15,
+    "comingSoonHold": 60,
+    "comingSoonFadeOut": 15,
+    "comingSoonTotal": 90,
+    "outroFadeIn": 15,
+    "outroHold": 60,
+    "outroFadeOut": 15,
+    "outroTotal": 90,
+    "transitionOverlap": 6
+  },
+  "layout": {
+    "introStyle": "slam",
+    "bookRevealAnimation": "slide",
+    "statsAnimation": "countUp",
+    "outroAnimation": "fade"
+  },
+  "sequences": {
+    "intro": true,
+    "bookReveal": true,
+    "stats": true,
+    "comingSoon": true,
+    "outro": true
+  }
+}
