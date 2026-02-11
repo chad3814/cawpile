@@ -30,6 +30,7 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 beforeEach(() => {
   jest.clearAllMocks()
   jest.spyOn(console, 'warn').mockImplementation(() => {})
+  jest.spyOn(console, 'error').mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -166,18 +167,86 @@ describe('cacheBookCoverToS3', () => {
     expect(result).toMatch(/\.jpg$/)
   })
 
-  test('returns original URL when fetch fails (non-ok response)', async () => {
+  test('retries on 429 then succeeds', async () => {
+    jest.useFakeTimers()
+    mockS3Send.mockRejectedValueOnce(new Error('NotFound'))
+    mockS3Send.mockResolvedValueOnce({}) // PutObject
+
+    // First fetch: 429, second fetch: success
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'content-type': 'image/jpeg' }),
+        arrayBuffer: () => Promise.resolve(Buffer.from('data').buffer),
+      })
+
+    const promise = cacheBookCoverToS3(TEST_URL)
+    await jest.advanceTimersByTimeAsync(1000)
+    const result = await promise
+
+    expect(result).toMatch(/^https:\/\/cawpile-downloads\.s3\./)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('429')
+    )
+    jest.useRealTimers()
+  })
+
+  test('retries on 500 then succeeds', async () => {
+    jest.useFakeTimers()
+    mockS3Send.mockRejectedValueOnce(new Error('NotFound'))
+    mockS3Send.mockResolvedValueOnce({})
+
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ 'content-type': 'image/jpeg' }),
+        arrayBuffer: () => Promise.resolve(Buffer.from('data').buffer),
+      })
+
+    const promise = cacheBookCoverToS3(TEST_URL)
+    await jest.advanceTimersByTimeAsync(1000)
+    const result = await promise
+
+    expect(result).toMatch(/^https:\/\/cawpile-downloads\.s3\./)
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    jest.useRealTimers()
+  })
+
+  test('does not retry on 404', async () => {
     mockS3Send.mockRejectedValueOnce(new Error('NotFound'))
 
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 429,
-    })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 })
 
     const result = await cacheBookCoverToS3(TEST_URL)
 
     expect(result).toBe(TEST_URL)
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('429'))
+    expect(mockFetch).toHaveBeenCalledTimes(1) // no retry
+  })
+
+  test('returns original URL after exhausting retries', async () => {
+    jest.useFakeTimers()
+    mockS3Send.mockRejectedValueOnce(new Error('NotFound'))
+
+    // All 4 attempts (1 initial + 3 retries) return 429
+    mockFetch
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+      .mockResolvedValueOnce({ ok: false, status: 429 })
+
+    const promise = cacheBookCoverToS3(TEST_URL)
+    await jest.advanceTimersByTimeAsync(7000) // 1s + 2s + 4s
+    const result = await promise
+
+    expect(result).toBe(TEST_URL)
+    expect(mockFetch).toHaveBeenCalledTimes(4)
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('failed to fetch'),
+    )
+    jest.useRealTimers()
   })
 
   test('returns original URL when S3 upload fails', async () => {
@@ -193,7 +262,7 @@ describe('cacheBookCoverToS3', () => {
     const result = await cacheBookCoverToS3(TEST_URL)
 
     expect(result).toBe(TEST_URL)
-    expect(console.warn).toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalled()
   })
 
   test('returns original URL when fetch throws (network error)', async () => {
@@ -263,12 +332,32 @@ describe('cacheCoverUrls', () => {
     expect(result.size).toBe(0)
   })
 
+  test('processes URLs in batches of 3 (concurrency limit)', async () => {
+    // Track the order of S3 send calls to verify batching
+    const callOrder: number[] = []
+    let callCount = 0
+    mockS3Send.mockImplementation(() => {
+      callOrder.push(++callCount)
+      return Promise.resolve({})
+    })
+
+    // 5 URLs should be processed in 2 batches: [3, 2]
+    const urls = Array.from({ length: 5 }, (_, i) => `https://example.com/cover${i}.jpg`)
+
+    const result = await cacheCoverUrls(urls)
+
+    expect(result.size).toBe(5)
+    // 5 HeadObject calls (one per URL, all succeed = already cached)
+    expect(mockS3Send).toHaveBeenCalledTimes(5)
+  })
+
   test('handles partial failures gracefully', async () => {
+    jest.useFakeTimers()
     // First URL: HeadObject succeeds (cached)
     mockS3Send.mockResolvedValueOnce({})
-    // Second URL: HeadObject fails, fetch fails
+    // Second URL: HeadObject fails, fetch returns 404 (no retry)
     mockS3Send.mockRejectedValueOnce(new Error('NotFound'))
-    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 })
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 404 })
 
     const urls = [
       'https://example.com/cached.jpg',
@@ -281,5 +370,6 @@ describe('cacheCoverUrls', () => {
     expect(result.size).toBe(2)
     expect(result.get(urls[0])).toMatch(/^https:\/\/cawpile-downloads\.s3\./)
     expect(result.get(urls[1])).toBe(urls[1])
+    jest.useRealTimers()
   })
 })

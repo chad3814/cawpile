@@ -10,6 +10,9 @@ const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
 const AWS_REGION = process.env.AWS_REGION || 'us-east-2'
 const COVER_CACHE_BUCKET = 'cawpile-downloads'
 
+const MAX_RETRIES = 3
+const CONCURRENCY = 3
+
 const s3Client = new S3Client({
   region: AWS_REGION,
   credentials:
@@ -42,6 +45,40 @@ function getExtensionFromUrl(url: string): string | null {
   } catch {
     return null
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Fetch with retry and exponential backoff.
+ * Retries on 429 and 5xx responses.
+ */
+async function fetchWithRetry(
+  url: string,
+  retries: number = MAX_RETRIES
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const response = await fetch(url, { signal: AbortSignal.timeout(15000) })
+
+    if (response.ok) return response
+
+    const shouldRetry =
+      attempt < retries && (response.status === 429 || response.status >= 500)
+
+    if (!shouldRetry) return response
+
+    // Exponential backoff: 1s, 2s, 4s
+    const delay = 1000 * Math.pow(2, attempt)
+    console.warn(
+      `Cover cache: ${response.status} fetching ${url}, retrying in ${delay}ms (attempt ${attempt + 1}/${retries})`
+    )
+    await sleep(delay)
+  }
+
+  // Unreachable, but TypeScript needs it
+  throw new Error('Exhausted retries')
 }
 
 /**
@@ -79,10 +116,12 @@ export async function cacheBookCoverToS3(url: string): Promise<string> {
       // Not found — continue to fetch and upload
     }
 
-    // Fetch the image
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000) })
+    // Fetch the image with retry
+    const response = await fetchWithRetry(url)
     if (!response.ok) {
-      console.warn(`Cover cache: failed to fetch ${url} (${response.status})`)
+      console.error(
+        `Cover cache: failed to fetch ${url} after retries (${response.status})`
+      )
       return url
     }
 
@@ -111,31 +150,37 @@ export async function cacheBookCoverToS3(url: string): Promise<string> {
 
     return getPublicUrl(key)
   } catch (error) {
-    console.warn(`Cover cache: error caching ${url}:`, error)
+    console.error(`Cover cache: error caching ${url}:`, error)
     return url
   }
 }
 
 /**
- * Cache multiple cover URLs to S3 in parallel.
+ * Cache multiple cover URLs to S3 with limited concurrency.
+ * Processes CONCURRENCY URLs at a time to avoid rate-limiting.
  * Returns a Map from original URL → S3 URL (or original on failure).
  */
 export async function cacheCoverUrls(
   urls: (string | null | undefined)[]
 ): Promise<Map<string, string>> {
   const uniqueUrls = [...new Set(urls.filter((u): u is string => !!u))]
-
-  const results = await Promise.allSettled(
-    uniqueUrls.map(async (url) => ({
-      original: url,
-      cached: await cacheBookCoverToS3(url),
-    }))
-  )
-
   const urlMap = new Map<string, string>()
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      urlMap.set(result.value.original, result.value.cached)
+
+  // Process in batches to avoid burst rate-limiting
+  for (let i = 0; i < uniqueUrls.length; i += CONCURRENCY) {
+    const batch = uniqueUrls.slice(i, i + CONCURRENCY)
+
+    const results = await Promise.allSettled(
+      batch.map(async (url) => ({
+        original: url,
+        cached: await cacheBookCoverToS3(url),
+      }))
+    )
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        urlMap.set(result.value.original, result.value.cached)
+      }
     }
   }
 
