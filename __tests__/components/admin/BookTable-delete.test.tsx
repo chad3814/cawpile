@@ -35,6 +35,7 @@ describe('BookTable Delete Functionality', () => {
           authors: [],
           format: null,
           googleBooksId: null,
+          defaultCoverProvider: null,
           googleBook: null,
         }
       ],
@@ -58,6 +59,7 @@ describe('BookTable Delete Functionality', () => {
           authors: [],
           format: null,
           googleBooksId: null,
+          defaultCoverProvider: null,
           googleBook: null,
         }
       ],

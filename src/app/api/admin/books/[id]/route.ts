@@ -25,6 +25,8 @@ export async function GET(
         editions: {
           include: {
             googleBook: true,
+            hardcoverBook: true,
+            ibdbBook: true,
             _count: {
               select: {
                 userBooks: true

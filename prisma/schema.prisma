@@ -91,7 +91,8 @@ model Edition {
   title         String?        // Edition-specific title if different
   authors       String[]       // Edition-specific authors if different
   format        BookFormat?
-  googleBooksId String?        @unique
+  googleBooksId        String?        @unique
+  defaultCoverProvider String?
   book          Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
   userBooks     UserBook[]
   googleBook    GoogleBook?

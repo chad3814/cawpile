@@ -58,6 +58,7 @@ export interface Edition {
   authors: string[]
   format: string | null
   googleBooksId: string | null
+  defaultCoverProvider: string | null
   googleBook?: GoogleBook | null
   hardcoverBook?: HardcoverBook | null
   ibdbBook?: IbdbBook | null

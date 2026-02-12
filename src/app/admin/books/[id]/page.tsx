@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import BookEditForm from '@/components/admin/BookEditForm'
 import Link from 'next/link'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
+import EditionCoverManager from '@/components/admin/EditionCoverManager'
 
 async function getBook(id: string) {
   const book = await prisma.book.findUnique({
@@ -12,6 +13,8 @@ async function getBook(id: string) {
       editions: {
         include: {
           googleBook: true,
+          hardcoverBook: true,
+          ibdbBook: true,
           _count: {
             select: {
               userBooks: true
@@ -105,6 +108,14 @@ export default async function BookEditPage({
                   </div>
                 </div>
                 
+                <EditionCoverManager
+                  editionId={edition.id}
+                  defaultCoverProvider={edition.defaultCoverProvider}
+                  googleBookImageUrl={edition.googleBook?.imageUrl ?? null}
+                  hardcoverBookImageUrl={edition.hardcoverBook?.imageUrl ?? null}
+                  ibdbBookImageUrl={edition.ibdbBook?.imageUrl ?? null}
+                />
+
                 {edition.googleBook && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <h4 className="text-sm font-medium text-gray-900 mb-2">Google Books Data</h4>
