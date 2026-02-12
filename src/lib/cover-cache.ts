@@ -4,6 +4,7 @@ import {
   HeadObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
+import { getCoverImageUrl, EditionWithProviders } from '@/lib/utils/getCoverImageUrl'
 
 const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
 const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY
@@ -153,6 +154,22 @@ export async function cacheBookCoverToS3(url: string): Promise<string> {
     console.error(`Cover cache: error caching ${url}:`, error)
     return url
   }
+}
+
+/**
+ * Resolve a cover image URL through S3 cache (server-only).
+ * Uses getCoverImageUrl to pick the best provider URL, then:
+ * 1. HEAD check on S3 — if cached, return S3 URL
+ * 2. Try to cache the provider image to S3 — if success, return S3 URL
+ * 3. On any failure, return the original provider URL
+ */
+export async function getCachedCoverImageUrl(
+  edition: EditionWithProviders,
+  preferredProvider?: string | null
+): Promise<string | undefined> {
+  const providerUrl = getCoverImageUrl(edition, preferredProvider)
+  if (!providerUrl) return undefined
+  return await cacheBookCoverToS3(providerUrl)
 }
 
 /**
