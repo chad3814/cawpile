@@ -3,6 +3,10 @@
  *
  * Defines the VideoTemplate interface and related types for customizing
  * video styles, layouts, and animations at render time via inline JSON.
+ *
+ * SYNC NOTE: This file is the canonical source for template types.
+ * A duplicate copy exists in the main Next.js app at src/types/video-template.ts
+ * When modifying types here, ensure the main app copy is updated as well.
  */
 
 import { COLORS, FONTS, TIMING } from './theme'

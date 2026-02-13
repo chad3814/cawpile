@@ -1,21 +1,23 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useDebounce } from '@/hooks/useDebounce'
 import TemplateCard from '@/components/templates/TemplateCard'
 import type { TemplateCardData } from '@/components/templates/TemplateCard'
-import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
 
 type SortOption = 'newest' | 'name' | 'popular'
 
 interface TemplateBrowseClientProps {
   selectedTemplateId: string | null
   userId: string
+  isAdmin?: boolean
 }
 
 const ITEMS_PER_PAGE = 12
 
-export default function TemplateBrowseClient({ selectedTemplateId: initialSelectedId, userId: _userId }: TemplateBrowseClientProps) {
+export default function TemplateBrowseClient({ selectedTemplateId: initialSelectedId, userId: _userId, isAdmin }: TemplateBrowseClientProps) {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('newest')
   const [page, setPage] = useState(1)
@@ -33,7 +35,7 @@ export default function TemplateBrowseClient({ selectedTemplateId: initialSelect
     setPage(1)
   }, [debouncedSearch])
 
-  // Fetch public templates
+  // Fetch templates - admin gets all (published + draft), users get published only
   const fetchTemplates = useCallback(async () => {
     setLoading(true)
     try {
@@ -46,11 +48,16 @@ export default function TemplateBrowseClient({ selectedTemplateId: initialSelect
         params.set('search', debouncedSearch.trim())
       }
 
-      const response = await fetch(`/api/user/templates?${params.toString()}`)
+      // Admin fetches from admin API (includes drafts); users fetch from user API
+      const endpoint = isAdmin
+        ? `/api/templates?${params.toString()}`
+        : `/api/user/templates?${params.toString()}`
+
+      const response = await fetch(endpoint)
       if (response.ok) {
         const data = await response.json()
         setTemplates(data.templates)
-        setTotalCount(data.totalCount)
+        setTotalCount(data.totalCount ?? data.templates.length)
         if (data.selectedTemplateId !== undefined) {
           setSelectedTemplateId(data.selectedTemplateId)
         }
@@ -60,17 +67,12 @@ export default function TemplateBrowseClient({ selectedTemplateId: initialSelect
     } finally {
       setLoading(false)
     }
-  }, [page, sort, debouncedSearch])
+  }, [page, sort, debouncedSearch, isAdmin])
 
   // Fetch user's personal (duplicated) templates
   const fetchMyTemplates = useCallback(async () => {
     setMyTemplatesLoading(true)
     try {
-      // Use search with a special parameter to get only user's templates
-      // The browse API returns published templates, so we need a different approach
-      // We'll fetch user's personal templates by filtering on the browse endpoint
-      // But the browse endpoint only returns published templates...
-      // Instead, query for user's unpublished templates via a separate call
       const response = await fetch(`/api/user/templates/mine`)
       if (response.ok) {
         const data = await response.json()
@@ -89,23 +91,54 @@ export default function TemplateBrowseClient({ selectedTemplateId: initialSelect
   }, [fetchTemplates])
 
   useEffect(() => {
-    fetchMyTemplates()
-  }, [fetchMyTemplates])
+    // Skip "my templates" fetch for admin since they see all templates already
+    if (!isAdmin) {
+      fetchMyTemplates()
+    } else {
+      setMyTemplatesLoading(false)
+    }
+  }, [fetchMyTemplates, isAdmin])
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!window.confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+      return
+    }
+    try {
+      const response = await fetch(`/api/templates/${templateId}`, { method: 'DELETE' })
+      if (response.ok) {
+        // Refresh templates list
+        fetchTemplates()
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error)
+    }
+  }
 
   const totalPages = Math.max(1, Math.ceil(totalCount / ITEMS_PER_PAGE))
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Template Gallery</h1>
-        <p className="text-muted-foreground mt-2">
-          Browse and select a template for your monthly recap video
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Template Gallery</h1>
+          <p className="text-muted-foreground mt-2">
+            Browse and select a template for your monthly recap video
+          </p>
+        </div>
+        {isAdmin && (
+          <Link
+            href="/dashboard/templates/create"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+          >
+            <PlusIcon className="h-5 w-5" />
+            Create New Template
+          </Link>
+        )}
       </div>
 
       {/* My Templates Section */}
-      {!myTemplatesLoading && myTemplates.length > 0 && (
+      {!isAdmin && !myTemplatesLoading && myTemplates.length > 0 && (
         <div className="mb-10">
           <h2 className="text-xl font-semibold text-foreground mb-4">My Templates</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="my-templates-grid">
@@ -185,6 +218,9 @@ export default function TemplateBrowseClient({ selectedTemplateId: initialSelect
                 key={template.id}
                 template={template}
                 isSelected={selectedTemplateId === template.id}
+                isAdmin={isAdmin}
+                isPublished={template.isPublished}
+                onDelete={() => handleDeleteTemplate(template.id)}
               />
             ))}
           </div>

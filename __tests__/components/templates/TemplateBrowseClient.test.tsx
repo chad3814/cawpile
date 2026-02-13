@@ -15,6 +15,11 @@ jest.mock('next/link', () => {
   return MockLink
 })
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}))
+
 // Mock useDebounce to return value immediately for testing
 jest.mock('@/hooks/useDebounce', () => ({
   useDebounce: (value: string) => value,

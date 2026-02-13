@@ -16,6 +16,11 @@ jest.mock('next/link', () => {
   return MockLink
 })
 
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}))
+
 describe('TemplateCard', () => {
   const baseTemplate: TemplateCardData = {
     id: 'tmpl-1',
