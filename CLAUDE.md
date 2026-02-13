@@ -20,14 +20,14 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 - `npx prisma studio` - Open Prisma Studio for database GUI
 
 ### Testing
-- `npm run test` - Run all Jest tests
+- `npm run test` - Run all Jest tests (root) and Vitest tests (video-gen)
 - `npm run test -- path/to/test` - Run specific test file
 - `npm run test:watch` - Run tests in watch mode
 - `npm run test:coverage` - Run tests with coverage report
 
 Tests are in `__tests__/` with subdirectories: `components/`, `lib/`, `api/`, `database/`, `integration/`, `hooks/`, `app/`
 
-Jest uses `maxWorkers: 1` to prevent database connection contention. Tests ignore `/services/` directory. The `nanoid` module is mocked via `__mocks__/nanoid.ts`.
+Jest uses `maxWorkers: 1` to prevent database connection contention. Tests ignore `/services/` directory. The `nanoid` module is mocked via `__mocks__/nanoid.ts`. Root `npm run test` and `npm run lint` cascade into `services/video-gen` via `--prefix`.
 
 ## Monorepo Structure
 
@@ -76,11 +76,19 @@ This repo contains two independently deployable services:
 - Profile settings: username, bio, readingGoal, profileEnabled, showCurrentlyReading, showTbr
 - Dashboard settings: dashboardLayout (GRID|TABLE), librarySortBy, librarySortOrder
 - Admin flags: isAdmin, isSuperAdmin
+- Template selection: `selectedTemplateId` → VideoTemplate (onDelete: SetNull)
 
 **Book → Edition → Provider Metadata** (three-level hierarchy)
 - `Book`: title + authors, unique on `(title, authors)` pair, bookType (FICTION|NONFICTION)
 - `Edition`: ISBN-specific (isbn10, isbn13, googleBooksId), links to Book
 - `GoogleBook`, `HardcoverBook`, `IbdbBook`: Provider-specific metadata linked to Edition
+
+**VideoTemplate** (video recap template config)
+- Config: JSON blob storing full template configuration (colors, fonts, timing, layout per sequence)
+- Creator: `userId` (nullable) → User relation; null means system template
+- Publishing: `isPublished` (default false), `usageCount` (tracks selections)
+- User selection: Users pick a template via `User.selectedTemplateId`
+- Index on `(isPublished, createdAt)` for efficient browse queries
 
 **UserBook** (user's reading record)
 - Status: WANT_TO_READ, READING, COMPLETED, DNF
@@ -126,7 +134,12 @@ Routes follow RESTful patterns in `src/app/api/`:
 - `/api/admin/*` - Admin operations (books, users, audit-log, stats, data-quality, editions/covers, bulk ops, resync) - require `isAdmin`
 - `/api/share/*` - Public review sharing
 - `/api/recap/monthly` - Monthly reading recap data for video generation
-- `/api/templates/*` - Admin video template management
+- `/api/templates/*` - Admin video template CRUD (GET, POST, PATCH, DELETE) - require `isAdmin`
+- `/api/user/templates` - Browse published templates (paginated, sortable, searchable)
+- `/api/user/templates/[id]` - Single template detail
+- `/api/user/templates/[id]/select` - Select template for user's recap (atomic usageCount increment)
+- `/api/user/templates/[id]/duplicate` - Fork template as personal unpublished copy
+- `/api/user/templates/mine` - User's personal (duplicated) templates
 
 ## Search System Architecture
 
@@ -159,20 +172,28 @@ Routes follow RESTful patterns in `src/app/api/`:
 **Form Field Components** (`components/forms/`)
 - Reusable field components: `AcquisitionMethodField`, `BookClubField`, etc.
 
+**Template Editor Pattern** (`components/templates/TemplateEditorClient.tsx`)
+- `useReducer` for nested config state management with per-section actions
+- 8-tab single-page editor (Colors, Fonts, Timing, Intro, Book Reveal, Stats Reveal, Coming Soon, Outro)
+- `TemplatePreviewPanel` for reactive static preview (color swatches, font samples, layout badges, timing bar)
+- Timing auto-calculation: admins set sequence totals, sub-timings derived proportionally (`src/lib/video/timingCalculation.ts`)
+
 ## Key Directories
 
 ```
 src/
-├── app/api/          # RESTful endpoints (auth/, books/, user/, admin/, charts/, share/)
-├── components/       # React components by domain (dashboard/, modals/, forms/, charts/, admin/, rating/)
+├── app/api/          # RESTful endpoints (auth/, books/, user/, admin/, charts/, share/, templates/)
+├── app/dashboard/    # Dashboard pages (templates/ for browse, create, edit, detail)
+├── components/       # React components by domain (dashboard/, modals/, forms/, charts/, admin/, rating/, templates/)
 ├── lib/
 │   ├── search/       # Multi-provider search (providers/, utils/, types.ts)
 │   ├── db/           # Database utilities (findOrCreateBook, findOrCreateEdition)
 │   ├── auth/         # Admin auth helpers
+│   ├── video/        # Video template utilities (validateTemplateConfig, timingCalculation)
 │   └── charts/       # Chart data processors
 ├── hooks/            # Custom hooks (useBookSearch, useDebounce, useBookClubs, useReadathons, useUsernameCheck)
 ├── contexts/         # React contexts (ChartDataContext)
-└── types/            # TypeScript types (book.ts, cawpile.ts)
+└── types/            # TypeScript types (book.ts, cawpile.ts, video-template.ts)
 
 __tests__/            # Jest tests mirroring src/ structure
 ```
@@ -190,6 +211,12 @@ __tests__/            # Jest tests mirroring src/ structure
 **Public Profiles**: User profiles at `/u/[username]` with privacy controls (profileEnabled, showCurrentlyReading, showTbr)
 
 **Monthly Recap**: Video recap generation via integration with video-gen service (`/api/recap/monthly`)
+
+**Template System**: Admin-created video templates with user browsing and selection
+- Browse: `/dashboard/templates` — card grid with search, sort (newest/name/popular), pagination
+- Detail: `/dashboard/templates/[id]` — full config display with select and duplicate actions
+- Create/Edit: `/dashboard/templates/create` and `/dashboard/templates/[id]/edit` — admin-only tabbed editor
+- Types shared between main app (`src/types/video-template.ts`) and video-gen service (`services/video-gen/src/lib/template-types.ts`) — keep in sync manually
 
 ## Data Flow: Adding a Book
 
