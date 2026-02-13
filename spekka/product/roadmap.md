@@ -27,7 +27,7 @@ The following features are fully implemented and operational:
 
 ## Up Next
 
-1. [ ] **Recap Template System** — Build an admin-facing template builder that defines the structure, layout, and style of monthly recap videos. Templates should be composable from reusable sections (intro, book list, ratings summary, stats highlights, outro) with configurable visual properties per section. `L`
+1. [x] **Recap Template System** — Build an admin-facing template builder that defines the structure, layout, and style of monthly recap videos. Templates should be composable from reusable sections (intro, book list, ratings summary, stats highlights, outro) with configurable visual properties per section. `L`
 
 2. [ ] **Recap Template Rendering** — Implement the video rendering pipeline that takes a selected template and a user's monthly reading data and produces a downloadable video file. Users should be able to preview the recap before rendering and choose which template to use. `XL`
 
