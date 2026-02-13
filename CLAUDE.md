@@ -135,6 +135,7 @@ Routes follow RESTful patterns in `src/app/api/`:
 - `/api/share/*` - Public review sharing
 - `/api/recap/monthly` - Monthly reading recap data for video generation
 - `/api/templates/*` - Admin video template CRUD (GET, POST, PATCH, DELETE) - require `isAdmin`
+- `/api/templates/[id]/background/*` - Template background image upload (presigned URL, sharp resize to 1080x1920, S3 delete)
 - `/api/user/templates` - Browse published templates (paginated, sortable, searchable)
 - `/api/user/templates/[id]` - Single template detail
 - `/api/user/templates/[id]/select` - Select template for user's recap (atomic usageCount increment)
@@ -175,8 +176,9 @@ Routes follow RESTful patterns in `src/app/api/`:
 **Template Editor Pattern** (`components/templates/TemplateEditorClient.tsx`)
 - `useReducer` for nested config state management with per-section actions
 - 8-tab single-page editor (Colors, Fonts, Timing, Intro, Book Reveal, Stats Reveal, Coming Soon, Outro)
-- `TemplatePreviewPanel` for reactive static preview (color swatches, font samples, layout badges, timing bar)
+- `TemplatePreviewPanel` for reactive static preview (color swatches, font samples, layout badges, timing bar, background thumbnails)
 - Timing auto-calculation: admins set sequence totals, sub-timings derived proportionally (`src/lib/video/timingCalculation.ts`)
+- Background image upload: 3-step flow (presigned URL → S3 PUT → server-side resize), per-sequence with global fallback and overlay opacity slider
 
 ## Key Directories
 
@@ -216,7 +218,9 @@ __tests__/            # Jest tests mirroring src/ structure
 - Browse: `/dashboard/templates` — card grid with search, sort (newest/name/popular), pagination
 - Detail: `/dashboard/templates/[id]` — full config display with select and duplicate actions
 - Create/Edit: `/dashboard/templates/create` and `/dashboard/templates/[id]/edit` — admin-only tabbed editor
+- Background images: global + per-sequence overrides with configurable overlay opacity, S3 upload via presigned URLs, resized to 1080x1920 with sharp
 - Types shared between main app (`src/types/video-template.ts`) and video-gen service (`services/video-gen/src/lib/template-types.ts`) — keep in sync manually
+- `getEffectiveTemplate()` resolves defaults, merges partials, and applies global-to-sequence fallback for background images
 
 ## Data Flow: Adding a Book
 
