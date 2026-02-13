@@ -10,8 +10,9 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 
 ### Development
 - `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production (runs `prisma generate` automatically)
+- `npm run build` - Build for production with Turbopack (runs `prisma generate` automatically)
 - `npm run lint` - Run ESLint for code quality checks
+- `npm run make-admin` - Promote a user to admin (runs `scripts/fix-admin-user.ts`)
 
 ### Database
 - `npx prisma migrate dev` - Create and apply migrations in development
@@ -25,6 +26,8 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 - `npm run test:coverage` - Run tests with coverage report
 
 Tests are in `__tests__/` with subdirectories: `components/`, `lib/`, `api/`, `database/`, `integration/`, `hooks/`, `app/`
+
+Jest uses `maxWorkers: 1` to prevent database connection contention. Tests ignore `/services/` directory. The `nanoid` module is mocked via `__mocks__/nanoid.ts`.
 
 ## Monorepo Structure
 
@@ -52,11 +55,17 @@ This repo contains two independently deployable services:
 - **Charts**: Recharts v3.2
 - **UI**: Headless UI, Heroicons
 
+### Additional Infrastructure
+- **S3 Storage**: Avatar uploads (`cawpile-avatars` bucket) and cover image caching (`cawpile-downloads` bucket) via `@aws-sdk/client-s3`
+- **Image Processing**: `sharp` for server-side image manipulation
+- **Data Export**: CSV/ZIP export of user data (`src/lib/export/`, `src/app/api/user/export/`)
+
 ### Key Patterns
 1. **Server Components**: Default for pages/layouts; `"use client"` for modals, forms, hooks
 2. **Multi-Provider Search**: Orchestrator pattern with parallel `Promise.allSettled` execution
 3. **Dual-Level Book Storage**: Book (title/authors) → Edition (ISBN) → Provider metadata (GoogleBook/HardcoverBook/IbdbBook)
 4. **Admin Audit Trail**: All admin actions logged with before/after values in AdminAuditLog
+5. **Search Result Signing**: HMAC-SHA256 signatures validate search results between search and book addition (`src/lib/search/utils/signResult.ts`)
 
 ## Database Schema
 
@@ -99,7 +108,6 @@ This repo contains two independently deployable services:
 - `src/lib/auth.ts` - NextAuth v5 configuration (Google OAuth + Prisma Adapter)
 - `src/lib/auth-helpers.ts` - `getCurrentUser()` for server-side user fetching
 - `src/lib/auth/admin.ts` - `requireAdmin()`, `requireSuperAdmin()` guards
-- `src/middleware.ts` - Route protection (redirects unauthenticated to `/auth/signin`)
 
 ### Session Data
 ```typescript
@@ -112,9 +120,13 @@ Routes follow RESTful patterns in `src/app/api/`:
 - `/api/books/search` - Multi-provider search
 - `/api/user/books` - CRUD for user's library (GET, POST, PATCH, DELETE)
 - `/api/user/preferences`, `/api/user/book-clubs`, `/api/user/readathons`
-- `/api/charts/*` - Analytics data (books-per-month, pages-per-month, book-format, etc.)
-- `/api/admin/*` - Admin operations (books, users, audit-log, stats) - require `isAdmin`
+- `/api/user/export` - CSV/ZIP data export
+- `/api/reading-sessions` - Reading session CRUD
+- `/api/charts/*` - Analytics data (11 chart types: books-per-month, pages-per-month, book-format, main-genres, acquisition-method, lgbtq/disability/poc/new-author representation, dnf-per-month, available-years)
+- `/api/admin/*` - Admin operations (books, users, audit-log, stats, data-quality, editions/covers, bulk ops, resync) - require `isAdmin`
 - `/api/share/*` - Public review sharing
+- `/api/recap/monthly` - Monthly reading recap data for video generation
+- `/api/templates/*` - Admin video template management
 
 ## Search System Architecture
 
@@ -158,7 +170,7 @@ src/
 │   ├── db/           # Database utilities (findOrCreateBook, findOrCreateEdition)
 │   ├── auth/         # Admin auth helpers
 │   └── charts/       # Chart data processors
-├── hooks/            # Custom hooks (useBookSearch, useDebounce)
+├── hooks/            # Custom hooks (useBookSearch, useDebounce, useBookClubs, useReadathons, useUsernameCheck)
 ├── contexts/         # React contexts (ChartDataContext)
 └── types/            # TypeScript types (book.ts, cawpile.ts)
 
@@ -175,6 +187,10 @@ __tests__/            # Jest tests mirroring src/ structure
 
 **Social Sharing**: `SharedReview` model with privacy controls, `ReviewImageTemplate` for shareable images
 
+**Public Profiles**: User profiles at `/u/[username]` with privacy controls (profileEnabled, showCurrentlyReading, showTbr)
+
+**Monthly Recap**: Video recap generation via integration with video-gen service (`/api/recap/monthly`)
+
 ## Data Flow: Adding a Book
 
 1. Search via `SearchModal` → `GET /api/books/search` → `SearchOrchestrator` runs providers in parallel
@@ -184,14 +200,23 @@ __tests__/            # Jest tests mirroring src/ structure
 
 ## Environment Variables
 
+See `.env.example` for full list with descriptions.
+
 **Required:**
-- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_URL` - PostgreSQL connection string (Neon)
 - `NEXTAUTH_URL`, `NEXTAUTH_SECRET` - NextAuth configuration
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` - OAuth credentials
 - `GOOGLE_BOOKS_API_KEY` - Google Books API
 
+**S3 (for avatars/covers):**
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET`
+
 **Optional:**
 - `ADMIN_EMAILS` - Comma-separated list to auto-promote to admin
+- `NEXT_PUBLIC_RENDER_SERVER_URL` - Video render server URL (defaults to `http://localhost:3001`)
+- `SEARCH_SIGNING_SECRET` - HMAC key for search result signing (min 32 chars)
+- `DEBUG` - Enable debug logging
+- `SESSION_MAX_AGE` - Session duration in seconds (default: 6 months)
 
 ## Important Notes
 
@@ -201,4 +226,4 @@ __tests__/            # Jest tests mirroring src/ structure
 
 **Styling**: TailwindCSS 4 with dark mode via `prefers-color-scheme`
 
-**Image Domains**: Configured in `next.config.ts` for Google Books, Hardcover, and IBDB
+**Image Domains**: Configured in `next.config.ts` for Google Books (`books.google.com`), Google user content (`*.googleusercontent.com`), and S3 (`*.amazonaws.com`). Images are unoptimized.
