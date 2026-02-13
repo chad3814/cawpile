@@ -4,7 +4,7 @@
  */
 
 import type { VideoTemplate } from './template-types'
-
+export type { VideoTemplate } from './template-types'
 export interface RecapBookRating {
   average: number
   characters: number | null

@@ -113,7 +113,7 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="MonthlyRecap"
-        component={MonthlyRecap}
+        component={MonthlyRecap as unknown as React.FC<Record<string, unknown>>}
         durationInFrames={duration}
         fps={VIDEO_CONFIG.fps}
         width={VIDEO_CONFIG.width}
