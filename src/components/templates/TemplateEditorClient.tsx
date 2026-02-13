@@ -1,6 +1,6 @@
 "use client"
 
-import { useReducer, useState, useCallback } from 'react'
+import { useReducer, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DEFAULT_TEMPLATE } from '@/types/video-template'
 import type {
@@ -50,11 +50,22 @@ const TABS: TabDefinition[] = [
   { key: 'outro', label: 'Outro' },
 ]
 
+// Sequence action type map for dispatching per-sequence actions
+type SequenceActionType = 'SET_INTRO' | 'SET_BOOK_REVEAL' | 'SET_STATS_REVEAL' | 'SET_COMING_SOON' | 'SET_OUTRO'
+
+const SEQUENCE_ACTION_MAP: Record<string, SequenceActionType> = {
+  intro: 'SET_INTRO',
+  bookReveal: 'SET_BOOK_REVEAL',
+  statsReveal: 'SET_STATS_REVEAL',
+  comingSoon: 'SET_COMING_SOON',
+  outro: 'SET_OUTRO',
+}
+
 // ============================================================================
 // State Management via useReducer
 // ============================================================================
 
-interface EditorState {
+export interface EditorState {
   colors: ResolvedColorsConfig
   fonts: ResolvedFontsConfig
   timingTotals: {
@@ -65,11 +76,16 @@ interface EditorState {
     outroTotal: number
     transitionOverlap: number
   }
+  // Global background image fields
+  globalBackgroundImage: string | null
+  globalBackgroundOverlayOpacity: number
   intro: {
     layout: IntroLayout
     titleFontSize: number
     subtitleFontSize: number
     showYear: boolean
+    backgroundImage: string | null
+    backgroundOverlayOpacity: number | null
   }
   bookReveal: {
     layout: BookRevealLayout
@@ -77,6 +93,8 @@ interface EditorState {
     showAuthors: boolean
     coverSize: 'small' | 'medium' | 'large'
     animationStyle: 'slide' | 'fade' | 'pop'
+    backgroundImage: string | null
+    backgroundOverlayOpacity: number | null
   }
   statsReveal: {
     layout: StatsRevealLayout
@@ -85,30 +103,38 @@ interface EditorState {
     showAverageRating: boolean
     showTopBook: boolean
     animateNumbers: boolean
+    backgroundImage: string | null
+    backgroundOverlayOpacity: number | null
   }
   comingSoon: {
     layout: ComingSoonLayout
     showProgress: boolean
     maxBooks: number
+    backgroundImage: string | null
+    backgroundOverlayOpacity: number | null
   }
   outro: {
     layout: OutroLayout
     showBranding: boolean
     customText: string
+    backgroundImage: string | null
+    backgroundOverlayOpacity: number | null
   }
 }
 
-type EditorAction =
+export type EditorAction =
   | { type: 'SET_COLOR'; key: keyof ResolvedColorsConfig; value: string }
   | { type: 'SET_FONT'; key: keyof ResolvedFontsConfig; value: string }
   | { type: 'SET_TIMING_TOTAL'; key: string; value: number }
+  | { type: 'SET_GLOBAL_BACKGROUND_IMAGE'; value: string | null }
+  | { type: 'SET_GLOBAL_BACKGROUND_OVERLAY_OPACITY'; value: number }
   | { type: 'SET_INTRO'; key: string; value: unknown }
   | { type: 'SET_BOOK_REVEAL'; key: string; value: unknown }
   | { type: 'SET_STATS_REVEAL'; key: string; value: unknown }
   | { type: 'SET_COMING_SOON'; key: string; value: unknown }
   | { type: 'SET_OUTRO'; key: string; value: unknown }
 
-function editorReducer(state: EditorState, action: EditorAction): EditorState {
+export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case 'SET_COLOR':
       return { ...state, colors: { ...state.colors, [action.key]: action.value } }
@@ -116,6 +142,10 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return { ...state, fonts: { ...state.fonts, [action.key]: action.value } }
     case 'SET_TIMING_TOTAL':
       return { ...state, timingTotals: { ...state.timingTotals, [action.key]: action.value } }
+    case 'SET_GLOBAL_BACKGROUND_IMAGE':
+      return { ...state, globalBackgroundImage: action.value }
+    case 'SET_GLOBAL_BACKGROUND_OVERLAY_OPACITY':
+      return { ...state, globalBackgroundOverlayOpacity: action.value }
     case 'SET_INTRO':
       return { ...state, intro: { ...state.intro, [action.key]: action.value } }
     case 'SET_BOOK_REVEAL':
@@ -131,7 +161,28 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
   }
 }
 
-function buildInitialState(template: ResolvedVideoTemplate): EditorState {
+export function buildInitialState(template: ResolvedVideoTemplate, rawConfig?: VideoTemplate): EditorState {
+  // Helper to extract raw (un-resolved) sequence background fields.
+  // When rawConfig is provided, use its values to distinguish overrides from inheritance.
+  // A raw value of undefined/null means the sequence inherits from global (state = null).
+  // A raw string value means the sequence has its own override.
+  function rawSeqBg(seq: 'intro' | 'bookReveal' | 'statsReveal' | 'comingSoon' | 'outro'): { backgroundImage: string | null; backgroundOverlayOpacity: number | null } {
+    if (rawConfig) {
+      const rawSeq = rawConfig[seq] as Record<string, unknown> | undefined
+      const rawBgImg = rawSeq?.backgroundImage
+      const rawBgOpacity = rawSeq?.backgroundOverlayOpacity
+      return {
+        backgroundImage: (typeof rawBgImg === 'string') ? rawBgImg : null,
+        backgroundOverlayOpacity: (typeof rawBgOpacity === 'number') ? rawBgOpacity : null,
+      }
+    }
+    // No raw config: use resolved values (backwards compatible)
+    return {
+      backgroundImage: template[seq].backgroundImage,
+      backgroundOverlayOpacity: template[seq].backgroundOverlayOpacity,
+    }
+  }
+
   return {
     colors: { ...template.global.colors },
     fonts: { ...template.global.fonts },
@@ -143,11 +194,28 @@ function buildInitialState(template: ResolvedVideoTemplate): EditorState {
       outroTotal: template.global.timing.outroTotal,
       transitionOverlap: template.global.timing.transitionOverlap,
     },
-    intro: { ...template.intro },
-    bookReveal: { ...template.bookReveal },
-    statsReveal: { ...template.statsReveal },
-    comingSoon: { ...template.comingSoon },
-    outro: { ...template.outro },
+    globalBackgroundImage: template.global.backgroundImage,
+    globalBackgroundOverlayOpacity: template.global.backgroundOverlayOpacity,
+    intro: {
+      ...template.intro,
+      ...rawSeqBg('intro'),
+    },
+    bookReveal: {
+      ...template.bookReveal,
+      ...rawSeqBg('bookReveal'),
+    },
+    statsReveal: {
+      ...template.statsReveal,
+      ...rawSeqBg('statsReveal'),
+    },
+    comingSoon: {
+      ...template.comingSoon,
+      ...rawSeqBg('comingSoon'),
+    },
+    outro: {
+      ...template.outro,
+      ...rawSeqBg('outro'),
+    },
   }
 }
 
@@ -155,20 +223,109 @@ function buildInitialState(template: ResolvedVideoTemplate): EditorState {
 // Utility: merge partial config onto defaults
 // ============================================================================
 
-function resolveConfig(initial?: VideoTemplate): ResolvedVideoTemplate {
+export function resolveConfig(initial?: VideoTemplate): ResolvedVideoTemplate {
   if (!initial) return DEFAULT_TEMPLATE
 
-  return {
+  const globalBackgroundImage = initial.global?.backgroundImage !== undefined && initial.global?.backgroundImage !== null
+    ? initial.global.backgroundImage
+    : DEFAULT_TEMPLATE.global.backgroundImage
+  const globalBackgroundOverlayOpacity = initial.global?.backgroundOverlayOpacity !== undefined && initial.global?.backgroundOverlayOpacity !== null
+    ? initial.global.backgroundOverlayOpacity
+    : DEFAULT_TEMPLATE.global.backgroundOverlayOpacity
+
+  const resolved: ResolvedVideoTemplate = {
     global: {
       colors: { ...DEFAULT_TEMPLATE.global.colors, ...initial.global?.colors },
       fonts: { ...DEFAULT_TEMPLATE.global.fonts, ...initial.global?.fonts },
       timing: { ...DEFAULT_TEMPLATE.global.timing, ...initial.global?.timing },
+      backgroundImage: globalBackgroundImage,
+      backgroundOverlayOpacity: globalBackgroundOverlayOpacity,
     },
-    intro: { ...DEFAULT_TEMPLATE.intro, ...initial.intro },
-    bookReveal: { ...DEFAULT_TEMPLATE.bookReveal, ...initial.bookReveal },
-    statsReveal: { ...DEFAULT_TEMPLATE.statsReveal, ...initial.statsReveal },
-    comingSoon: { ...DEFAULT_TEMPLATE.comingSoon, ...initial.comingSoon },
-    outro: { ...DEFAULT_TEMPLATE.outro, ...initial.outro },
+    intro: { ...DEFAULT_TEMPLATE.intro, ...initial.intro, backgroundOverlayOpacity: initial.intro?.backgroundOverlayOpacity ?? DEFAULT_TEMPLATE.intro.backgroundOverlayOpacity },
+    bookReveal: { ...DEFAULT_TEMPLATE.bookReveal, ...initial.bookReveal, backgroundOverlayOpacity: initial.bookReveal?.backgroundOverlayOpacity ?? DEFAULT_TEMPLATE.bookReveal.backgroundOverlayOpacity },
+    statsReveal: { ...DEFAULT_TEMPLATE.statsReveal, ...initial.statsReveal, backgroundOverlayOpacity: initial.statsReveal?.backgroundOverlayOpacity ?? DEFAULT_TEMPLATE.statsReveal.backgroundOverlayOpacity },
+    comingSoon: { ...DEFAULT_TEMPLATE.comingSoon, ...initial.comingSoon, backgroundOverlayOpacity: initial.comingSoon?.backgroundOverlayOpacity ?? DEFAULT_TEMPLATE.comingSoon.backgroundOverlayOpacity },
+    outro: { ...DEFAULT_TEMPLATE.outro, ...initial.outro, backgroundOverlayOpacity: initial.outro?.backgroundOverlayOpacity ?? DEFAULT_TEMPLATE.outro.backgroundOverlayOpacity },
+  }
+
+  // Apply global-to-sequence fallback for background image fields
+  const sequences = ['intro', 'bookReveal', 'statsReveal', 'comingSoon', 'outro'] as const
+  for (const seq of sequences) {
+    const seqConfig = resolved[seq] as unknown as Record<string, unknown>
+    const sourceSeqConfig = initial[seq] as Record<string, unknown> | undefined
+
+    if (sourceSeqConfig?.backgroundImage !== undefined && sourceSeqConfig.backgroundImage !== null) {
+      seqConfig.backgroundImage = sourceSeqConfig.backgroundImage
+    } else {
+      seqConfig.backgroundImage = globalBackgroundImage
+    }
+
+    if (sourceSeqConfig?.backgroundOverlayOpacity !== undefined && sourceSeqConfig.backgroundOverlayOpacity !== null) {
+      seqConfig.backgroundOverlayOpacity = sourceSeqConfig.backgroundOverlayOpacity
+    } else {
+      seqConfig.backgroundOverlayOpacity = globalBackgroundOverlayOpacity
+    }
+  }
+
+  return resolved
+}
+
+// ============================================================================
+// Utility: assemble config from editor state
+// ============================================================================
+
+export function assembleConfig(state: EditorState, assembleFullTimingConfigFn: typeof assembleFullTimingConfig): VideoTemplate {
+  const timing = assembleFullTimingConfigFn(state.timingTotals)
+
+  return {
+    global: {
+      colors: { ...state.colors },
+      fonts: { ...state.fonts },
+      timing,
+      backgroundImage: state.globalBackgroundImage,
+      backgroundOverlayOpacity: state.globalBackgroundOverlayOpacity,
+    },
+    intro: {
+      layout: state.intro.layout,
+      titleFontSize: state.intro.titleFontSize,
+      subtitleFontSize: state.intro.subtitleFontSize,
+      showYear: state.intro.showYear,
+      backgroundImage: state.intro.backgroundImage,
+      backgroundOverlayOpacity: state.intro.backgroundOverlayOpacity,
+    },
+    bookReveal: {
+      layout: state.bookReveal.layout,
+      showRatings: state.bookReveal.showRatings,
+      showAuthors: state.bookReveal.showAuthors,
+      coverSize: state.bookReveal.coverSize,
+      animationStyle: state.bookReveal.animationStyle,
+      backgroundImage: state.bookReveal.backgroundImage,
+      backgroundOverlayOpacity: state.bookReveal.backgroundOverlayOpacity,
+    },
+    statsReveal: {
+      layout: state.statsReveal.layout,
+      showTotalBooks: state.statsReveal.showTotalBooks,
+      showTotalPages: state.statsReveal.showTotalPages,
+      showAverageRating: state.statsReveal.showAverageRating,
+      showTopBook: state.statsReveal.showTopBook,
+      animateNumbers: state.statsReveal.animateNumbers,
+      backgroundImage: state.statsReveal.backgroundImage,
+      backgroundOverlayOpacity: state.statsReveal.backgroundOverlayOpacity,
+    },
+    comingSoon: {
+      layout: state.comingSoon.layout,
+      showProgress: state.comingSoon.showProgress,
+      maxBooks: state.comingSoon.maxBooks,
+      backgroundImage: state.comingSoon.backgroundImage,
+      backgroundOverlayOpacity: state.comingSoon.backgroundOverlayOpacity,
+    },
+    outro: {
+      layout: state.outro.layout,
+      showBranding: state.outro.showBranding,
+      customText: state.outro.customText,
+      backgroundImage: state.outro.backgroundImage,
+      backgroundOverlayOpacity: state.outro.backgroundOverlayOpacity,
+    },
   }
 }
 
@@ -242,7 +399,7 @@ export default function TemplateEditorClient({
 }: TemplateEditorClientProps) {
   const router = useRouter()
   const resolved = resolveConfig(initialConfig)
-  const [state, dispatch] = useReducer(editorReducer, buildInitialState(resolved))
+  const [state, dispatch] = useReducer(editorReducer, buildInitialState(resolved, initialConfig))
 
   // Metadata fields
   const [name, setName] = useState(initialName ?? '')
@@ -260,23 +417,103 @@ export default function TemplateEditorClient({
   // Delete state (for edit mode)
   const [deleting, setDeleting] = useState(false)
 
-  // Assemble the full VideoTemplate config from state
-  const assembleConfig = useCallback((): VideoTemplate => {
-    const timing = assembleFullTimingConfig(state.timingTotals)
+  // Background upload state
+  const [uploadingBackground, setUploadingBackground] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const globalFileInputRef = useRef<HTMLInputElement>(null)
 
-    return {
-      global: {
-        colors: { ...state.colors },
-        fonts: { ...state.fonts },
-        timing,
-      },
-      intro: { ...state.intro },
-      bookReveal: { ...state.bookReveal },
-      statsReveal: { ...state.statsReveal },
-      comingSoon: { ...state.comingSoon },
-      outro: { ...state.outro },
-    }
+  // Assemble the full VideoTemplate config from state
+  const assembleConfigFromState = useCallback((): VideoTemplate => {
+    return assembleConfig(state, assembleFullTimingConfig)
   }, [state])
+
+  // ============================================================================
+  // Background Image Upload Flow
+  // ============================================================================
+
+  const handleBackgroundUpload = async (
+    file: File,
+    sequence: 'global' | 'intro' | 'bookReveal' | 'statsReveal' | 'comingSoon' | 'outro'
+  ) => {
+    if (!templateId) {
+      setUploadError('Please save the template first before uploading background images.')
+      return
+    }
+
+    setUploadingBackground(sequence)
+    setUploadError(null)
+
+    try {
+      // Step 1: Request presigned URL
+      const presignedResponse = await fetch(`/api/templates/${templateId}/background/presigned-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: file.type,
+          fileSize: file.size,
+          sequence,
+        }),
+      })
+
+      if (!presignedResponse.ok) {
+        const data = await presignedResponse.json()
+        throw new Error(data.error || 'Failed to get upload URL')
+      }
+
+      const { presignedUrl, key } = await presignedResponse.json()
+
+      // Step 2: Upload file directly to S3
+      const uploadResponse = await fetch(presignedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to S3')
+      }
+
+      // Step 3: Process the uploaded image (resize)
+      const processResponse = await fetch(`/api/templates/${templateId}/background`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, sequence }),
+      })
+
+      if (!processResponse.ok) {
+        const data = await processResponse.json()
+        throw new Error(data.error || 'Failed to process background image')
+      }
+
+      const { backgroundUrl } = await processResponse.json()
+
+      // Step 4: Dispatch URL into editor state
+      if (sequence === 'global') {
+        dispatch({ type: 'SET_GLOBAL_BACKGROUND_IMAGE', value: backgroundUrl })
+      } else {
+        const actionType = SEQUENCE_ACTION_MAP[sequence]
+        dispatch({ type: actionType, key: 'backgroundImage', value: backgroundUrl })
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingBackground(null)
+    }
+  }
+
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    sequence: 'global' | 'intro' | 'bookReveal' | 'statsReveal' | 'comingSoon' | 'outro'
+  ) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleBackgroundUpload(file, sequence)
+    }
+    // Reset the input so re-selecting the same file triggers onChange
+    e.target.value = ''
+  }
 
   // Save handler
   const handleSave = async () => {
@@ -288,7 +525,7 @@ export default function TemplateEditorClient({
       return
     }
 
-    const config = assembleConfig()
+    const config = assembleConfigFromState()
 
     // Client-side validation
     const validation = validateTemplateConfig(config)
@@ -367,6 +604,139 @@ export default function TemplateEditorClient({
   }
 
   // ============================================================================
+  // Render: Background Image Section (reusable for global and per-sequence)
+  // ============================================================================
+
+  const renderBackgroundImageSection = (
+    sequence: 'global' | 'intro' | 'bookReveal' | 'statsReveal' | 'comingSoon' | 'outro',
+    currentImage: string | null,
+    currentOpacity: number | null,
+    isInheriting: boolean,
+    globalImage: string | null
+  ) => {
+    const prefix = sequence
+    const isGlobal = sequence === 'global'
+    const effectiveOpacity = currentOpacity ?? state.globalBackgroundOverlayOpacity
+    const isUploading = uploadingBackground === sequence
+
+    return (
+      <div className="border-t border-border pt-4 mt-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Background Image</h3>
+
+        {/* Upload disabled in create mode */}
+        {!templateId && (
+          <p className="text-xs text-muted-foreground mb-3">
+            Save the template first to upload background images.
+          </p>
+        )}
+
+        {/* File upload input */}
+        <div className="mb-3">
+          <input
+            ref={isGlobal ? globalFileInputRef : undefined}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={(e) => handleFileSelect(e, sequence)}
+            disabled={!templateId || isUploading}
+            className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-border file:text-sm file:font-medium file:bg-card file:text-card-foreground hover:file:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid={`${prefix}-background-upload`}
+          />
+        </div>
+
+        {/* Loading indicator */}
+        {isUploading && (
+          <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Uploading...
+          </div>
+        )}
+
+        {/* Thumbnail preview */}
+        {currentImage && !isInheriting && (
+          <div className="mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={currentImage}
+              alt={`${sequence} background preview`}
+              className="w-24 h-[42px] object-cover rounded border border-border"
+              data-testid={`${prefix}-background-preview`}
+            />
+          </div>
+        )}
+
+        {/* Inheriting from global indicator */}
+        {!isGlobal && isInheriting && globalImage && (
+          <div className="mb-3">
+            <p className="text-xs text-muted-foreground mb-1">Inheriting from global</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={globalImage}
+              alt="Inherited global background"
+              className="w-24 h-[42px] object-cover rounded border border-border opacity-50"
+              data-testid={`${prefix}-background-preview`}
+            />
+          </div>
+        )}
+
+        {/* Overlay opacity slider */}
+        <div className="mb-3">
+          <label className="text-xs text-muted-foreground block mb-1">
+            Overlay Opacity: {effectiveOpacity.toFixed(2)}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.05"
+            value={effectiveOpacity}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value)
+              if (isGlobal) {
+                dispatch({ type: 'SET_GLOBAL_BACKGROUND_OVERLAY_OPACITY', value: val })
+              } else {
+                const actionType = SEQUENCE_ACTION_MAP[sequence]
+                dispatch({ type: actionType, key: 'backgroundOverlayOpacity', value: val })
+              }
+            }}
+            className="w-full"
+            data-testid={`${prefix}-background-opacity`}
+          />
+        </div>
+
+        {/* Remove / Clear override button */}
+        {isGlobal && currentImage && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_GLOBAL_BACKGROUND_IMAGE', value: null })}
+            className="text-xs text-red-500 hover:text-red-400 transition-colors"
+            data-testid={`${prefix}-background-remove`}
+          >
+            Remove background image
+          </button>
+        )}
+
+        {!isGlobal && !isInheriting && currentImage && (
+          <button
+            type="button"
+            onClick={() => {
+              const actionType = SEQUENCE_ACTION_MAP[sequence]
+              dispatch({ type: actionType, key: 'backgroundImage', value: null })
+              dispatch({ type: actionType, key: 'backgroundOverlayOpacity', value: null })
+            }}
+            className="text-xs text-red-500 hover:text-red-400 transition-colors"
+            data-testid={`${prefix}-background-remove`}
+          >
+            Clear override (inherit from global)
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // ============================================================================
   // Render: Colors Tab
   // ============================================================================
 
@@ -406,6 +776,15 @@ export default function TemplateEditorClient({
           </div>
         </div>
       ))}
+
+      {/* Global Background Image Section */}
+      {renderBackgroundImageSection(
+        'global',
+        state.globalBackgroundImage,
+        state.globalBackgroundOverlayOpacity,
+        false,
+        null
+      )}
     </div>
   )
 
@@ -515,150 +894,174 @@ export default function TemplateEditorClient({
   // Render: Intro Tab
   // ============================================================================
 
-  const renderIntroTab = () => (
-    <div className="space-y-6" data-testid="intro-tab-panel">
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Intro Layout</label>
-        <select
-          value={state.intro.layout}
-          onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'layout', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="intro-layout-select"
-        >
-          <option value="centered">Centered</option>
-          <option value="split">Split</option>
-          <option value="minimal">Minimal</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Title Font Size</label>
-        <input
-          type="number"
-          value={state.intro.titleFontSize}
-          onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'titleFontSize', value: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          min={1}
-          data-testid="intro-titleFontSize"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Subtitle Font Size</label>
-        <input
-          type="number"
-          value={state.intro.subtitleFontSize}
-          onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'subtitleFontSize', value: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          min={1}
-          data-testid="intro-subtitleFontSize"
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-semibold text-foreground">Show Year</label>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'SET_INTRO', key: 'showYear', value: !state.intro.showYear })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.intro.showYear ? 'bg-primary' : 'bg-muted'
-          }`}
-          role="switch"
-          aria-checked={state.intro.showYear}
-          data-testid="intro-showYear-toggle"
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              state.intro.showYear ? 'translate-x-6' : 'translate-x-1'
-            }`}
+  const renderIntroTab = () => {
+    const hasOwnImage = state.intro.backgroundImage !== null
+    return (
+      <div className="space-y-6" data-testid="intro-tab-panel">
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Intro Layout</label>
+          <select
+            value={state.intro.layout}
+            onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'layout', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="intro-layout-select"
+          >
+            <option value="centered">Centered</option>
+            <option value="split">Split</option>
+            <option value="minimal">Minimal</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Title Font Size</label>
+          <input
+            type="number"
+            value={state.intro.titleFontSize}
+            onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'titleFontSize', value: parseInt(e.target.value) || 0 })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            min={1}
+            data-testid="intro-titleFontSize"
           />
-        </button>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Subtitle Font Size</label>
+          <input
+            type="number"
+            value={state.intro.subtitleFontSize}
+            onChange={(e) => dispatch({ type: 'SET_INTRO', key: 'subtitleFontSize', value: parseInt(e.target.value) || 0 })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            min={1}
+            data-testid="intro-subtitleFontSize"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold text-foreground">Show Year</label>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_INTRO', key: 'showYear', value: !state.intro.showYear })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              state.intro.showYear ? 'bg-primary' : 'bg-muted'
+            }`}
+            role="switch"
+            aria-checked={state.intro.showYear}
+            data-testid="intro-showYear-toggle"
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                state.intro.showYear ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Background Image Section */}
+        {renderBackgroundImageSection(
+          'intro',
+          state.intro.backgroundImage,
+          state.intro.backgroundOverlayOpacity,
+          !hasOwnImage,
+          state.globalBackgroundImage
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   // ============================================================================
   // Render: Book Reveal Tab
   // ============================================================================
 
-  const renderBookRevealTab = () => (
-    <div className="space-y-6" data-testid="bookReveal-tab-panel">
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Book Reveal Layout</label>
-        <select
-          value={state.bookReveal.layout}
-          onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'layout', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="bookReveal-layout-select"
-        >
-          <option value="sequential">Sequential</option>
-          <option value="grid">Grid</option>
-          <option value="carousel">Carousel</option>
-        </select>
-      </div>
+  const renderBookRevealTab = () => {
+    const hasOwnImage = state.bookReveal.backgroundImage !== null
+    return (
+      <div className="space-y-6" data-testid="bookReveal-tab-panel">
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Book Reveal Layout</label>
+          <select
+            value={state.bookReveal.layout}
+            onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'layout', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="bookReveal-layout-select"
+          >
+            <option value="sequential">Sequential</option>
+            <option value="grid">Grid</option>
+            <option value="carousel">Carousel</option>
+          </select>
+        </div>
 
-      {/* Toggle: showRatings */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-semibold text-foreground">Show Ratings</label>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'SET_BOOK_REVEAL', key: 'showRatings', value: !state.bookReveal.showRatings })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.bookReveal.showRatings ? 'bg-primary' : 'bg-muted'
-          }`}
-          role="switch"
-          aria-checked={state.bookReveal.showRatings}
-          data-testid="bookReveal-showRatings-toggle"
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.bookReveal.showRatings ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
+        {/* Toggle: showRatings */}
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold text-foreground">Show Ratings</label>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_BOOK_REVEAL', key: 'showRatings', value: !state.bookReveal.showRatings })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              state.bookReveal.showRatings ? 'bg-primary' : 'bg-muted'
+            }`}
+            role="switch"
+            aria-checked={state.bookReveal.showRatings}
+            data-testid="bookReveal-showRatings-toggle"
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.bookReveal.showRatings ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
 
-      {/* Toggle: showAuthors */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-semibold text-foreground">Show Authors</label>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'SET_BOOK_REVEAL', key: 'showAuthors', value: !state.bookReveal.showAuthors })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.bookReveal.showAuthors ? 'bg-primary' : 'bg-muted'
-          }`}
-          role="switch"
-          aria-checked={state.bookReveal.showAuthors}
-          data-testid="bookReveal-showAuthors-toggle"
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.bookReveal.showAuthors ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
+        {/* Toggle: showAuthors */}
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold text-foreground">Show Authors</label>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_BOOK_REVEAL', key: 'showAuthors', value: !state.bookReveal.showAuthors })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              state.bookReveal.showAuthors ? 'bg-primary' : 'bg-muted'
+            }`}
+            role="switch"
+            aria-checked={state.bookReveal.showAuthors}
+            data-testid="bookReveal-showAuthors-toggle"
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.bookReveal.showAuthors ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
 
-      {/* Cover Size */}
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Cover Size</label>
-        <select
-          value={state.bookReveal.coverSize}
-          onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'coverSize', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="bookReveal-coverSize-select"
-        >
-          <option value="small">Small</option>
-          <option value="medium">Medium</option>
-          <option value="large">Large</option>
-        </select>
-      </div>
+        {/* Cover Size */}
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Cover Size</label>
+          <select
+            value={state.bookReveal.coverSize}
+            onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'coverSize', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="bookReveal-coverSize-select"
+          >
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
 
-      {/* Animation Style */}
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Animation Style</label>
-        <select
-          value={state.bookReveal.animationStyle}
-          onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'animationStyle', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="bookReveal-animationStyle-select"
-        >
-          <option value="slide">Slide</option>
-          <option value="fade">Fade</option>
-          <option value="pop">Pop</option>
-        </select>
+        {/* Animation Style */}
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Animation Style</label>
+          <select
+            value={state.bookReveal.animationStyle}
+            onChange={(e) => dispatch({ type: 'SET_BOOK_REVEAL', key: 'animationStyle', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="bookReveal-animationStyle-select"
+          >
+            <option value="slide">Slide</option>
+            <option value="fade">Fade</option>
+            <option value="pop">Pop</option>
+          </select>
+        </div>
+
+        {/* Background Image Section */}
+        {renderBackgroundImageSection(
+          'bookReveal',
+          state.bookReveal.backgroundImage,
+          state.bookReveal.backgroundOverlayOpacity,
+          !hasOwnImage,
+          state.globalBackgroundImage
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   // ============================================================================
   // Render: Stats Reveal Tab
@@ -672,6 +1075,8 @@ export default function TemplateEditorClient({
       { key: 'showTopBook', label: 'Show Top Book' },
       { key: 'animateNumbers', label: 'Animate Numbers' },
     ]
+
+    const hasOwnImage = state.statsReveal.backgroundImage !== null
 
     return (
       <div className="space-y-6" data-testid="statsReveal-tab-panel">
@@ -706,6 +1111,15 @@ export default function TemplateEditorClient({
             </button>
           </div>
         ))}
+
+        {/* Background Image Section */}
+        {renderBackgroundImageSection(
+          'statsReveal',
+          state.statsReveal.backgroundImage,
+          state.statsReveal.backgroundOverlayOpacity,
+          !hasOwnImage,
+          state.globalBackgroundImage
+        )}
       </div>
     )
   }
@@ -714,101 +1128,125 @@ export default function TemplateEditorClient({
   // Render: Coming Soon Tab
   // ============================================================================
 
-  const renderComingSoonTab = () => (
-    <div className="space-y-6" data-testid="comingSoon-tab-panel">
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Coming Soon Layout</label>
-        <select
-          value={state.comingSoon.layout}
-          onChange={(e) => dispatch({ type: 'SET_COMING_SOON', key: 'layout', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="comingSoon-layout-select"
-        >
-          <option value="list">List</option>
-          <option value="grid">Grid</option>
-          <option value="single">Single</option>
-        </select>
-      </div>
+  const renderComingSoonTab = () => {
+    const hasOwnImage = state.comingSoon.backgroundImage !== null
+    return (
+      <div className="space-y-6" data-testid="comingSoon-tab-panel">
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Coming Soon Layout</label>
+          <select
+            value={state.comingSoon.layout}
+            onChange={(e) => dispatch({ type: 'SET_COMING_SOON', key: 'layout', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="comingSoon-layout-select"
+          >
+            <option value="list">List</option>
+            <option value="grid">Grid</option>
+            <option value="single">Single</option>
+          </select>
+        </div>
 
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-semibold text-foreground">Show Progress</label>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'SET_COMING_SOON', key: 'showProgress', value: !state.comingSoon.showProgress })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.comingSoon.showProgress ? 'bg-primary' : 'bg-muted'
-          }`}
-          role="switch"
-          aria-checked={state.comingSoon.showProgress}
-          data-testid="comingSoon-showProgress-toggle"
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.comingSoon.showProgress ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold text-foreground">Show Progress</label>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_COMING_SOON', key: 'showProgress', value: !state.comingSoon.showProgress })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              state.comingSoon.showProgress ? 'bg-primary' : 'bg-muted'
+            }`}
+            role="switch"
+            aria-checked={state.comingSoon.showProgress}
+            data-testid="comingSoon-showProgress-toggle"
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.comingSoon.showProgress ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Max Books</label>
-        <input
-          type="number"
-          value={state.comingSoon.maxBooks}
-          onChange={(e) => dispatch({ type: 'SET_COMING_SOON', key: 'maxBooks', value: parseInt(e.target.value) || 1 })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          min={1}
-          data-testid="comingSoon-maxBooks"
-        />
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Max Books</label>
+          <input
+            type="number"
+            value={state.comingSoon.maxBooks}
+            onChange={(e) => dispatch({ type: 'SET_COMING_SOON', key: 'maxBooks', value: parseInt(e.target.value) || 1 })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            min={1}
+            data-testid="comingSoon-maxBooks"
+          />
+        </div>
+
+        {/* Background Image Section */}
+        {renderBackgroundImageSection(
+          'comingSoon',
+          state.comingSoon.backgroundImage,
+          state.comingSoon.backgroundOverlayOpacity,
+          !hasOwnImage,
+          state.globalBackgroundImage
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   // ============================================================================
   // Render: Outro Tab
   // ============================================================================
 
-  const renderOutroTab = () => (
-    <div className="space-y-6" data-testid="outro-tab-panel">
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Outro Layout</label>
-        <select
-          value={state.outro.layout}
-          onChange={(e) => dispatch({ type: 'SET_OUTRO', key: 'layout', value: e.target.value })}
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="outro-layout-select"
-        >
-          <option value="centered">Centered</option>
-          <option value="minimal">Minimal</option>
-          <option value="branded">Branded</option>
-        </select>
-      </div>
+  const renderOutroTab = () => {
+    const hasOwnImage = state.outro.backgroundImage !== null
+    return (
+      <div className="space-y-6" data-testid="outro-tab-panel">
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Outro Layout</label>
+          <select
+            value={state.outro.layout}
+            onChange={(e) => dispatch({ type: 'SET_OUTRO', key: 'layout', value: e.target.value })}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="outro-layout-select"
+          >
+            <option value="centered">Centered</option>
+            <option value="minimal">Minimal</option>
+            <option value="branded">Branded</option>
+          </select>
+        </div>
 
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-semibold text-foreground">Show Branding</label>
-        <button
-          type="button"
-          onClick={() => dispatch({ type: 'SET_OUTRO', key: 'showBranding', value: !state.outro.showBranding })}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            state.outro.showBranding ? 'bg-primary' : 'bg-muted'
-          }`}
-          role="switch"
-          aria-checked={state.outro.showBranding}
-          data-testid="outro-showBranding-toggle"
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.outro.showBranding ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold text-foreground">Show Branding</label>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'SET_OUTRO', key: 'showBranding', value: !state.outro.showBranding })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              state.outro.showBranding ? 'bg-primary' : 'bg-muted'
+            }`}
+            role="switch"
+            aria-checked={state.outro.showBranding}
+            data-testid="outro-showBranding-toggle"
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${state.outro.showBranding ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-foreground mb-2">Custom Text</label>
-        <input
-          type="text"
-          value={state.outro.customText}
-          onChange={(e) => dispatch({ type: 'SET_OUTRO', key: 'customText', value: e.target.value })}
-          placeholder="Enter custom outro text..."
-          className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
-          data-testid="outro-customText"
-        />
+        <div>
+          <label className="block text-sm font-semibold text-foreground mb-2">Custom Text</label>
+          <input
+            type="text"
+            value={state.outro.customText}
+            onChange={(e) => dispatch({ type: 'SET_OUTRO', key: 'customText', value: e.target.value })}
+            placeholder="Enter custom outro text..."
+            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-card-foreground"
+            data-testid="outro-customText"
+          />
+        </div>
+
+        {/* Background Image Section */}
+        {renderBackgroundImageSection(
+          'outro',
+          state.outro.backgroundImage,
+          state.outro.backgroundOverlayOpacity,
+          !hasOwnImage,
+          state.globalBackgroundImage
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   // ============================================================================
   // Tab Panel Renderer
@@ -826,6 +1264,28 @@ export default function TemplateEditorClient({
       case 'outro': return renderOutroTab()
       default: return null
     }
+  }
+
+  // ============================================================================
+  // Construct backgroundImages prop for preview panel (Task 4.6)
+  // ============================================================================
+
+  const backgroundImages = {
+    global: state.globalBackgroundImage,
+    intro: state.intro.backgroundImage || state.globalBackgroundImage,
+    bookReveal: state.bookReveal.backgroundImage || state.globalBackgroundImage,
+    statsReveal: state.statsReveal.backgroundImage || state.globalBackgroundImage,
+    comingSoon: state.comingSoon.backgroundImage || state.globalBackgroundImage,
+    outro: state.outro.backgroundImage || state.globalBackgroundImage,
+  }
+
+  const backgroundOpacities = {
+    global: state.globalBackgroundOverlayOpacity,
+    intro: state.intro.backgroundOverlayOpacity ?? state.globalBackgroundOverlayOpacity,
+    bookReveal: state.bookReveal.backgroundOverlayOpacity ?? state.globalBackgroundOverlayOpacity,
+    statsReveal: state.statsReveal.backgroundOverlayOpacity ?? state.globalBackgroundOverlayOpacity,
+    comingSoon: state.comingSoon.backgroundOverlayOpacity ?? state.globalBackgroundOverlayOpacity,
+    outro: state.outro.backgroundOverlayOpacity ?? state.globalBackgroundOverlayOpacity,
   }
 
   // ============================================================================
@@ -901,6 +1361,13 @@ export default function TemplateEditorClient({
             ))}
           </div>
 
+          {/* Upload Error Display */}
+          {uploadError && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+              <p className="text-sm text-red-600 dark:text-red-400">{uploadError}</p>
+            </div>
+          )}
+
           {/* Active Panel */}
           <div className="min-h-[400px]">
             {renderActivePanel()}
@@ -922,6 +1389,8 @@ export default function TemplateEditorClient({
                 comingSoon: state.comingSoon.layout,
                 outro: state.outro.layout,
               }}
+              backgroundImages={backgroundImages}
+              backgroundOpacities={backgroundOpacities}
             />
           </div>
         </div>

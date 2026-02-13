@@ -7,7 +7,7 @@ import {
   interpolate,
   Img,
 } from 'remotion'
-import { useColors, useFonts, useTiming, useSequenceConfig } from '../../lib/TemplateContext'
+import { useColors, useFonts, useTiming, useSequenceConfig, useBackgroundImage } from '../../lib/TemplateContext'
 import { fadeIn, fadeOut, staggerDelay } from '../../lib/animations'
 import { KineticText } from '../../components/KineticText'
 import type { RecapCurrentlyReading } from '../../lib/types'
@@ -150,6 +150,7 @@ export const ComingSoonSequence: React.FC<ComingSoonSequenceProps> = ({
   const fonts = useFonts()
   const timing = useTiming()
   const config = useSequenceConfig('comingSoon')
+  const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('comingSoon')
 
   // Overall fade
   const fadeInOpacity = fadeIn(frame, 0, timing.comingSoonFadeIn)
@@ -170,6 +171,19 @@ export const ComingSoonSequence: React.FC<ComingSoonSequenceProps> = ({
         opacity,
       }}
     >
+      {/* Background image layer */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+      )}
+      {backgroundImage && (
+        <AbsoluteFill style={{ backgroundColor: colors.background, opacity: backgroundOverlayOpacity }} />
+      )}
+
       {/* Background gradient */}
       <AbsoluteFill
         style={{

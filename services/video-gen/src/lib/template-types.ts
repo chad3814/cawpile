@@ -163,6 +163,9 @@ export interface IntroConfig {
   titleFontSize?: number
   subtitleFontSize?: number
   showYear?: boolean
+  // Background image
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 /**
@@ -175,6 +178,9 @@ export interface BookRevealConfig {
   showAuthors?: boolean
   coverSize?: 'small' | 'medium' | 'large'
   animationStyle?: 'slide' | 'fade' | 'pop'
+  // Background image
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 /**
@@ -188,6 +194,9 @@ export interface StatsRevealConfig {
   showAverageRating?: boolean
   showTopBook?: boolean
   animateNumbers?: boolean
+  // Background image
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 /**
@@ -198,6 +207,9 @@ export interface ComingSoonConfig {
   // Additional styling options
   showProgress?: boolean
   maxBooks?: number
+  // Background image
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 /**
@@ -208,6 +220,9 @@ export interface OutroConfig {
   // Additional styling options
   showBranding?: boolean
   customText?: string
+  // Background image
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 // ============================================================================
@@ -221,6 +236,9 @@ export interface GlobalTemplateConfig {
   colors?: ColorsConfig
   fonts?: FontsConfig
   timing?: TimingConfig
+  // Background image (applies to all sequences as default)
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 // ============================================================================
@@ -266,6 +284,8 @@ export interface ResolvedGlobalConfig {
   colors: ResolvedColorsConfig
   fonts: ResolvedFontsConfig
   timing: ResolvedTimingConfig
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -276,6 +296,8 @@ export interface ResolvedIntroConfig {
   titleFontSize: number
   subtitleFontSize: number
   showYear: boolean
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -287,6 +309,8 @@ export interface ResolvedBookRevealConfig {
   showAuthors: boolean
   coverSize: 'small' | 'medium' | 'large'
   animationStyle: 'slide' | 'fade' | 'pop'
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -299,6 +323,8 @@ export interface ResolvedStatsRevealConfig {
   showAverageRating: boolean
   showTopBook: boolean
   animateNumbers: boolean
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -308,6 +334,8 @@ export interface ResolvedComingSoonConfig {
   layout: ComingSoonLayout
   showProgress: boolean
   maxBooks: number
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -317,6 +345,8 @@ export interface ResolvedOutroConfig {
   layout: OutroLayout
   showBranding: boolean
   customText: string
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 /**
@@ -390,12 +420,16 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
       outroTotal: TIMING.outroTotal,
       transitionOverlap: TIMING.transitionOverlap,
     },
+    backgroundImage: null,
+    backgroundOverlayOpacity: 0.7,
   },
   intro: {
     layout: 'centered',
     titleFontSize: 72,
     subtitleFontSize: 36,
     showYear: true,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   bookReveal: {
     layout: 'sequential',
@@ -403,6 +437,8 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
     showAuthors: true,
     coverSize: 'large',
     animationStyle: 'slide',
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   statsReveal: {
     layout: 'stacked',
@@ -411,16 +447,22 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
     showAverageRating: true,
     showTopBook: true,
     animateNumbers: true,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   comingSoon: {
     layout: 'list',
     showProgress: true,
     maxBooks: 3,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   outro: {
     layout: 'centered',
     showBranding: true,
     customText: '',
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
 }
 
@@ -471,6 +513,11 @@ function deepMerge<T extends object>(target: T, source: Partial<T> | undefined):
 }
 
 /**
+ * Sequence names for iteration in background image resolution
+ */
+const SEQUENCE_NAMES = ['intro', 'bookReveal', 'statsReveal', 'comingSoon', 'outro'] as const
+
+/**
  * Get an effective template by merging provided partial template over defaults
  *
  * @param template - Optional partial template with overrides
@@ -496,19 +543,66 @@ export function getEffectiveTemplate(
   template?: Partial<VideoTemplate> | null
 ): ResolvedVideoTemplate {
   if (!template) {
-    return DEFAULT_TEMPLATE
+    return {
+      ...DEFAULT_TEMPLATE,
+      // Apply global fallback to sequences for the default template
+      intro: { ...DEFAULT_TEMPLATE.intro, backgroundImage: DEFAULT_TEMPLATE.global.backgroundImage, backgroundOverlayOpacity: DEFAULT_TEMPLATE.global.backgroundOverlayOpacity },
+      bookReveal: { ...DEFAULT_TEMPLATE.bookReveal, backgroundImage: DEFAULT_TEMPLATE.global.backgroundImage, backgroundOverlayOpacity: DEFAULT_TEMPLATE.global.backgroundOverlayOpacity },
+      statsReveal: { ...DEFAULT_TEMPLATE.statsReveal, backgroundImage: DEFAULT_TEMPLATE.global.backgroundImage, backgroundOverlayOpacity: DEFAULT_TEMPLATE.global.backgroundOverlayOpacity },
+      comingSoon: { ...DEFAULT_TEMPLATE.comingSoon, backgroundImage: DEFAULT_TEMPLATE.global.backgroundImage, backgroundOverlayOpacity: DEFAULT_TEMPLATE.global.backgroundOverlayOpacity },
+      outro: { ...DEFAULT_TEMPLATE.outro, backgroundImage: DEFAULT_TEMPLATE.global.backgroundImage, backgroundOverlayOpacity: DEFAULT_TEMPLATE.global.backgroundOverlayOpacity },
+    }
   }
 
-  return {
+  // Step 1: Deep merge with defaults
+  const globalColors = deepMerge(DEFAULT_TEMPLATE.global.colors, template.global?.colors)
+  const globalFonts = deepMerge(DEFAULT_TEMPLATE.global.fonts, template.global?.fonts)
+  const globalTiming = deepMerge(DEFAULT_TEMPLATE.global.timing, template.global?.timing)
+
+  // Resolve global background image fields
+  const globalBackgroundImage = template.global?.backgroundImage !== undefined && template.global?.backgroundImage !== null
+    ? template.global.backgroundImage
+    : DEFAULT_TEMPLATE.global.backgroundImage
+  const globalBackgroundOverlayOpacity = template.global?.backgroundOverlayOpacity !== undefined && template.global?.backgroundOverlayOpacity !== null
+    ? template.global.backgroundOverlayOpacity
+    : DEFAULT_TEMPLATE.global.backgroundOverlayOpacity
+
+  const resolved: ResolvedVideoTemplate = {
     global: {
-      colors: deepMerge(DEFAULT_TEMPLATE.global.colors, template.global?.colors),
-      fonts: deepMerge(DEFAULT_TEMPLATE.global.fonts, template.global?.fonts),
-      timing: deepMerge(DEFAULT_TEMPLATE.global.timing, template.global?.timing),
+      colors: globalColors,
+      fonts: globalFonts,
+      timing: globalTiming,
+      backgroundImage: globalBackgroundImage,
+      backgroundOverlayOpacity: globalBackgroundOverlayOpacity,
     },
-    intro: deepMerge(DEFAULT_TEMPLATE.intro, template.intro),
-    bookReveal: deepMerge(DEFAULT_TEMPLATE.bookReveal, template.bookReveal),
-    statsReveal: deepMerge(DEFAULT_TEMPLATE.statsReveal, template.statsReveal),
-    comingSoon: deepMerge(DEFAULT_TEMPLATE.comingSoon, template.comingSoon),
-    outro: deepMerge(DEFAULT_TEMPLATE.outro, template.outro),
+    intro: deepMerge(DEFAULT_TEMPLATE.intro, template.intro as Partial<ResolvedIntroConfig>),
+    bookReveal: deepMerge(DEFAULT_TEMPLATE.bookReveal, template.bookReveal as Partial<ResolvedBookRevealConfig>),
+    statsReveal: deepMerge(DEFAULT_TEMPLATE.statsReveal, template.statsReveal as Partial<ResolvedStatsRevealConfig>),
+    comingSoon: deepMerge(DEFAULT_TEMPLATE.comingSoon, template.comingSoon as Partial<ResolvedComingSoonConfig>),
+    outro: deepMerge(DEFAULT_TEMPLATE.outro, template.outro as Partial<ResolvedOutroConfig>),
   }
+
+  // Step 2: Post-processing - apply global-to-sequence fallback for background image fields
+  for (const seqName of SEQUENCE_NAMES) {
+    const seqConfig = resolved[seqName] as unknown as Record<string, unknown>
+    const sourceSeqConfig = template[seqName] as Record<string, unknown> | undefined
+
+    // For backgroundImage: if the source sequence explicitly sets it (even to a string),
+    // use that value. Otherwise, inherit from global.
+    // deepMerge skips null values, so sequence-level null means "inherit from global"
+    if (sourceSeqConfig?.backgroundImage !== undefined && sourceSeqConfig.backgroundImage !== null) {
+      seqConfig.backgroundImage = sourceSeqConfig.backgroundImage
+    } else {
+      seqConfig.backgroundImage = globalBackgroundImage
+    }
+
+    // For backgroundOverlayOpacity: same fallback logic
+    if (sourceSeqConfig?.backgroundOverlayOpacity !== undefined && sourceSeqConfig.backgroundOverlayOpacity !== null) {
+      seqConfig.backgroundOverlayOpacity = sourceSeqConfig.backgroundOverlayOpacity
+    } else {
+      seqConfig.backgroundOverlayOpacity = globalBackgroundOverlayOpacity
+    }
+  }
+
+  return resolved
 }

@@ -82,13 +82,13 @@ const TIMING_PROPERTIES = [
 const TOP_LEVEL_PROPERTIES = ['global', 'intro', 'bookReveal', 'statsReveal', 'comingSoon', 'outro'] as const
 
 // Valid global sub-properties
-const GLOBAL_PROPERTIES = ['colors', 'fonts', 'timing'] as const
+const GLOBAL_PROPERTIES = ['colors', 'fonts', 'timing', 'backgroundImage', 'backgroundOverlayOpacity'] as const
 
 // Valid intro properties
-const INTRO_PROPERTIES = ['layout', 'titleFontSize', 'subtitleFontSize', 'showYear'] as const
+const INTRO_PROPERTIES = ['layout', 'titleFontSize', 'subtitleFontSize', 'showYear', 'backgroundImage', 'backgroundOverlayOpacity'] as const
 
 // Valid bookReveal properties
-const BOOK_REVEAL_PROPERTIES = ['layout', 'showRatings', 'showAuthors', 'coverSize', 'animationStyle'] as const
+const BOOK_REVEAL_PROPERTIES = ['layout', 'showRatings', 'showAuthors', 'coverSize', 'animationStyle', 'backgroundImage', 'backgroundOverlayOpacity'] as const
 
 // Valid statsReveal properties
 const STATS_REVEAL_PROPERTIES = [
@@ -98,13 +98,50 @@ const STATS_REVEAL_PROPERTIES = [
   'showAverageRating',
   'showTopBook',
   'animateNumbers',
+  'backgroundImage',
+  'backgroundOverlayOpacity',
 ] as const
 
 // Valid comingSoon properties
-const COMING_SOON_PROPERTIES = ['layout', 'showProgress', 'maxBooks'] as const
+const COMING_SOON_PROPERTIES = ['layout', 'showProgress', 'maxBooks', 'backgroundImage', 'backgroundOverlayOpacity'] as const
 
 // Valid outro properties
-const OUTRO_PROPERTIES = ['layout', 'showBranding', 'customText'] as const
+const OUTRO_PROPERTIES = ['layout', 'showBranding', 'customText', 'backgroundImage', 'backgroundOverlayOpacity'] as const
+
+/**
+ * Validate backgroundImage value: must be a string or null
+ */
+function validateBackgroundImage(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value !== null && typeof value !== 'string') {
+    errors.push({
+      path,
+      message: 'backgroundImage must be a string or null',
+      value,
+    })
+  }
+}
+
+/**
+ * Validate backgroundOverlayOpacity value: must be a number between 0-1 (inclusive) or null
+ */
+function validateBackgroundOverlayOpacity(value: unknown, path: string, errors: ValidationError[]): void {
+  if (value === null) return
+  if (typeof value !== 'number') {
+    errors.push({
+      path,
+      message: 'backgroundOverlayOpacity must be a number between 0 and 1, or null',
+      value,
+    })
+    return
+  }
+  if (value < 0 || value > 1) {
+    errors.push({
+      path,
+      message: 'backgroundOverlayOpacity must be between 0 and 1 (inclusive)',
+      value,
+    })
+  }
+}
 
 /**
  * Validates a video template configuration against the schema.
@@ -212,6 +249,16 @@ function validateGlobalConfig(global: unknown, errors: ValidationError[]): void 
   // Validate timing
   if ('timing' in globalObj && globalObj.timing !== undefined) {
     validateTimingConfig(globalObj.timing, errors)
+  }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in globalObj && globalObj.backgroundImage !== undefined) {
+    validateBackgroundImage(globalObj.backgroundImage, 'global.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in globalObj && globalObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(globalObj.backgroundOverlayOpacity, 'global.backgroundOverlayOpacity', errors)
   }
 }
 
@@ -389,6 +436,16 @@ function validateIntroConfig(intro: unknown, errors: ValidationError[]): void {
       })
     }
   }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in introObj && introObj.backgroundImage !== undefined) {
+    validateBackgroundImage(introObj.backgroundImage, 'intro.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in introObj && introObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(introObj.backgroundOverlayOpacity, 'intro.backgroundOverlayOpacity', errors)
+  }
 }
 
 function validateBookRevealConfig(bookReveal: unknown, errors: ValidationError[]): void {
@@ -460,6 +517,16 @@ function validateBookRevealConfig(bookReveal: unknown, errors: ValidationError[]
       }
     }
   }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in bookRevealObj && bookRevealObj.backgroundImage !== undefined) {
+    validateBackgroundImage(bookRevealObj.backgroundImage, 'bookReveal.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in bookRevealObj && bookRevealObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(bookRevealObj.backgroundOverlayOpacity, 'bookReveal.backgroundOverlayOpacity', errors)
+  }
 }
 
 function validateStatsRevealConfig(statsReveal: unknown, errors: ValidationError[]): void {
@@ -508,6 +575,16 @@ function validateStatsRevealConfig(statsReveal: unknown, errors: ValidationError
         })
       }
     }
+  }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in statsRevealObj && statsRevealObj.backgroundImage !== undefined) {
+    validateBackgroundImage(statsRevealObj.backgroundImage, 'statsReveal.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in statsRevealObj && statsRevealObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(statsRevealObj.backgroundOverlayOpacity, 'statsReveal.backgroundOverlayOpacity', errors)
   }
 }
 
@@ -566,6 +643,16 @@ function validateComingSoonConfig(comingSoon: unknown, errors: ValidationError[]
       })
     }
   }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in comingSoonObj && comingSoonObj.backgroundImage !== undefined) {
+    validateBackgroundImage(comingSoonObj.backgroundImage, 'comingSoon.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in comingSoonObj && comingSoonObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(comingSoonObj.backgroundOverlayOpacity, 'comingSoon.backgroundOverlayOpacity', errors)
+  }
 }
 
 function validateOutroConfig(outro: unknown, errors: ValidationError[]): void {
@@ -622,5 +709,15 @@ function validateOutroConfig(outro: unknown, errors: ValidationError[]): void {
         value: outroObj.customText,
       })
     }
+  }
+
+  // Validate backgroundImage
+  if ('backgroundImage' in outroObj && outroObj.backgroundImage !== undefined) {
+    validateBackgroundImage(outroObj.backgroundImage, 'outro.backgroundImage', errors)
+  }
+
+  // Validate backgroundOverlayOpacity
+  if ('backgroundOverlayOpacity' in outroObj && outroObj.backgroundOverlayOpacity !== undefined) {
+    validateBackgroundOverlayOpacity(outroObj.backgroundOverlayOpacity, 'outro.backgroundOverlayOpacity', errors)
   }
 }

@@ -89,6 +89,8 @@ export interface IntroConfig {
   titleFontSize?: number
   subtitleFontSize?: number
   showYear?: boolean
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 export interface BookRevealConfig {
@@ -97,6 +99,8 @@ export interface BookRevealConfig {
   showAuthors?: boolean
   coverSize?: 'small' | 'medium' | 'large'
   animationStyle?: 'slide' | 'fade' | 'pop'
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 export interface StatsRevealConfig {
@@ -106,18 +110,24 @@ export interface StatsRevealConfig {
   showAverageRating?: boolean
   showTopBook?: boolean
   animateNumbers?: boolean
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 export interface ComingSoonConfig {
   layout?: ComingSoonLayout
   showProgress?: boolean
   maxBooks?: number
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 export interface OutroConfig {
   layout?: OutroLayout
   showBranding?: boolean
   customText?: string
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 // ============================================================================
@@ -128,6 +138,8 @@ export interface GlobalTemplateConfig {
   colors?: ColorsConfig
   fonts?: FontsConfig
   timing?: TimingConfig
+  backgroundImage?: string | null
+  backgroundOverlayOpacity?: number | null
 }
 
 // ============================================================================
@@ -155,6 +167,8 @@ export interface ResolvedGlobalConfig {
   colors: ResolvedColorsConfig
   fonts: ResolvedFontsConfig
   timing: ResolvedTimingConfig
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedIntroConfig {
@@ -162,6 +176,8 @@ export interface ResolvedIntroConfig {
   titleFontSize: number
   subtitleFontSize: number
   showYear: boolean
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedBookRevealConfig {
@@ -170,6 +186,8 @@ export interface ResolvedBookRevealConfig {
   showAuthors: boolean
   coverSize: 'small' | 'medium' | 'large'
   animationStyle: 'slide' | 'fade' | 'pop'
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedStatsRevealConfig {
@@ -179,18 +197,24 @@ export interface ResolvedStatsRevealConfig {
   showAverageRating: boolean
   showTopBook: boolean
   animateNumbers: boolean
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedComingSoonConfig {
   layout: ComingSoonLayout
   showProgress: boolean
   maxBooks: number
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedOutroConfig {
   layout: OutroLayout
   showBranding: boolean
   customText: string
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
 }
 
 export interface ResolvedVideoTemplate {
@@ -256,12 +280,16 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
       outroTotal: 90,
       transitionOverlap: 6,
     },
+    backgroundImage: null,
+    backgroundOverlayOpacity: 0.7,
   },
   intro: {
     layout: 'centered',
     titleFontSize: 72,
     subtitleFontSize: 36,
     showYear: true,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   bookReveal: {
     layout: 'sequential',
@@ -269,6 +297,8 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
     showAuthors: true,
     coverSize: 'large',
     animationStyle: 'slide',
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   statsReveal: {
     layout: 'stacked',
@@ -277,15 +307,21 @@ export const DEFAULT_TEMPLATE: ResolvedVideoTemplate = {
     showAverageRating: true,
     showTopBook: true,
     animateNumbers: true,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   comingSoon: {
     layout: 'list',
     showProgress: true,
     maxBooks: 3,
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
   outro: {
     layout: 'centered',
     showBranding: true,
     customText: '',
+    backgroundImage: null,
+    backgroundOverlayOpacity: null as unknown as number,
   },
 }

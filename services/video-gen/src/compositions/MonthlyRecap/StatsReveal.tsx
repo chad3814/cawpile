@@ -6,7 +6,7 @@ import {
   spring,
   Img,
 } from 'remotion'
-import { useColors, useFonts, useTiming, useRatingColor } from '../../lib/TemplateContext'
+import { useColors, useFonts, useTiming, useRatingColor, useBackgroundImage } from '../../lib/TemplateContext'
 import { fadeIn, fadeOut, countUp } from '../../lib/animations'
 import { KineticText } from '../../components/KineticText'
 import type { RecapStats } from '../../lib/types'
@@ -92,6 +92,7 @@ export const StatsReveal: React.FC<StatsRevealProps> = ({ stats }) => {
   const fonts = useFonts()
   const timing = useTiming()
   const getRatingColor = useRatingColor()
+  const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('statsReveal')
 
   // Overall fade
   const fadeInOpacity = fadeIn(frame, 0, 15)
@@ -116,6 +117,19 @@ export const StatsReveal: React.FC<StatsRevealProps> = ({ stats }) => {
         opacity,
       }}
     >
+      {/* Background image layer */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+      )}
+      {backgroundImage && (
+        <AbsoluteFill style={{ backgroundColor: colors.background, opacity: backgroundOverlayOpacity }} />
+      )}
+
       {/* Background */}
       <AbsoluteFill
         style={{

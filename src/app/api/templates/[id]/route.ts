@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
 import { logAdminAction, logFieldChanges } from '@/lib/audit/logger'
 import { validateTemplateConfig } from '@/lib/video/validateTemplateConfig'
+import { extractKeyFromUrl, deleteAvatar } from '@/lib/s3-upload'
 
 /**
  * GET /api/templates/[id] - Get a single video template
@@ -179,11 +180,39 @@ export async function PATCH(
 }
 
 /**
+ * Extract all background image URLs from a template config JSON
+ */
+function extractBackgroundUrls(config: unknown): string[] {
+  const urls: string[] = []
+  if (!config || typeof config !== 'object') return urls
+
+  const configObj = config as Record<string, unknown>
+
+  // Check global.backgroundImage
+  const globalConfig = configObj.global as Record<string, unknown> | undefined
+  if (globalConfig?.backgroundImage && typeof globalConfig.backgroundImage === 'string') {
+    urls.push(globalConfig.backgroundImage)
+  }
+
+  // Check each sequence's backgroundImage
+  const sequences = ['intro', 'bookReveal', 'statsReveal', 'comingSoon', 'outro'] as const
+  for (const seq of sequences) {
+    const seqConfig = configObj[seq] as Record<string, unknown> | undefined
+    if (seqConfig?.backgroundImage && typeof seqConfig.backgroundImage === 'string') {
+      urls.push(seqConfig.backgroundImage)
+    }
+  }
+
+  return urls
+}
+
+/**
  * DELETE /api/templates/[id] - Delete a video template
  *
  * Requires admin authentication
  * Returns 404 if template not found
  * Deleting a template will SetNull any user's selectedTemplateId referencing it
+ * Cleans up associated background images from S3
  */
 export async function DELETE(
   request: NextRequest,
@@ -207,6 +236,17 @@ export async function DELETE(
         { error: 'Template not found' },
         { status: 404 }
       )
+    }
+
+    // Clean up S3 background images (fire-and-forget)
+    const backgroundUrls = extractBackgroundUrls(existingTemplate.config)
+    for (const url of backgroundUrls) {
+      const s3Key = extractKeyFromUrl(url)
+      if (s3Key) {
+        deleteAvatar(s3Key).catch((err) => {
+          console.error('Failed to delete background image from S3:', err)
+        })
+      }
     }
 
     // Delete the template

@@ -47,6 +47,14 @@ type SequenceConfigMap = {
   outro: ResolvedOutroConfig
 }
 
+/**
+ * Return type for the useBackgroundImage hook
+ */
+export interface BackgroundImageConfig {
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
+}
+
 // ============================================================================
 // Context
 // ============================================================================
@@ -176,6 +184,33 @@ export function useSequenceConfig<T extends SequenceName>(
 ): SequenceConfigMap[T] {
   const template = useTemplate()
   return template[sequenceName] as SequenceConfigMap[T]
+}
+
+// ============================================================================
+// Background Image Hook
+// ============================================================================
+
+/**
+ * Hook to access the resolved background image and overlay opacity for a sequence.
+ * Values are already resolved by getEffectiveTemplate() with global fallback applied.
+ *
+ * @param sequenceName - Name of the sequence to get background image config for
+ * @returns Object with backgroundImage (string | null) and backgroundOverlayOpacity (number)
+ *
+ * @example
+ * const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('intro')
+ * if (backgroundImage) {
+ *   // Render background image layer
+ * }
+ */
+export function useBackgroundImage(sequenceName: SequenceName): BackgroundImageConfig {
+  const template = useTemplate()
+  const seqConfig = template[sequenceName]
+
+  return {
+    backgroundImage: seqConfig.backgroundImage,
+    backgroundOverlayOpacity: seqConfig.backgroundOverlayOpacity,
+  }
 }
 
 // ============================================================================

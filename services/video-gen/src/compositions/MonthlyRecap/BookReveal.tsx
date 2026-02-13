@@ -7,7 +7,7 @@ import {
   spring,
   interpolate,
 } from 'remotion'
-import { useColors, useFonts, useTiming, useSequenceConfig, useRatingColor } from '../../lib/TemplateContext'
+import { useColors, useFonts, useTiming, useSequenceConfig, useRatingColor, useBackgroundImage } from '../../lib/TemplateContext'
 import { fadeIn, countUp, typewriter } from '../../lib/animations'
 import { convertToStars } from '../../lib/theme'
 import type { RecapBook } from '../../lib/types'
@@ -43,6 +43,7 @@ export const BookReveal: React.FC<BookRevealProps> = ({ book, index, random }) =
   const timing = useTiming()
   const config = useSequenceConfig('bookReveal')
   const getRatingColor = useRatingColor()
+  const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('bookReveal')
 
   // Pick exit direction randomly
   const exitDirection =
@@ -110,6 +111,19 @@ export const BookReveal: React.FC<BookRevealProps> = ({ book, index, random }) =
         opacity,
       }}
     >
+      {/* Background image layer */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+      )}
+      {backgroundImage && (
+        <AbsoluteFill style={{ backgroundColor: colors.background, opacity: backgroundOverlayOpacity }} />
+      )}
+
       {/* Background gradient */}
       <AbsoluteFill
         style={{

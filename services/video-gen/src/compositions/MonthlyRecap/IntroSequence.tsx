@@ -1,6 +1,6 @@
 import React from 'react'
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate } from 'remotion'
-import { useColors, useTiming, useSequenceConfig } from '../../lib/TemplateContext'
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, Img } from 'remotion'
+import { useColors, useTiming, useSequenceConfig, useBackgroundImage } from '../../lib/TemplateContext'
 import { KineticText } from '../../components/KineticText'
 import { fadeIn, fadeOut } from '../../lib/animations'
 
@@ -10,16 +10,26 @@ interface IntroSequenceProps {
   bookCount: number
 }
 
+interface LayoutProps extends IntroSequenceProps {
+  colors: ReturnType<typeof useColors>
+  timing: ReturnType<typeof useTiming>
+  config: ReturnType<typeof useSequenceConfig<'intro'>>
+  backgroundImage: string | null
+  backgroundOverlayOpacity: number
+}
+
 /**
  * Centered layout - default layout with centered text
  */
-const CenteredLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof useColors>; timing: ReturnType<typeof useTiming>; config: ReturnType<typeof useSequenceConfig<'intro'>> }> = ({
+const CenteredLayout: React.FC<LayoutProps> = ({
   monthName,
   year,
   bookCount,
   colors,
   timing,
   config,
+  backgroundImage,
+  backgroundOverlayOpacity,
 }) => {
   const frame = useCurrentFrame()
   useVideoConfig()
@@ -41,6 +51,30 @@ const CenteredLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof 
         opacity,
       }}
     >
+      {/* Background image layer (bottommost) */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        </AbsoluteFill>
+      )}
+
+      {/* Color overlay on top of background image */}
+      {backgroundImage && (
+        <AbsoluteFill
+          style={{
+            backgroundColor: colors.background,
+            opacity: backgroundOverlayOpacity,
+          }}
+        />
+      )}
+
       {/* Animated gradient background */}
       <AbsoluteFill
         style={{
@@ -127,13 +161,15 @@ const CenteredLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof 
 /**
  * Split layout - text split across screen areas
  */
-const SplitLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof useColors>; timing: ReturnType<typeof useTiming>; config: ReturnType<typeof useSequenceConfig<'intro'>> }> = ({
+const SplitLayout: React.FC<LayoutProps> = ({
   monthName,
   year,
   bookCount,
   colors,
   timing,
   config,
+  backgroundImage,
+  backgroundOverlayOpacity,
 }) => {
   const frame = useCurrentFrame()
   useVideoConfig()
@@ -149,6 +185,19 @@ const SplitLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof use
         opacity,
       }}
     >
+      {/* Background image layer */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+      )}
+      {backgroundImage && (
+        <AbsoluteFill style={{ backgroundColor: colors.background, opacity: backgroundOverlayOpacity }} />
+      )}
+
       {/* Top section */}
       <AbsoluteFill
         style={{
@@ -230,13 +279,15 @@ const SplitLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof use
 /**
  * Minimal layout - reduced visual elements
  */
-const MinimalLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof useColors>; timing: ReturnType<typeof useTiming>; config: ReturnType<typeof useSequenceConfig<'intro'>> }> = ({
+const MinimalLayout: React.FC<LayoutProps> = ({
   monthName,
   year,
   bookCount: _bookCount, // Intentionally unused in minimal layout
   colors,
   timing,
   config,
+  backgroundImage,
+  backgroundOverlayOpacity,
 }) => {
   const frame = useCurrentFrame()
   useVideoConfig()
@@ -252,6 +303,19 @@ const MinimalLayout: React.FC<IntroSequenceProps & { colors: ReturnType<typeof u
         opacity,
       }}
     >
+      {/* Background image layer */}
+      {backgroundImage && (
+        <AbsoluteFill>
+          <Img
+            src={backgroundImage}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </AbsoluteFill>
+      )}
+      {backgroundImage && (
+        <AbsoluteFill style={{ backgroundColor: colors.background, opacity: backgroundOverlayOpacity }} />
+      )}
+
       <AbsoluteFill
         style={{
           display: 'flex',
@@ -291,8 +355,9 @@ export const IntroSequence: React.FC<IntroSequenceProps> = (props) => {
   const colors = useColors()
   const timing = useTiming()
   const config = useSequenceConfig('intro')
+  const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('intro')
 
-  const layoutProps = { ...props, colors, timing, config }
+  const layoutProps = { ...props, colors, timing, config, backgroundImage, backgroundOverlayOpacity }
 
   switch (config.layout) {
     case 'split':

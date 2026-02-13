@@ -4,10 +4,33 @@ import {
   useCurrentFrame,
   useVideoConfig,
   spring,
+  Img,
 } from 'remotion'
-import { useColors, useFonts, useTiming, useSequenceConfig } from '../../lib/TemplateContext'
+import { useColors, useFonts, useTiming, useSequenceConfig, useBackgroundImage } from '../../lib/TemplateContext'
 import { fadeIn, fadeOut, pulse } from '../../lib/animations'
 import { KineticText } from '../../components/KineticText'
+
+/**
+ * Background image layers - reusable across layout variants
+ */
+const BackgroundImageLayers: React.FC<{
+  backgroundImage: string | null
+  backgroundColor: string
+  backgroundOverlayOpacity: number
+}> = ({ backgroundImage, backgroundColor, backgroundOverlayOpacity }) => {
+  if (!backgroundImage) return null
+  return (
+    <>
+      <AbsoluteFill>
+        <Img
+          src={backgroundImage}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </AbsoluteFill>
+      <AbsoluteFill style={{ backgroundColor, opacity: backgroundOverlayOpacity }} />
+    </>
+  )
+}
 
 export const OutroSequence: React.FC = () => {
   const frame = useCurrentFrame()
@@ -16,6 +39,7 @@ export const OutroSequence: React.FC = () => {
   const fonts = useFonts()
   const timing = useTiming()
   const config = useSequenceConfig('outro')
+  const { backgroundImage, backgroundOverlayOpacity } = useBackgroundImage('outro')
 
   // Overall fade
   const fadeInOpacity = fadeIn(frame, 0, timing.outroFadeIn)
@@ -46,6 +70,11 @@ export const OutroSequence: React.FC = () => {
             opacity,
           }}
         >
+          <BackgroundImageLayers
+            backgroundImage={backgroundImage}
+            backgroundColor={colors.background}
+            backgroundOverlayOpacity={backgroundOverlayOpacity}
+          />
           <AbsoluteFill
             style={{
               display: 'flex',
@@ -77,6 +106,12 @@ export const OutroSequence: React.FC = () => {
             opacity,
           }}
         >
+          <BackgroundImageLayers
+            backgroundImage={backgroundImage}
+            backgroundColor={colors.background}
+            backgroundOverlayOpacity={backgroundOverlayOpacity}
+          />
+
           {/* Background gradient */}
           <AbsoluteFill
             style={{
@@ -171,6 +206,12 @@ export const OutroSequence: React.FC = () => {
             opacity,
           }}
         >
+          <BackgroundImageLayers
+            backgroundImage={backgroundImage}
+            backgroundColor={colors.background}
+            backgroundOverlayOpacity={backgroundOverlayOpacity}
+          />
+
           {/* Background gradient */}
           <AbsoluteFill
             style={{

@@ -23,11 +23,31 @@ interface SequenceLayouts {
   outro: string
 }
 
+interface BackgroundImages {
+  global?: string | null
+  intro?: string | null
+  bookReveal?: string | null
+  statsReveal?: string | null
+  comingSoon?: string | null
+  outro?: string | null
+}
+
+interface BackgroundOpacities {
+  global?: number
+  intro?: number
+  bookReveal?: number
+  statsReveal?: number
+  comingSoon?: number
+  outro?: number
+}
+
 export interface TemplatePreviewPanelProps {
   colors: ResolvedColorsConfig
   fonts: ResolvedFontsConfig
   timingTotals: TimingTotals
   layouts: SequenceLayouts
+  backgroundImages?: BackgroundImages
+  backgroundOpacities?: BackgroundOpacities
 }
 
 // ============================================================================
@@ -91,6 +111,8 @@ export default function TemplatePreviewPanel({
   fonts,
   timingTotals,
   layouts,
+  backgroundImages,
+  backgroundOpacities,
 }: TemplatePreviewPanelProps) {
   const totalFrames =
     timingTotals.introTotal +
@@ -98,6 +120,16 @@ export default function TemplatePreviewPanel({
     timingTotals.statsTotal +
     timingTotals.comingSoonTotal +
     timingTotals.outroTotal
+
+  // Determine if any background images are set
+  const hasAnyBackgroundImage = backgroundImages && (
+    backgroundImages.global ||
+    backgroundImages.intro ||
+    backgroundImages.bookReveal ||
+    backgroundImages.statsReveal ||
+    backgroundImages.comingSoon ||
+    backgroundImages.outro
+  )
 
   return (
     <div className="space-y-6" data-testid="template-preview-panel">
@@ -168,6 +200,38 @@ export default function TemplatePreviewPanel({
           ))}
         </div>
       </div>
+
+      {/* Backgrounds Section */}
+      {hasAnyBackgroundImage && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Backgrounds</h3>
+          <div className="flex flex-wrap gap-3">
+            {SEQUENCE_SECTIONS.map(({ key, label }) => {
+              const imageUrl = backgroundImages?.[key] || backgroundImages?.global || null
+              const opacity = backgroundOpacities?.[key] ?? backgroundOpacities?.global ?? 0.7
+              if (!imageUrl) return null
+              return (
+                <div
+                  key={key}
+                  className="flex flex-col items-center gap-1"
+                  data-testid={`preview-bg-${key}`}
+                >
+                  <div className="relative w-[48px] h-[85px] rounded overflow-hidden border border-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={imageUrl}
+                      alt={`${label} background`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{label}</span>
+                  <span className="text-[10px] text-muted-foreground">{Math.round(opacity * 100)}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Timing Overview */}
       <div>
