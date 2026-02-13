@@ -54,8 +54,9 @@ export async function GET(
  * PATCH /api/templates/[id] - Update a video template
  *
  * Requires admin authentication
- * Accepts partial updates for any field: name, description, previewThumbnailUrl, config
+ * Accepts partial updates for any field: name, description, previewThumbnailUrl, config, isPublished
  * If config is provided, validates before saving
+ * Tracks isPublished changes in audit logging via logFieldChanges
  * Returns 404 if template not found
  */
 export async function PATCH(
@@ -70,11 +71,12 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { name, description, previewThumbnailUrl, config } = body as {
+    const { name, description, previewThumbnailUrl, config, isPublished } = body as {
       name?: string
       description?: string
       previewThumbnailUrl?: string
       config?: unknown
+      isPublished?: boolean
     }
 
     // Check if template exists
@@ -109,6 +111,7 @@ export async function PATCH(
       description?: string | null
       previewThumbnailUrl?: string | null
       config?: object
+      isPublished?: boolean
     } = {}
 
     if (name !== undefined) {
@@ -133,6 +136,10 @@ export async function PATCH(
       updateData.config = config as object
     }
 
+    if (isPublished !== undefined) {
+      updateData.isPublished = isPublished
+    }
+
     // Track changes for audit logging
     const changes: Record<string, { old: unknown; new: unknown }> = {}
     if (updateData.name !== undefined && updateData.name !== existingTemplate.name) {
@@ -146,6 +153,9 @@ export async function PATCH(
     }
     if (updateData.config !== undefined) {
       changes.config = { old: existingTemplate.config, new: updateData.config }
+    }
+    if (updateData.isPublished !== undefined && updateData.isPublished !== existingTemplate.isPublished) {
+      changes.isPublished = { old: existingTemplate.isPublished, new: updateData.isPublished }
     }
 
     // Update the template
@@ -173,6 +183,7 @@ export async function PATCH(
  *
  * Requires admin authentication
  * Returns 404 if template not found
+ * Deleting a template will SetNull any user's selectedTemplateId referencing it
  */
 export async function DELETE(
   request: NextRequest,

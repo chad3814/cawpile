@@ -263,7 +263,7 @@ describe('Templates API Endpoints', () => {
         entityType: 'VideoTemplate',
         entityId: data.template.id,
         actionType: 'CREATE',
-        newValue: { name: data.template.name },
+        newValue: { name: data.template.name, isPublished: false },
       })
     })
 

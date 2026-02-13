@@ -27,6 +27,7 @@ model User {
   image         String?
   isAdmin       Boolean          @default(false)
   isSuperAdmin  Boolean          @default(false)
+  selectedTemplateId String?
   accounts      Account[]
   sessions      Session[]
   userBooks     UserBook[]
@@ -34,6 +35,8 @@ model User {
   readathons    UserReadathon[]
   adminActions  AdminAuditLog[]  @relation("AdminUser")
   sharedReviews SharedReview[]
+  selectedTemplate  VideoTemplate? @relation("SelectedTemplate", fields: [selectedTemplateId], references: [id], onDelete: SetNull)
+  createdTemplates  VideoTemplate[] @relation("CreatedTemplates")
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -271,8 +274,15 @@ model VideoTemplate {
   description         String?
   previewThumbnailUrl String?
   config              Json
+  userId              String?
+  isPublished         Boolean  @default(false)
+  usageCount          Int      @default(0)
+  creator             User?    @relation("CreatedTemplates", fields: [userId], references: [id], onDelete: SetNull)
+  selectedByUsers     User[]   @relation("SelectedTemplate")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  @@index([isPublished, createdAt])
 }
 
 enum BookStatus {

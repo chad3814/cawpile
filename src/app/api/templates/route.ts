@@ -10,6 +10,8 @@ import { validateTemplateConfig } from '@/lib/video/validateTemplateConfig'
  * Requires admin authentication
  * Returns all templates ordered by createdAt descending (newest first)
  * Supports pagination via limit and offset query parameters
+ * Supports optional isPublished query parameter to filter by published status
+ * Includes creator relation (name, image) in the response
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,13 +23,28 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const limit = searchParams.get('limit')
     const offset = searchParams.get('offset')
+    const isPublishedParam = searchParams.get('isPublished')
+
+    // Build where clause for optional isPublished filter
+    const where: { isPublished?: boolean } = {}
+    if (isPublishedParam === 'true') {
+      where.isPublished = true
+    } else if (isPublishedParam === 'false') {
+      where.isPublished = false
+    }
 
     const templates = await prisma.videoTemplate.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },
       take: limit ? parseInt(limit, 10) : undefined,
       skip: offset ? parseInt(offset, 10) : undefined,
+      include: {
+        creator: {
+          select: { name: true, image: true },
+        },
+      },
     })
 
     return NextResponse.json(
@@ -51,7 +68,8 @@ export async function GET(request: NextRequest) {
  * POST /api/templates - Create a new video template
  *
  * Requires admin authentication
- * Accepts: name (required), description (optional), previewThumbnailUrl (optional), config (required)
+ * Accepts: name (required), description (optional), previewThumbnailUrl (optional), config (required), isPublished (optional)
+ * Auto-sets userId to the creating admin's ID (if the user exists in the database)
  * Validates config against the template schema before saving
  * Returns 400 with validation errors if config is invalid
  */
@@ -63,11 +81,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, previewThumbnailUrl, config } = body as {
+    const { name, description, previewThumbnailUrl, config, isPublished } = body as {
       name?: string
       description?: string
       previewThumbnailUrl?: string
       config?: unknown
+      isPublished?: boolean
     }
 
     // Validate required fields
@@ -97,13 +116,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the template
+    // Verify the user exists in the database before setting userId (FK constraint)
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true },
+    })
+
+    // Create the template with userId auto-set to the creating admin
     const template = await prisma.videoTemplate.create({
       data: {
         name: name.trim(),
         description: description?.trim() || null,
         previewThumbnailUrl: previewThumbnailUrl?.trim() || null,
         config: config as object,
+        userId: dbUser ? user.id : null,
+        isPublished: isPublished === true,
       },
     })
 
@@ -111,7 +138,7 @@ export async function POST(request: NextRequest) {
       entityType: 'VideoTemplate',
       entityId: template.id,
       actionType: 'CREATE',
-      newValue: { name: template.name },
+      newValue: { name: template.name, isPublished: template.isPublished },
     })
 
     return NextResponse.json({ template }, { status: 201 })
