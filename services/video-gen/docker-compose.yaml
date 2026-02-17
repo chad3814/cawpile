@@ -1,18 +1,39 @@
 services:
   cawpile-video:
-    image: cawpile-video
+    image: ghcr.io/chad3814/cawpile/video-gen:latest
     restart: unless-stopped
     environment:
       - AWS_REGION=us-east-2
       - S3_BUCKET_NAME=cawpile-downloads
+    labels:
+      com.centurylinklabs.watchtower.enable: true
     ports:
       - 8014:3001
     secrets:
       - aws_client_id
       - aws_client_secret
 
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    ports:
+      - 8080:8080
+    environment:
+      - WATCHTOWER_HTTP_API_TOKEN=/run/secrets/update_token
+      - WATCHTOWER_CLEANUP=true
+      - DOCKER_CONFIG=/config
+      - WATCHTOWER_LABEL_ENABLE=true
+    command: --http-api-update
+    volumes:
+      - /home/ubuntu/.docker:/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    secrets:
+      - update_token
+
 secrets:
   aws_client_id:
     file: secrets/aws_client_id
   aws_client_secret:
     file: secrets/aws_client_secret
+  update_token:
+    file: secrets/update_token
