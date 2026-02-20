@@ -17,6 +17,6 @@ export async function deleteLocalFile(filePath: string): Promise<void> {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     console.error(`[Cleanup] Failed to delete local file ${filename}: ${errorMessage}`)
-    throw new Error(`Failed to delete local file: ${errorMessage}`)
+    throw new Error(`Failed to delete local file: ${errorMessage}`, { cause: error })
   }
 }
