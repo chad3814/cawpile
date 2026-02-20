@@ -481,8 +481,8 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 10: Settings, Profile, and Social Sharing
 **Dependencies:** Task Group 5 (API client and auth), Task Group 8 (Book Details for share action)
 
-- [ ] 10.0 Complete settings, profile, and sharing screens
-  - [ ] 10.1 Write 7 focused tests for settings, profile, and sharing
+- [x] 10.0 Complete settings, profile, and sharing screens
+  - [x] 10.1 Write 7 focused tests for settings, profile, and sharing
     - Test settings screen loads current user data via `GET /api/user/settings`
     - Test username availability check debounces and calls `GET /api/user/username-check?username=`
     - Test settings save calls `PATCH /api/user/settings` with updated fields
@@ -490,7 +490,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Test public profile screen fetches and displays data via `GET /api/profile/[username]`
     - Test Share Review modal creates share via `POST /api/user/books/[id]/share` and opens native share sheet
     - Test delete account flow shows confirmation and calls `DELETE /api/user`
-  - [ ] 10.2 Create query and mutation hooks for settings and profile
+  - [x] 10.2 Create query and mutation hooks for settings and profile
     - `useSettings()` query hook: `GET /api/user/settings`
     - `useUpdateSettings()` mutation: `PATCH /api/user/settings`
     - `useUsernameCheck(username)` query hook: `GET /api/user/username-check?username=` with 500ms debounce
@@ -498,7 +498,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - `useShareReview(bookId)` mutation: `POST/PATCH /api/user/books/[id]/share`
     - `useDeleteShare(bookId)` mutation: `DELETE /api/user/books/[id]/share`
     - Place in appropriate `hooks/queries/` and `hooks/mutations/` directories
-  - [ ] 10.3 Build Settings screen (`app/(tabs)/settings.tsx`)
+  - [x] 10.3 Build Settings screen (`app/(tabs)/settings.tsx`)
     - **Profile section**: Name text input, Username text input (with real-time availability check indicator), Bio text area (500 char limit with counter)
     - **Avatar section**: Display current avatar (from S3 or Google OAuth fallback), "Change Avatar" button triggering image picker and presigned URL upload flow (`GET /api/user/avatar/presigned-url` then PUT to S3 then `POST /api/user/avatar`)
     - **Reading goal**: Number input (1-500 range)
@@ -506,29 +506,29 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - **Account section**: Email display (read-only), Sign Out button, Delete Account button
     - Save button persists all changes via `useUpdateSettings` mutation
     - Sign out triggers `signOut()` from auth context
-  - [ ] 10.4 Build Delete Account confirmation flow
+  - [x] 10.4 Build Delete Account confirmation flow
     - Alert dialog with warning text matching web app's `DeleteAccountModal` behavior
     - Requires typing confirmation text (e.g., "DELETE")
     - Calls `DELETE /api/user` on confirmation
     - On success: clear auth state, navigate to sign-in screen
-  - [ ] 10.5 Build Profile tab screen (`app/(tabs)/profile.tsx`)
+  - [x] 10.5 Build Profile tab screen (`app/(tabs)/profile.tsx`)
     - Display current user's public profile (same data as `/u/[username]`)
     - Fetches via `usePublicProfile(currentUser.username)`
     - Shows: avatar, name, username, bio, currently reading books (if enabled), shared reviews list, TBR section (if enabled)
     - Each shared review shows book cover, title, rating average
     - Tapping a book in "currently reading" or TBR navigates to Book Details
-  - [ ] 10.6 Build public profile view for other users
+  - [x] 10.6 Build public profile view for other users
     - Accessible via navigation from shared reviews or direct username lookup
     - Uses same `usePublicProfile(username)` hook
     - Read-only view: avatar, name, username, bio, currently reading, shared reviews, TBR
     - No editing capabilities
-  - [ ] 10.7 Build Share Review modal (`app/(modals)/share-review.tsx`)
+  - [x] 10.7 Build Share Review modal (`app/(modals)/share-review.tsx`)
     - Accessible from Book Details on completed + rated books
     - Privacy toggles: Show Dates, Show Book Clubs, Show Readathons, Show Review Text -- native Switch components
     - "Create Share" / "Update Share" button calls `useShareReview` mutation
     - On success: generate share URL, open React Native `Share` API native share sheet with URL
     - "Delete Share" option calls `useDeleteShare` mutation with confirmation
-  - [ ] 10.8 Ensure settings, profile, and sharing tests pass
+  - [x] 10.8 Ensure settings, profile, and sharing tests pass
     - Run the 7 tests from 10.1
 
 **Acceptance Criteria:**
@@ -546,18 +546,18 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 11: Edit Book and Remaining Modals
 **Dependencies:** Task Group 8 (Book Details provides navigation), Task Group 7 (form patterns from Add Book Wizard)
 
-- [ ] 11.0 Complete Edit Book and remaining modals
-  - [ ] 11.1 Write 4 focused tests for Edit Book
+- [x] 11.0 Complete Edit Book and remaining modals
+  - [x] 11.1 Write 4 focused tests for Edit Book
     - Test edit form pre-populates with current book data
     - Test status change updates dependent fields (e.g., changing to Completed shows finish date)
     - Test edit submission calls `PATCH /api/user/books/[id]` with changed fields
     - Test review text editing saves via the same PATCH endpoint
-  - [ ] 11.2 Create `useUpdateBook` mutation hook
+  - [x] 11.2 Create `useUpdateBook` mutation hook
     - `apps/mobile/src/hooks/mutations/useUpdateBook.ts`
     - `PATCH /api/user/books/[id]` with partial update payload
     - Optimistic cache update for book details and library list
     - Supports offline queueing
-  - [ ] 11.3 Build Edit Book modal (`app/(modals)/edit-book.tsx`)
+  - [x] 11.3 Build Edit Book modal (`app/(modals)/edit-book.tsx`)
     - Pre-populated form with current book data
     - Editable fields: Status, Format (multi-select), Start Date, Finish Date, Progress, Current Page
     - Tracking fields: Acquisition Method, Book Club, Readathon, Reread, DNF Reason (if DNF)
@@ -565,7 +565,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Review text area
     - Save button submits changed fields only via `useUpdateBook`
     - On success: invalidate book detail and library caches, close modal
-  - [ ] 11.4 Ensure Edit Book tests pass
+  - [x] 11.4 Ensure Edit Book tests pass
     - Run the 4 tests from 11.1
 
 **Acceptance Criteria:**
@@ -582,8 +582,8 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 12: Test Review and Gap Analysis
 **Dependencies:** Task Groups 1-11
 
-- [ ] 12.0 Review existing tests and fill critical gaps only
-  - [ ] 12.1 Review tests from all previous Task Groups
+- [x] 12.0 Review existing tests and fill critical gaps only
+  - [x] 12.1 Review tests from all previous Task Groups
     - Review the 4 monorepo tests from Task Group 1 (1.1)
     - Review the 6 shared package tests from Task Group 2 (2.1)
     - Review the 5 mobile auth tests from Task Group 3 (3.1)
@@ -596,20 +596,20 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Review the 7 settings/profile/sharing tests from Task Group 10 (10.1)
     - Review the 4 edit book tests from Task Group 11 (11.1)
     - Total existing tests: approximately 59 tests
-  - [ ] 12.2 Analyze test coverage gaps for this feature only
+  - [x] 12.2 Analyze test coverage gaps for this feature only
     - Identify critical end-to-end user workflows that lack coverage
     - Focus on integration points between mobile screens and API
     - Check offline queue reliability across app restart scenarios
     - Verify auth token refresh and expiry handling
     - Assess navigation flow correctness (tab switches, modal open/close, stack push/pop)
-  - [ ] 12.3 Write up to 10 additional strategic tests to fill critical gaps
+  - [x] 12.3 Write up to 10 additional strategic tests to fill critical gaps
     - Test end-to-end: search for book, add it, view in library, open details, rate it, share review
     - Test offline: go offline, add book, update progress, go online, verify queue processes
     - Test auth expiry: JWT expires mid-session, verify re-auth redirect
     - Test deep navigation: library -> book details -> rate -> summary -> submit -> back to details with updated rating
     - Test data consistency: add book optimistically, API fails, verify rollback removes book from cache
     - Additional tests as identified in gap analysis (up to 5 more)
-  - [ ] 12.4 Run all feature-specific tests
+  - [x] 12.4 Run all feature-specific tests
     - Run all tests from Task Groups 1-11 plus the new tests from 12.3
     - Expected total: approximately 59-69 tests
     - Verify all critical workflows pass

@@ -22,5 +22,13 @@
     "lint": "npm run lint -w apps/web",
     "lint:web": "npm run lint -w apps/web",
     "typecheck:mobile": "npm run typecheck -w apps/mobile"
+  },
+  "overrides": {
+    "cawpile": {
+      "tailwindcss": "$tailwindcss"
+    },
+    "cawpile-mobile": {
+      "tailwindcss": "$tailwindcss"
+    }
   }
 }

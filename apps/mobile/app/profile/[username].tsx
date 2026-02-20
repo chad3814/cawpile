@@ -7,12 +7,10 @@ import {
   ActivityIndicator,
   useColorScheme,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams, Stack } from "expo-router";
 import { Image } from "expo-image";
 import { getCawpileGrade, getCawpileColor } from "@cawpile/shared";
 import type { CawpileSemanticColor, ProfileBookData, ProfileSharedReview } from "@cawpile/shared";
-import { useAuth } from "@/contexts/AuthContext";
 import { usePublicProfile } from "@/hooks/queries/usePublicProfile";
 
 const SEMANTIC_COLORS: Record<CawpileSemanticColor, string> = {
@@ -29,14 +27,12 @@ function resolveCoverUrlFromEdition(edition: ProfileBookData["edition"]): string
   return null;
 }
 
-export default function ProfileScreen() {
+export default function PublicProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-  const { user } = useAuth();
+  const { username } = useLocalSearchParams<{ username: string }>();
 
-  // Use the authenticated user's username for their own profile
-  const username = user?.name ?? "";
   const { data: profileData, isLoading, isError } = usePublicProfile(username);
 
   const handleBookPress = useCallback(
@@ -48,32 +44,28 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <>
+        <Stack.Screen options={{ headerShown: true, headerTitle: "", headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" }, headerTintColor: isDark ? "#f8fafc" : "#1a1a1a" }} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
           <ActivityIndicator size="large" color={isDark ? "#60a5fa" : "#3b82f6"} />
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
   if (isError || !profileData) {
     return (
-      <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 }}>
-          <Text style={{ fontSize: 48, marginBottom: 16 }}>@</Text>
-          <Text style={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b", textAlign: "center" }}>
-            Set up your username in Settings to enable your public profile.
+      <>
+        <Stack.Screen options={{ headerShown: true, headerTitle: "Profile", headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" }, headerTintColor: isDark ? "#f8fafc" : "#1a1a1a" }} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
+          <Text style={{ fontSize: 16, color: isDark ? "#94a3b8" : "#64748b" }}>
+            Profile not found.
           </Text>
-          <Pressable
-            onPress={() => router.push("/(tabs)/settings")}
-            style={{ marginTop: 16 }}
-          >
-            <Text style={{ color: "#3b82f6", fontSize: 14, fontWeight: "600" }}>
-              Go to Settings
-            </Text>
+          <Pressable onPress={() => router.back()} style={{ marginTop: 16 }}>
+            <Text style={{ color: "#3b82f6", fontSize: 14 }}>Go back</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
@@ -81,16 +73,26 @@ export default function ProfileScreen() {
   const avatarUrl = profileUser.profilePictureUrl ?? profileUser.image;
 
   return (
-    <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: isDark ? "#0f172a" : "#ffffff" }}>
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: `@${profileUser.username}`,
+          headerStyle: { backgroundColor: isDark ? "#0f172a" : "#ffffff" },
+          headerTintColor: isDark ? "#f8fafc" : "#1a1a1a",
+        }}
+      />
+
       <ScrollView
-        testID="profile-scroll"
+        testID="public-profile-scroll"
+        style={{ flex: 1, backgroundColor: isDark ? "#0f172a" : "#ffffff" }}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* Profile Header */}
         <View style={{ alignItems: "center", paddingTop: 24, paddingBottom: 20 }}>
           {avatarUrl ? (
             <Image
-              testID="profile-avatar"
+              testID="public-profile-avatar"
               source={{ uri: avatarUrl }}
               style={{ width: 80, height: 80, borderRadius: 40 }}
               contentFit="cover"
@@ -112,7 +114,7 @@ export default function ProfileScreen() {
           )}
 
           <Text
-            testID="profile-name"
+            testID="public-profile-name"
             style={{
               fontSize: 20,
               fontWeight: "bold",
@@ -124,7 +126,7 @@ export default function ProfileScreen() {
           </Text>
 
           <Text
-            testID="profile-username"
+            testID="public-profile-username"
             style={{
               fontSize: 14,
               color: isDark ? "#94a3b8" : "#64748b",
@@ -136,7 +138,7 @@ export default function ProfileScreen() {
 
           {profileUser.bio && (
             <Text
-              testID="profile-bio"
+              testID="public-profile-bio"
               style={{
                 fontSize: 14,
                 color: isDark ? "#cbd5e1" : "#475569",
@@ -151,26 +153,18 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Currently Reading Section */}
+        {/* Currently Reading */}
         {profileUser.showCurrentlyReading && currentlyReading.length > 0 && (
           <View style={{ marginTop: 8, paddingHorizontal: 16 }}>
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "bold",
-                color: isDark ? "#f8fafc" : "#1a1a1a",
-                marginBottom: 12,
-              }}
-            >
+            <Text style={{ fontSize: 17, fontWeight: "bold", color: isDark ? "#f8fafc" : "#1a1a1a", marginBottom: 12 }}>
               Currently Reading
             </Text>
             {currentlyReading.map((book: ProfileBookData) => {
               const coverUrl = resolveCoverUrlFromEdition(book.edition);
               return (
-                <Pressable
+                <View
                   key={book.id}
-                  testID={`currently-reading-${book.id}`}
-                  onPress={() => handleBookPress(book.id)}
+                  testID={`public-reading-${book.id}`}
                   style={{
                     flexDirection: "row",
                     paddingVertical: 10,
@@ -187,13 +181,9 @@ export default function ProfileScreen() {
                   ) : (
                     <View
                       style={{
-                        width: 40,
-                        height: 60,
-                        borderRadius: 4,
+                        width: 40, height: 60, borderRadius: 4,
                         backgroundColor: isDark ? "#334155" : "#e2e8f0",
-                        marginRight: 12,
-                        alignItems: "center",
-                        justifyContent: "center",
+                        marginRight: 12, alignItems: "center", justifyContent: "center",
                       }}
                     >
                       <Text style={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }}>[ ]</Text>
@@ -212,49 +202,17 @@ export default function ProfileScreen() {
                     >
                       {book.edition.book.authors.join(", ")}
                     </Text>
-                    {book.progress > 0 && (
-                      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-                        <View
-                          style={{
-                            height: 4,
-                            flex: 1,
-                            borderRadius: 2,
-                            backgroundColor: isDark ? "#334155" : "#e2e8f0",
-                            maxWidth: 100,
-                          }}
-                        >
-                          <View
-                            style={{
-                              height: 4,
-                              borderRadius: 2,
-                              backgroundColor: "#3b82f6",
-                              width: `${book.progress}%`,
-                            }}
-                          />
-                        </View>
-                        <Text style={{ fontSize: 11, color: isDark ? "#94a3b8" : "#64748b", marginLeft: 6 }}>
-                          {book.progress}%
-                        </Text>
-                      </View>
-                    )}
                   </View>
-                </Pressable>
+                </View>
               );
             })}
           </View>
         )}
 
-        {/* Shared Reviews Section */}
+        {/* Shared Reviews */}
         {sharedReviews.length > 0 && (
           <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "bold",
-                color: isDark ? "#f8fafc" : "#1a1a1a",
-                marginBottom: 12,
-              }}
-            >
+            <Text style={{ fontSize: 17, fontWeight: "bold", color: isDark ? "#f8fafc" : "#1a1a1a", marginBottom: 12 }}>
               Shared Reviews
             </Text>
             {sharedReviews.map((review: ProfileSharedReview) => {
@@ -263,7 +221,7 @@ export default function ProfileScreen() {
               return (
                 <View
                   key={review.id}
-                  testID={`shared-review-${review.id}`}
+                  testID={`public-review-${review.id}`}
                   style={{
                     flexDirection: "row",
                     paddingVertical: 10,
@@ -272,50 +230,22 @@ export default function ProfileScreen() {
                   }}
                 >
                   {coverUrl ? (
-                    <Image
-                      source={{ uri: coverUrl }}
-                      style={{ width: 40, height: 60, borderRadius: 4, marginRight: 12 }}
-                      contentFit="cover"
-                    />
+                    <Image source={{ uri: coverUrl }} style={{ width: 40, height: 60, borderRadius: 4, marginRight: 12 }} contentFit="cover" />
                   ) : (
-                    <View
-                      style={{
-                        width: 40,
-                        height: 60,
-                        borderRadius: 4,
-                        backgroundColor: isDark ? "#334155" : "#e2e8f0",
-                        marginRight: 12,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
+                    <View style={{ width: 40, height: 60, borderRadius: 4, backgroundColor: isDark ? "#334155" : "#e2e8f0", marginRight: 12, alignItems: "center", justifyContent: "center" }}>
                       <Text style={{ fontSize: 14, color: isDark ? "#64748b" : "#94a3b8" }}>[ ]</Text>
                     </View>
                   )}
                   <View style={{ flex: 1, justifyContent: "center" }}>
-                    <Text
-                      style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#f8fafc" : "#1a1a1a" }}
-                      numberOfLines={2}
-                    >
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#f8fafc" : "#1a1a1a" }} numberOfLines={2}>
                       {review.userBook.edition.book.title}
                     </Text>
-                    <Text
-                      style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginTop: 2 }}
-                      numberOfLines={1}
-                    >
+                    <Text style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginTop: 2 }} numberOfLines={1}>
                       {review.userBook.edition.book.authors.join(", ")}
                     </Text>
                     {rating && (
                       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-                        <View
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 4,
-                            backgroundColor: SEMANTIC_COLORS[getCawpileColor(rating.average)],
-                            marginRight: 4,
-                          }}
-                        />
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: SEMANTIC_COLORS[getCawpileColor(rating.average)], marginRight: 4 }} />
                         <Text style={{ fontSize: 12, fontWeight: "600", color: isDark ? "#e2e8f0" : "#334155" }}>
                           {rating.average.toFixed(1)}
                         </Text>
@@ -334,21 +264,13 @@ export default function ProfileScreen() {
         {/* TBR Section */}
         {profileUser.showTbr && tbr && tbr.books.length > 0 && (
           <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
-            <Text
-              style={{
-                fontSize: 17,
-                fontWeight: "bold",
-                color: isDark ? "#f8fafc" : "#1a1a1a",
-                marginBottom: 12,
-              }}
-            >
+            <Text style={{ fontSize: 17, fontWeight: "bold", color: isDark ? "#f8fafc" : "#1a1a1a", marginBottom: 12 }}>
               Want to Read ({tbr.totalCount})
             </Text>
             {tbr.books.map((book: ProfileBookData) => (
-              <Pressable
+              <View
                 key={book.id}
-                testID={`tbr-${book.id}`}
-                onPress={() => handleBookPress(book.id)}
+                testID={`public-tbr-${book.id}`}
                 style={{
                   flexDirection: "row",
                   paddingVertical: 10,
@@ -357,33 +279,18 @@ export default function ProfileScreen() {
                 }}
               >
                 <View style={{ flex: 1, justifyContent: "center" }}>
-                  <Text
-                    style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#f8fafc" : "#1a1a1a" }}
-                    numberOfLines={2}
-                  >
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: isDark ? "#f8fafc" : "#1a1a1a" }} numberOfLines={2}>
                     {book.edition.book.title}
                   </Text>
-                  <Text
-                    style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginTop: 2 }}
-                    numberOfLines={1}
-                  >
+                  <Text style={{ fontSize: 12, color: isDark ? "#94a3b8" : "#64748b", marginTop: 2 }} numberOfLines={1}>
                     {book.edition.book.authors.join(", ")}
                   </Text>
                 </View>
-              </Pressable>
+              </View>
             ))}
           </View>
         )}
-
-        {/* Empty state */}
-        {sharedReviews.length === 0 && currentlyReading.length === 0 && (
-          <View style={{ alignItems: "center", paddingVertical: 32, paddingHorizontal: 32 }}>
-            <Text style={{ fontSize: 14, color: isDark ? "#94a3b8" : "#64748b", textAlign: "center" }}>
-              No shared reviews or currently reading books to display.
-            </Text>
-          </View>
-        )}
       </ScrollView>
-    </SafeAreaView>
+    </>
   );
 }

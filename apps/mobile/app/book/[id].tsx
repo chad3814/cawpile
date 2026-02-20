@@ -130,6 +130,8 @@ export default function BookDetailsScreen() {
   const pageCount = gb?.pageCount;
   const statusColor = STATUS_COLORS[book.status];
   const rating = book.cawpileRating;
+  const canShare = (book.status === "COMPLETED" || book.status === "DNF") && rating;
+  const sharedReview = book.sharedReview;
 
   return (
     <>
@@ -689,6 +691,60 @@ export default function BookDetailsScreen() {
           >
             <Text style={{ color: isDark ? "#e2e8f0" : "#334155", fontSize: 14, fontWeight: "600" }}>
               {rating ? "Edit Rating" : "Rate (CAWPILE)"}
+            </Text>
+          </Pressable>
+
+          {/* Share Button */}
+          {canShare && (
+            <Pressable
+              testID="share-button"
+              onPress={() => router.push({
+                pathname: "/(modals)/share-review",
+                params: {
+                  id: book.id,
+                  existingShareToken: sharedReview?.shareToken ?? "",
+                  existingShowDates: sharedReview?.showDates ? "true" : "false",
+                  existingShowBookClubs: sharedReview?.showBookClubs ? "true" : "false",
+                  existingShowReadathons: sharedReview?.showReadathons ? "true" : "false",
+                  existingShowReview: sharedReview?.showReview ? "true" : "false",
+                },
+              })}
+              style={{
+                paddingVertical: 12,
+                borderRadius: 8,
+                backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: isDark ? "#334155" : "#e2e8f0",
+              }}
+            >
+              <Text style={{ color: isDark ? "#e2e8f0" : "#334155", fontSize: 14, fontWeight: "600" }}>
+                {sharedReview ? "Edit Share" : "Share Review"}
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Edit Button */}
+          <Pressable
+            testID="edit-button"
+            onPress={() => router.push({
+              pathname: "/(modals)/edit-book",
+              params: {
+                id: book.id,
+                bookData: JSON.stringify(book),
+              },
+            })}
+            style={{
+              paddingVertical: 12,
+              borderRadius: 8,
+              backgroundColor: isDark ? "#1e293b" : "#f1f5f9",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: isDark ? "#334155" : "#e2e8f0",
+            }}
+          >
+            <Text style={{ color: isDark ? "#e2e8f0" : "#334155", fontSize: 14, fontWeight: "600" }}>
+              Edit
             </Text>
           </Pressable>
 
