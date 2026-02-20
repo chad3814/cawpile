@@ -288,24 +288,24 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 6: Library / Dashboard Screen
 **Dependencies:** Task Group 5 (API client, auth, and query infrastructure)
 
-- [ ] 6.0 Complete Library screen
-  - [ ] 6.1 Write 5 focused tests for Library screen
+- [x] 6.0 Complete Library screen
+  - [x] 6.1 Write 5 focused tests for Library screen
     - Test library fetches and displays books from `GET /api/user/books`
     - Test status filter chips filter the displayed books (re-fetches with `?status=` param)
     - Test pull-to-refresh triggers query invalidation and re-fetch
     - Test tapping a book card navigates to Book Details screen
     - Test empty state renders appropriate messaging per status filter
-  - [ ] 6.2 Create query and mutation hooks for library
+  - [x] 6.2 Create query and mutation hooks for library
     - `useLibrary(status?)` query hook: `GET /api/user/books` with optional `?status=` filter, returns `DashboardBookData[]`
     - `useDeleteBook()` mutation hook: `DELETE /api/user/books/[id]` with optimistic cache removal
     - Place in `apps/mobile/src/hooks/queries/useLibrary.ts` and `apps/mobile/src/hooks/mutations/useDeleteBook.ts`
-  - [ ] 6.3 Build BookCard component
+  - [x] 6.3 Build BookCard component
     - Display: cover image (via `expo-image` with 7-day cache), title, author, status badge, CAWPILE average (if rated)
     - Use `getCawpileGrade` and `getCawpileColor` from `@cawpile/shared` for rating display
     - Resolve cover image URL from provider priority: `preferredCoverProvider` > hardcoverBook > googleBook > ibdbBook
     - Placeholder image for books without covers
     - Dark mode support via NativeWind
-  - [ ] 6.4 Build Library screen (`app/(tabs)/library.tsx`)
+  - [x] 6.4 Build Library screen (`app/(tabs)/library.tsx`)
     - Status filter chips at top: All, Reading, Want to Read, Completed, DNF (horizontally scrollable)
     - 2-column grid layout using `FlatList` with `numColumns={2}`
     - Sort control: End Date, Start Date, Title, Date Added with ASC/DESC toggle
@@ -313,7 +313,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Tapping a BookCard navigates to Book Details (push onto stack, not modal)
     - Loading skeleton state while fetching
     - Empty states per status filter with contextual messaging
-  - [ ] 6.5 Ensure Library screen tests pass
+  - [x] 6.5 Ensure Library screen tests pass
     - Run the 5 tests from 6.1
 
 **Acceptance Criteria:**
@@ -329,24 +329,24 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 7: Book Search and Add Book Wizard
 **Dependencies:** Task Group 5 (API client), Task Group 6 (Library query hooks for cache invalidation)
 
-- [ ] 7.0 Complete Search and Add Book flow
-  - [ ] 7.1 Write 6 focused tests for Search and Add Book
+- [x] 7.0 Complete Search and Add Book flow
+  - [x] 7.1 Write 6 focused tests for Search and Add Book
     - Test search input debounces at 600ms and calls `GET /api/books/search?q=`
     - Test tagged search syntax (`ibdb:`, `hard:`, `gbid:`, `isbn:`) shows visual indicator
     - Test search results display title, authors, source badges, and cover thumbnail
     - Test tapping a search result opens the Add Book Wizard modal
     - Test wizard step count varies by status: Want to Read = 2, Reading/Completed = 4
     - Test wizard submission calls `POST /api/user/books` with `signedResult` and invalidates library cache
-  - [ ] 7.2 Create search query hook
+  - [x] 7.2 Create search query hook
     - `useBookSearch(query)` in `apps/mobile/src/hooks/queries/useBookSearch.ts`
     - Calls `GET /api/books/search?q=` with 600ms debounce (use `useDebounce` hook)
     - Returns `{ books: SignedBookSearchResult[], taggedSearch: boolean }`
     - Disabled when query is empty
-  - [ ] 7.3 Create `useDebounce` hook
+  - [x] 7.3 Create `useDebounce` hook
     - `apps/mobile/src/hooks/useDebounce.ts`
     - Generic debounce hook matching pattern from web app's `src/hooks/useDebounce.ts`
     - Default delay: 600ms
-  - [ ] 7.4 Build Search screen (`app/(tabs)/search.tsx`)
+  - [x] 7.4 Build Search screen (`app/(tabs)/search.tsx`)
     - Text input with search icon, 600ms debounce
     - Tagged search detection: display visual badge when `ibdb:`, `hard:`, `gbid:`, `isbn:` prefix detected
     - Results displayed in `FlatList`: cover thumbnail (small), title, authors, source provider badges
@@ -354,17 +354,17 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Empty state for no results ("No books found")
     - Error state on API failure with retry
     - Tapping a result opens Add Book Wizard modal with the selected book's `signedResult`
-  - [ ] 7.5 Create autocomplete hooks for wizard
+  - [x] 7.5 Create autocomplete hooks for wizard
     - `useBookClubs()`: `GET /api/user/book-clubs`, returns list for autocomplete
     - `useReadathons()`: `GET /api/user/readathons`, returns list for autocomplete
     - Place in `apps/mobile/src/hooks/queries/`
-  - [ ] 7.6 Create `useAddBook` mutation hook
+  - [x] 7.6 Create `useAddBook` mutation hook
     - `apps/mobile/src/hooks/mutations/useAddBook.ts`
     - Calls `POST /api/user/books` with the form data + `signedResult`
     - On success: invalidate library query cache, close modal, navigate to library
     - On offline: enqueue to offline action queue
     - Optimistic update: add book to library cache immediately
-  - [ ] 7.7 Build Add Book Wizard modal (`app/(modals)/add-book.tsx`)
+  - [x] 7.7 Build Add Book Wizard modal (`app/(modals)/add-book.tsx`)
     - Multi-step form presented as a modal stack over tabs
     - Progress bar at top showing current step / total steps
     - Step 1 (all statuses): Status selection (Want to Read, Currently Reading, Completed) + Format multi-select (required)
@@ -375,7 +375,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Back/Next navigation buttons, Submit on final step
     - Form validation: format is required on Step 1
     - Submission includes `signedResult` from search (passed as route param)
-  - [ ] 7.8 Ensure Search and Add Book tests pass
+  - [x] 7.8 Ensure Search and Add Book tests pass
     - Run the 6 tests from 7.1
 
 **Acceptance Criteria:**
@@ -392,18 +392,18 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 8: Book Details Screen
 **Dependencies:** Task Group 6 (Library screen navigates here), Task Group 5 (API client)
 
-- [ ] 8.0 Complete Book Details screen
-  - [ ] 8.1 Write 5 focused tests for Book Details
+- [x] 8.0 Complete Book Details screen
+  - [x] 8.1 Write 5 focused tests for Book Details
     - Test book metadata displays correctly (title, authors, description, page count, ISBNs, categories)
     - Test user-specific data renders (status badge, format badges, progress bar, dates)
     - Test CAWPILE rating display shows facet breakdown with colored bars and average
     - Test reading sessions list fetches and displays via `GET /api/reading-sessions?userBookId=`
     - Test delete action shows confirmation dialog and calls `DELETE /api/user/books/[id]`
-  - [ ] 8.2 Create query hooks for Book Details
+  - [x] 8.2 Create query hooks for Book Details
     - `useBookDetails(id)` -- uses library cache data (no separate endpoint needed, data is in `DashboardBookData`)
     - `useReadingSessions(userBookId)` -- `GET /api/reading-sessions?userBookId=`, returns sessions list
     - Place in `apps/mobile/src/hooks/queries/`
-  - [ ] 8.3 Build Book Details screen (`app/book/[id].tsx`)
+  - [x] 8.3 Build Book Details screen (`app/book/[id].tsx`)
     - Full-screen view pushed onto navigation stack (not a modal)
     - **Book metadata section**: Large cover image, title, subtitle, authors, expandable description (collapsed to 3 lines with "Show more"), page count, categories as chips, ISBNs, published date
     - **User data section**: Status badge (colored), format badges, start date, finish date, progress bar (for Reading status with percentage), current page display
@@ -413,7 +413,7 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - **Reading sessions section**: List of sessions with date, pages read, duration, notes
     - **Action buttons**: Update Progress, Log Session, Rate (CAWPILE), Write Review, Share, Edit, Delete
     - Delete button triggers native `Alert.alert` confirmation dialog
-  - [ ] 8.4 Ensure Book Details tests pass
+  - [x] 8.4 Ensure Book Details tests pass
     - Run the 5 tests from 8.1
 
 **Acceptance Criteria:**
@@ -429,21 +429,21 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 9: CAWPILE Rating and Reading Sessions
 **Dependencies:** Task Group 8 (Book Details provides navigation to these modals), Task Group 2 (shared CAWPILE utilities)
 
-- [ ] 9.0 Complete rating and session screens
-  - [ ] 9.1 Write 6 focused tests for rating and session features
+- [x] 9.0 Complete rating and session screens
+  - [x] 9.1 Write 6 focused tests for rating and session features
     - Test CAWPILE rating screen renders correct facets for fiction vs. nonfiction books (using shared `getFacetConfig`)
     - Test slider updates value for each facet and displays current score
     - Test rating summary computes correct average (using shared `calculateCawpileAverage`)
     - Test rating submission calls `PATCH /api/user/books/[id]` with `cawpileRating` object
     - Test Update Progress modal submits percentage and page number via `PATCH /api/user/books/[id]`
     - Test Log Reading Session modal submits via `POST /api/reading-sessions`
-  - [ ] 9.2 Create mutation hooks for rating and sessions
+  - [x] 9.2 Create mutation hooks for rating and sessions
     - `useSubmitRating(bookId)` -- `PATCH /api/user/books/[id]` with `{ cawpileRating }`, invalidates book detail cache
     - `useUpdateProgress(bookId)` -- `PATCH /api/user/books/[id]` with `{ progress, currentPage }`, optimistic update
     - `useCreateReadingSession()` -- `POST /api/reading-sessions`, invalidates sessions cache
     - Place in `apps/mobile/src/hooks/mutations/`
     - All support offline queueing
-  - [ ] 9.3 Build CAWPILE Rating screen (`app/(modals)/rate-book.tsx`)
+  - [x] 9.3 Build CAWPILE Rating screen (`app/(modals)/rate-book.tsx`)
     - Swipeable card interface using `react-native-gesture-handler` and `react-native-reanimated`
     - One card per facet, 7 total -- facets from `getFacetConfig(bookType)` via `@cawpile/shared`
     - Each card: facet name, description, guiding questions list, slider (1-10 range), current value display
@@ -452,18 +452,18 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Summary card at end: all 7 facets with scores (or "Skipped"), computed average (from `calculateCawpileAverage`), letter grade (from `getCawpileGrade`), star rating (from `convertToStars`)
     - Submit button on summary card
     - Pre-populate slider values when editing existing ratings
-  - [ ] 9.4 Build Update Progress modal (`app/(modals)/update-progress.tsx`)
+  - [x] 9.4 Build Update Progress modal (`app/(modals)/update-progress.tsx`)
     - Percentage slider (0-100%) with numeric display
     - Page number text input (optional, numeric keyboard)
     - Current values pre-populated from book data
     - Submit calls `useUpdateProgress` mutation
     - On success: invalidate queries, close modal
-  - [ ] 9.5 Build Log Reading Session modal (`app/(modals)/log-session.tsx`)
+  - [x] 9.5 Build Log Reading Session modal (`app/(modals)/log-session.tsx`)
     - Fields: Start page (number input), End page (number input), Duration in minutes (optional number input), Notes (optional text area)
     - Validation: end page must be greater than start page
     - Submit calls `useCreateReadingSession` mutation
     - On success: invalidate sessions query, close modal
-  - [ ] 9.6 Ensure rating and session tests pass
+  - [x] 9.6 Ensure rating and session tests pass
     - Run the 6 tests from 9.1
 
 **Acceptance Criteria:**
