@@ -10,15 +10,17 @@
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "dev:web": "npm run dev -w apps/web",
-    "dev:mobile": "npm run dev -w apps/mobile",
+    "dev:mobile": "npm run start -w apps/mobile",
     "build": "npm run build -w apps/web",
     "build:web": "npm run build -w apps/web",
     "build:shared": "npm run build -w packages/shared",
     "test": "npm run test -w apps/web",
     "test:web": "npm run test -w apps/web",
+    "test:mobile": "npm run test -w apps/mobile",
     "test:shared": "npm run test -w packages/shared",
     "test:video-gen": "npm run test:run -w services/video-gen",
     "lint": "npm run lint -w apps/web",
-    "lint:web": "npm run lint -w apps/web"
+    "lint:web": "npm run lint -w apps/web",
+    "typecheck:mobile": "npm run typecheck -w apps/mobile"
   }
 }

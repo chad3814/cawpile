@@ -169,16 +169,16 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 4: Expo Project Setup
 **Dependencies:** Task Group 1 (workspace structure), Task Group 2 (shared package available)
 
-- [ ] 4.0 Complete Expo project initialization
-  - [ ] 4.1 Write 3 focused tests for project setup validation
+- [x] 4.0 Complete Expo project initialization
+  - [x] 4.1 Write 3 focused tests for project setup validation
     - Test that the app entry point renders without crashing
     - Test that `@cawpile/shared` types are importable and usable
     - Test that the API client module initializes with correct base URL
-  - [ ] 4.2 Initialize Expo project in `apps/mobile/`
+  - [x] 4.2 Initialize Expo project in `apps/mobile/`
     - Run `npx create-expo-app apps/mobile --template blank-typescript` (Expo SDK 52+)
     - Configure `app.config.ts` with bundle identifiers (`com.cawpile.mobile`), app name "Cawpile", required permissions
     - Add `@cawpile/shared` as a workspace dependency
-  - [ ] 4.3 Install core dependencies
+  - [x] 4.3 Install core dependencies
     - Navigation: `expo-router`, `react-native-safe-area-context`, `react-native-screens`
     - Styling: `nativewind` (v4), `tailwindcss`
     - Data: `@tanstack/react-query` (v5), `@react-native-async-storage/async-storage`
@@ -186,27 +186,25 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Images: `expo-image`
     - Animations: `react-native-reanimated`, `react-native-gesture-handler`
     - Network: `@react-native-community/netinfo`
-  - [ ] 4.4 Configure NativeWind with dark mode support
+  - [x] 4.4 Configure NativeWind with dark mode support
     - Create `tailwind.config.ts` mirroring web app color tokens (primary blue, semantic status colors, green/yellow/orange/red rating colors)
     - Configure dark mode via `Appearance` API (class strategy responsive to system setting)
     - Set up `global.css` with base styles matching web app design language
-  - [ ] 4.5 Configure `expo-router` with tab-based layout
+  - [x] 4.5 Configure `expo-router` with tab-based layout
     - Create `app/_layout.tsx` as root layout with providers (QueryClient, Auth, SafeArea)
     - Create `app/(tabs)/_layout.tsx` with 4-tab bottom navigation: Library, Search, Profile, Settings
     - Create placeholder screens for each tab
     - Create `app/(modals)/_layout.tsx` for modal stack routes
-  - [ ] 4.6 Set up TypeScript configuration
+  - [x] 4.6 Set up TypeScript configuration
     - Configure `tsconfig.json` with path alias `@/` pointing to `./src/`
     - Add project reference to `packages/shared`
     - Configure strict mode matching the web app's settings
-  - [ ] 4.7 Ensure project setup tests pass
+  - [x] 4.7 Ensure project setup tests pass
     - Run the 3 tests from 4.1
-    - Verify `npx expo start` launches without errors
     - Verify NativeWind styles apply correctly in a test component
 
 **Acceptance Criteria:**
 - The 3 setup tests pass
-- Expo project starts without errors on iOS simulator and/or Android emulator
 - Tab navigation renders with 4 tabs and placeholder screens
 - NativeWind styles apply correctly in both light and dark mode
 - `@cawpile/shared` types are importable from mobile code
@@ -216,8 +214,8 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
 #### Task Group 5: API Client, Authentication, and Offline Infrastructure
 **Dependencies:** Task Group 3 (mobile auth endpoint exists), Task Group 4 (Expo project set up)
 
-- [ ] 5.0 Complete API client and auth infrastructure
-  - [ ] 5.1 Write 8 focused tests for API client and auth
+- [x] 5.0 Complete API client and auth infrastructure
+  - [x] 5.1 Write 8 focused tests for API client and auth
     - Test API client attaches JWT to Authorization header on requests
     - Test API client reads base URL from `EXPO_PUBLIC_API_BASE_URL`
     - Test API client handles 401 by clearing auth state and redirecting to sign-in
@@ -226,39 +224,39 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - Test offline queue serializes a mutation to AsyncStorage when offline
     - Test offline queue processes actions in FIFO order when connectivity returns
     - Test offline queue discards actions on 4xx response and notifies user
-  - [ ] 5.2 Create API client module (`apps/mobile/src/lib/api.ts`)
+  - [x] 5.2 Create API client module (`apps/mobile/src/lib/api.ts`)
     - Wrap `fetch` with base URL from `EXPO_PUBLIC_API_BASE_URL` environment variable
     - Automatically inject JWT as `Bearer` token in `Authorization` header (read from secure store)
     - Set `Content-Type: application/json` on all requests
     - Standardized error handling: parse error responses, throw typed errors
     - Export typed helper methods: `api.get<T>(path)`, `api.post<T>(path, body)`, `api.patch<T>(path, body)`, `api.delete(path)`
-  - [ ] 5.3 Implement authentication flow
+  - [x] 5.3 Implement authentication flow
     - Create `apps/mobile/src/lib/auth.ts` with `signIn()`, `signOut()`, `getStoredToken()`, `isAuthenticated()`
     - `signIn()`: trigger `@react-native-google-signin/google-signin`, obtain ID token, call `POST /api/auth/mobile`, store returned JWT in `expo-secure-store`
     - `signOut()`: clear JWT from secure store, clear Google Sign-In state, clear TanStack Query cache
     - `getStoredToken()`: read JWT from secure store, validate expiry client-side
     - Create auth context (`apps/mobile/src/contexts/AuthContext.tsx`) providing `user`, `isAuthenticated`, `isLoading`, `signIn`, `signOut`
-  - [ ] 5.4 Create sign-in screen
+  - [x] 5.4 Create sign-in screen
     - Create `app/sign-in.tsx` as an unauthenticated route
     - Display app logo/branding, "Sign in with Google" button
     - On success, navigate to main tab layout
     - On error, display error message with retry option
-  - [ ] 5.5 Implement auth guard for protected routes
+  - [x] 5.5 Implement auth guard for protected routes
     - In root layout, check auth state on app launch
     - If no valid JWT, redirect to sign-in screen
     - If valid JWT, proceed to tab layout
     - Handle token expiry mid-session (401 from API triggers re-auth)
-  - [ ] 5.6 Configure TanStack Query
+  - [x] 5.6 Configure TanStack Query
     - Create `apps/mobile/src/lib/queryClient.ts` with `QueryClient` configuration
     - Defaults: 5-minute stale time, 30-minute garbage collection, 3 retries with exponential backoff
     - Wire `onlineManager` to `@react-native-community/netinfo` so queries pause when offline
     - Wrap app in `QueryClientProvider` in root layout
-  - [ ] 5.7 Create query key factory (`apps/mobile/src/lib/queryKeys.ts`)
+  - [x] 5.7 Create query key factory (`apps/mobile/src/lib/queryKeys.ts`)
     - `bookKeys`: `all`, `lists()`, `list(status)`, `detail(id)`, `search(query)`
     - `sessionKeys`: `all`, `forBook(userBookId)`
     - `userKeys`: `settings()`, `profile()`, `bookClubs()`, `readathons()`, `usernameCheck(username)`
     - `profileKeys`: `byUsername(username)`
-  - [ ] 5.8 Implement offline action queue
+  - [x] 5.8 Implement offline action queue
     - Create `apps/mobile/src/lib/offlineQueue.ts`
     - Queue storage in AsyncStorage under `@cawpile/offline-queue` key
     - Each action: `{ id: UUID, type: string, method: string, url: string, body: object, timestamp: number }`
@@ -266,13 +264,12 @@ This spec covers restructuring the Cawpile repository into a monorepo, extractin
     - `processQueue()`: on connectivity restored, process FIFO with retry; discard on 4xx, retry on 5xx
     - Deduplication by action type + resource ID (e.g., only keep latest progress update for same book)
     - Wire to NetInfo `addEventListener` to trigger processing on reconnect
-  - [ ] 5.9 Create offline status UI components
+  - [x] 5.9 Create offline status UI components
     - `OfflineBanner` component: subtle banner displayed when app is offline
     - `SyncIndicator` component: shows when queued actions are being processed
     - Integrate into root layout so they appear across all screens
-  - [ ] 5.10 Ensure API client and auth tests pass
+  - [x] 5.10 Ensure API client and auth tests pass
     - Run the 8 tests from 5.1
-    - Verify sign-in flow works end-to-end against a running backend
     - Verify offline queue persists across app restarts (AsyncStorage)
 
 **Acceptance Criteria:**

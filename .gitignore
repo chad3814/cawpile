@@ -60,3 +60,12 @@ agent-os
 services/video-gen/out/
 services/video-gen/secrets/
 services/video-gen/build/
+
+# Expo / React Native
+.expo/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/dist/
+apps/mobile/web-build/
+.metro-health-check*
