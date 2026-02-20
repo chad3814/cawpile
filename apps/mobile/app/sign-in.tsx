@@ -4,11 +4,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 
+const DEV_USER_ID = "cmlvj29pr0000kavbkr62htcc";
+
 export default function SignInScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, devSignIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,6 +22,20 @@ export default function SignInScreen() {
       router.replace("/(tabs)/library");
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Sign in failed. Please try again.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDevSignIn = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await devSignIn(DEV_USER_ID);
+      router.replace("/(tabs)/library");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Dev sign in failed.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -119,6 +135,28 @@ export default function SignInScreen() {
           >
             Tap the button above to try again
           </Text>
+        )}
+
+        {/* Dev sign-in bypass — only shown in development */}
+        {__DEV__ && (
+          <Pressable
+            onPress={handleDevSignIn}
+            disabled={isLoading}
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? "#4a4a4a" : isDark ? "#334155" : "#64748b",
+              paddingHorizontal: 24,
+              paddingVertical: 14,
+              borderRadius: 8,
+              width: "100%",
+              alignItems: "center",
+              marginTop: 24,
+              opacity: isLoading ? 0.7 : 1,
+            })}
+          >
+            <Text style={{ color: "#ffffff", fontSize: 14, fontWeight: "600" }}>
+              Dev Sign In (bypass Google)
+            </Text>
+          </Pressable>
         )}
       </View>
     </SafeAreaView>

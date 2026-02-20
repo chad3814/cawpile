@@ -210,3 +210,37 @@ export async function signOut(): Promise<void> {
     // Google sign-out may fail if not previously signed in; ignore
   }
 }
+
+/**
+ * Dev-only sign in that bypasses Google Sign-In.
+ * Calls POST /api/auth/mobile/dev with a hardcoded userId.
+ * Only works when the backend is running in development mode.
+ */
+export async function devSignIn(userId: string): Promise<AuthUser> {
+  const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
+  if (!baseUrl) {
+    throw new Error("EXPO_PUBLIC_API_BASE_URL is not configured");
+  }
+
+  const response = await fetch(`${baseUrl}/api/auth/mobile/dev`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    const message = (errorBody as Record<string, string> | null)?.error ?? "Dev sign-in failed";
+    throw new Error(message);
+  }
+
+  const data = await response.json() as MobileAuthResponse;
+  await storeToken(data.token);
+
+  const user = await getAuthUser();
+  if (!user) {
+    throw new Error("Failed to decode user data from token");
+  }
+
+  return user;
+}

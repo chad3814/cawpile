@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import {
   signIn as authSignIn,
   signOut as authSignOut,
+  devSignIn as authDevSignIn,
   getAuthUser,
   type AuthUser,
 } from "@/lib/auth";
@@ -13,6 +14,7 @@ interface AuthContextValue {
   isLoading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  devSignIn: (userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -56,6 +58,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
   }, []);
 
+  const devSignIn = useCallback(async (userId: string) => {
+    const authUser = await authDevSignIn(userId);
+    setUser(authUser);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -64,6 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading,
         signIn,
         signOut,
+        devSignIn,
       }}
     >
       {children}
