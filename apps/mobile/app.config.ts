@@ -42,7 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: "metro",
   },
   plugins: [
-    "expo-router",
+    ["expo-router", { root: "./app" }],
     "expo-secure-store",
   ],
   experiments: {
