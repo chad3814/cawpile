@@ -7,13 +7,15 @@ const monorepoRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// Explicitly set project root so expo-router resolves app/ correctly in monorepo
+// Set project root explicitly for expo-router and entry point resolution
 config.projectRoot = projectRoot;
 
-// Ensure Metro watches monorepo root for workspace packages
-config.watchFolders = [monorepoRoot];
+// Watch only the specific workspace directories Metro needs, not the entire monorepo
+config.watchFolders = [
+  path.resolve(monorepoRoot, "packages/shared"),
+];
 
-// Resolve node_modules from both project and monorepo root
+// Resolve node_modules from both the project and monorepo root (for hoisted deps)
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(monorepoRoot, "node_modules"),
