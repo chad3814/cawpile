@@ -1,24 +1,5 @@
-export enum BookType {
-  FICTION = 'FICTION',
-  NONFICTION = 'NONFICTION'
-}
-
-export interface CawpileFacet {
-  name: string
-  key: keyof CawpileRating
-  description: string
-  questions: string[]
-}
-
-export interface CawpileRating {
-  characters: number | null
-  atmosphere: number | null
-  writing: number | null
-  plot: number | null
-  intrigue: number | null
-  logic: number | null
-  enjoyment: number | null
-}
+import type { CawpileFacet, CawpileRating, CawpileSemanticColor } from '../types/cawpile';
+import type { BookType } from '../types/enums';
 
 export const FICTION_FACETS: CawpileFacet[] = [
   {
@@ -103,7 +84,7 @@ export const FICTION_FACETS: CawpileFacet[] = [
       "Was your enjoyment consistent throughout?"
     ]
   }
-]
+];
 
 export const NONFICTION_FACETS: CawpileFacet[] = [
   {
@@ -179,7 +160,7 @@ export const NONFICTION_FACETS: CawpileFacet[] = [
       "Would you recommend it to others?"
     ]
   }
-]
+];
 
 export const RATING_SCALE_GUIDE = [
   { value: 10, label: "One of my favourites ever" },
@@ -192,56 +173,57 @@ export const RATING_SCALE_GUIDE = [
   { value: 3, label: "Bad. A few good things but not enjoyable" },
   { value: 2, label: "Horrible. Not enough to redeem" },
   { value: 1, label: "Abysmal. Shouldn't have been published" }
-]
+];
 
 export function getFacetConfig(bookType: BookType): CawpileFacet[] {
-  return bookType === BookType.NONFICTION ? NONFICTION_FACETS : FICTION_FACETS
+  return bookType === 'NONFICTION' ? NONFICTION_FACETS : FICTION_FACETS;
 }
 
-const RATING_KEYS = ['character', 'atmospher', 'writing', 'plot', 'intrigue', 'enjoyment']
+const RATING_KEYS = ['character', 'atmospher', 'writing', 'plot', 'intrigue', 'enjoyment'];
+
 export function calculateCawpileAverage(rating: CawpileRating): number {
   const values = Object.entries(rating).filter(
     ([key, val]: [string, string | number | null]) =>
       RATING_KEYS.includes(key) && 'number' === typeof val
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ).map(([_key, val]: [string, number]) => val) as number[];
+  ).map(([, val]) => val as number);
 
-  if (values.length === 0) return 0
-  const sum = values.reduce((acc, val) => acc + val, 0)
-  return Number((sum / values.length).toFixed(1))
+  if (values.length === 0) return 0;
+  const sum = values.reduce((acc, val) => acc + val, 0);
+  return Number((sum / values.length).toFixed(1));
 }
 
 export function convertToStars(average: number): number {
-  if (average <= 1.0) return 0
-  if (average <= 2.2) return 1
-  if (average <= 4.5) return 2
-  if (average <= 6.9) return 3
-  if (average <= 8.9) return 4
-  return 5
-}
-
-export function getStarEmojis(stars: number): string {
-  return '⭐'.repeat(stars)
+  if (average <= 1.0) return 0;
+  if (average <= 2.2) return 1;
+  if (average <= 4.5) return 2;
+  if (average <= 6.9) return 3;
+  if (average <= 8.9) return 4;
+  return 5;
 }
 
 export function getCawpileGrade(average: number): string {
-  if (average >= 9) return 'A+'
-  if (average >= 8.5) return 'A'
-  if (average >= 8) return 'A-'
-  if (average >= 7.5) return 'B+'
-  if (average >= 7) return 'B'
-  if (average >= 6.5) return 'B-'
-  if (average >= 6) return 'C+'
-  if (average >= 5.5) return 'C'
-  if (average >= 5) return 'C-'
-  if (average >= 4.5) return 'D+'
-  if (average >= 4) return 'D'
-  return 'F'
+  if (average >= 9) return 'A+';
+  if (average >= 8.5) return 'A';
+  if (average >= 8) return 'A-';
+  if (average >= 7.5) return 'B+';
+  if (average >= 7) return 'B';
+  if (average >= 6.5) return 'B-';
+  if (average >= 6) return 'C+';
+  if (average >= 5.5) return 'C';
+  if (average >= 5) return 'C-';
+  if (average >= 4.5) return 'D+';
+  if (average >= 4) return 'D';
+  return 'F';
 }
 
-export function getCawpileColor(value: number): string {
-  if (value >= 8) return 'text-green-600 dark:text-green-400'
-  if (value >= 6) return 'text-yellow-600 dark:text-yellow-400'
-  if (value >= 4) return 'text-orange-600 dark:text-orange-400'
-  return 'text-red-600 dark:text-red-400'
+/**
+ * Returns a semantic color name for a CAWPILE rating value.
+ * Platform-specific rendering (Tailwind classes, hex codes, etc.)
+ * should map these semantic names to actual colors.
+ */
+export function getCawpileColor(value: number): CawpileSemanticColor {
+  if (value >= 8) return 'green';
+  if (value >= 6) return 'yellow';
+  if (value >= 4) return 'orange';
+  return 'red';
 }

@@ -4,45 +4,94 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cawpile is a book reading tracker with a custom CAWPILE rating system, built with Next.js 16, React 19, TypeScript, TailwindCSS 4, Prisma ORM, and NextAuth v5. It features multi-provider book search, reading progress tracking, admin tools, and analytics charts.
+Cawpile is a book reading tracker with a custom CAWPILE rating system. The repository is structured as an npm workspaces monorepo containing:
+
+- **`apps/web/`** -- Next.js 16, React 19, TypeScript, TailwindCSS 4, Prisma ORM, NextAuth v5 web application. Deployed to Vercel.
+- **`packages/shared/`** -- Shared TypeScript types and pure utility functions consumed by both web and mobile apps. No React or Prisma dependencies.
+- **`services/video-gen/`** -- Remotion + Express video render server, deployed to EC2 via Docker/GHCR/Watchtower. Uses React 18 (Remotion requirement).
 
 ## Common Commands
 
+All commands run from the **monorepo root**.
+
 ### Development
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production with Turbopack (runs `prisma generate` automatically)
-- `npm run lint` - Run ESLint for code quality checks
-- `npm run make-admin` - Promote a user to admin (runs `scripts/fix-admin-user.ts`)
+- `npm run dev` - Start web development server with Turbopack
+- `npm run dev:web` - Same as above (explicit)
+- `npm run build` - Build web app for production (runs `prisma generate` automatically)
+- `npm run build:shared` - Build the shared package
+- `npm run lint` - Run ESLint on the web app
 
 ### Database
-- `npx prisma migrate dev` - Create and apply migrations in development
-- `npx prisma db push` - Push schema changes without migrations (dev only)
-- `npx prisma studio` - Open Prisma Studio for database GUI
+- `npm run -w apps/web -- npx prisma migrate dev` - Create and apply migrations
+- `npm run -w apps/web -- npx prisma db push` - Push schema changes without migrations (dev only)
+- `npm run -w apps/web -- npx prisma studio` - Open Prisma Studio for database GUI
 
 ### Testing
-- `npm run test` - Run all Jest tests (root) and Vitest tests (video-gen)
-- `npm run test -- path/to/test` - Run specific test file
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Run tests with coverage report
+- `npm run test` - Run all Jest tests for the web app
+- `npm run test:web` - Same as above (explicit)
+- `npm run test:shared` - Run shared package tests
+- `npm run test:video-gen` - Run Vitest tests for video-gen service
+- `npm run test -w apps/web -- --testPathPatterns="path/to/test"` - Run specific test file
 
-Tests are in `__tests__/` with subdirectories: `components/`, `lib/`, `api/`, `database/`, `integration/`, `hooks/`, `app/`
+Tests in `apps/web/__tests__/` with subdirectories: `components/`, `lib/`, `api/`, `database/`, `integration/`, `hooks/`, `app/`, `monorepo/`
 
-Jest uses `maxWorkers: 1` to prevent database connection contention. Tests ignore `/services/` directory. The `nanoid` module is mocked via `__mocks__/nanoid.ts`. Root `npm run test` and `npm run lint` cascade into `services/video-gen` via `--prefix`.
+Jest uses `maxWorkers: 1` to prevent database connection contention. The `nanoid` module is mocked via `apps/web/__mocks__/nanoid.ts`.
+
+### Workspace Commands
+- `npm install` - Installs all workspace dependencies from root
+- `npm run build -w packages/shared` - Build a specific workspace
+- `npm run test -w apps/web` - Test a specific workspace
+- `npm run test:run -w services/video-gen` - Run video-gen tests
 
 ## Monorepo Structure
 
-This repo contains two independently deployable services:
+```
+cawpile/
+├── apps/
+│   └── web/                 # Next.js web application (deployed to Vercel)
+│       ├── src/             # Application source code
+│       ├── prisma/          # Database schema and migrations
+│       ├── public/          # Static assets
+│       ├── __tests__/       # Jest tests
+│       ├── __mocks__/       # Test mocks
+│       ├── scripts/         # Utility scripts
+│       ├── package.json     # Web app dependencies
+│       ├── tsconfig.json    # TypeScript config (paths: @/* -> ./src/*)
+│       ├── jest.config.ts   # Jest configuration
+│       └── ...config files
+├── packages/
+│   └── shared/              # Shared TypeScript types and utilities
+│       ├── src/             # Source (types/, utils/, index.ts)
+│       ├── dist/            # Compiled output (ESM + .d.ts)
+│       ├── package.json     # @cawpile/shared
+│       └── tsconfig.json
+├── services/
+│   └── video-gen/           # Remotion video render server (deployed to EC2)
+│       ├── src/             # Remotion compositions and components
+│       ├── server/          # Express API server
+│       ├── package.json     # Independent dependencies (React 18)
+│       └── Dockerfile
+├── package.json             # Root workspace config
+├── vercel.json              # Vercel deployment config (points to apps/web)
+├── .github/                 # CI workflows
+├── CLAUDE.md                # This file
+├── docs/                    # Documentation
+├── claudedocs/              # Claude-specific docs
+└── spekka/                  # Spec management
+```
 
-- **Root (Next.js app)** — Deployed to Vercel
-- **services/video-gen** — Remotion + Express video render server, deployed to EC2 via Docker/GHCR/Watchtower
+### Shared Package (`@cawpile/shared`)
+- Package name: `@cawpile/shared`, referenced as `"@cawpile/shared": "*"` in web's dependencies
+- Contains: shared TypeScript types (book, cawpile, dashboard, profile) and pure utility functions
+- No React dependency -- pure TypeScript, consumable by both web (React 19) and mobile (React 18)
+- Build output: ESM with TypeScript declarations in `dist/`
+- Import in web app: `import { calculateCawpileAverage } from '@cawpile/shared'`
 
 ### Video Gen Service
 - Has its own `package.json`, `node_modules`, and `CLAUDE.md`
-- Uses React 18 (Remotion requirement) — NOT React 19
-- `cd services/video-gen && npm install` to install its dependencies
-- `npm run server` to start the Express server (port 3001)
-- `npm run dev` to start Remotion Studio
-- `npm run test` to run Vitest tests
+- Uses React 18 (Remotion requirement) -- NOT React 19
+- Included in npm workspaces; a `postinstall` script handles React version isolation for tests
+- `npm run test:run -w services/video-gen` to run Vitest tests
 - Dockerfile builds and deploys independently
 
 ## Architecture
@@ -51,21 +100,21 @@ This repo contains two independently deployable services:
 - **Frontend**: Next.js 16 (App Router), React 19.1, TypeScript, TailwindCSS 4
 - **Backend**: Next.js API Routes, Prisma v6.15
 - **Database**: PostgreSQL (Neon serverless)
-- **Authentication**: NextAuth v5 with Google OAuth and Prisma Adapter
+- **Authentication**: NextAuth v5 with Google OAuth and Prisma Adapter; JWT-based mobile auth
 - **Charts**: Recharts v3.2
 - **UI**: Headless UI, Heroicons
 
 ### Additional Infrastructure
 - **S3 Storage**: Avatar uploads (`cawpile-avatars` bucket) and cover image caching (`cawpile-downloads` bucket) via `@aws-sdk/client-s3`
 - **Image Processing**: `sharp` for server-side image manipulation
-- **Data Export**: CSV/ZIP export of user data (`src/lib/export/`, `src/app/api/user/export/`)
+- **Data Export**: CSV/ZIP export of user data (`apps/web/src/lib/export/`, `apps/web/src/app/api/user/export/`)
 
 ### Key Patterns
 1. **Server Components**: Default for pages/layouts; `"use client"` for modals, forms, hooks
 2. **Multi-Provider Search**: Orchestrator pattern with parallel `Promise.allSettled` execution
-3. **Dual-Level Book Storage**: Book (title/authors) → Edition (ISBN) → Provider metadata (GoogleBook/HardcoverBook/IbdbBook)
+3. **Dual-Level Book Storage**: Book (title/authors) -> Edition (ISBN) -> Provider metadata (GoogleBook/HardcoverBook/IbdbBook)
 4. **Admin Audit Trail**: All admin actions logged with before/after values in AdminAuditLog
-5. **Search Result Signing**: HMAC-SHA256 signatures validate search results between search and book addition (`src/lib/search/utils/signResult.ts`)
+5. **Search Result Signing**: HMAC-SHA256 signatures validate search results between search and book addition (`apps/web/src/lib/search/utils/signResult.ts`)
 
 ## Database Schema
 
@@ -76,16 +125,16 @@ This repo contains two independently deployable services:
 - Profile settings: username, bio, readingGoal, profileEnabled, showCurrentlyReading, showTbr
 - Dashboard settings: dashboardLayout (GRID|TABLE), librarySortBy, librarySortOrder
 - Admin flags: isAdmin, isSuperAdmin
-- Template selection: `selectedTemplateId` → VideoTemplate (onDelete: SetNull)
+- Template selection: `selectedTemplateId` -> VideoTemplate (onDelete: SetNull)
 
-**Book → Edition → Provider Metadata** (three-level hierarchy)
+**Book -> Edition -> Provider Metadata** (three-level hierarchy)
 - `Book`: title + authors, unique on `(title, authors)` pair, bookType (FICTION|NONFICTION)
 - `Edition`: ISBN-specific (isbn10, isbn13, googleBooksId), links to Book
 - `GoogleBook`, `HardcoverBook`, `IbdbBook`: Provider-specific metadata linked to Edition
 
 **VideoTemplate** (video recap template config)
 - Config: JSON blob storing full template configuration (colors, fonts, timing, layout per sequence)
-- Creator: `userId` (nullable) → User relation; null means system template
+- Creator: `userId` (nullable) -> User relation; null means system template
 - Publishing: `isPublished` (default false), `usageCount` (tracks selections)
 - User selection: Users pick a template via `User.selectedTemplateId`
 - Index on `(isPublished, createdAt)` for efficient browse queries
@@ -107,131 +156,112 @@ This repo contains two independently deployable services:
 - `UserBook`: Unique on `(userId, editionId)`
 
 ### Connection
-- Singleton Prisma client pattern (`src/lib/prisma.ts`)
+- Singleton Prisma client pattern (`apps/web/src/lib/prisma.ts`)
 - Neon serverless connection pooling via `@neondatabase/serverless`
 
 ## Authentication
 
 ### Key Files
-- `src/lib/auth.ts` - NextAuth v5 configuration (Google OAuth + Prisma Adapter)
-- `src/lib/auth-helpers.ts` - `getCurrentUser()` for server-side user fetching
-- `src/lib/auth/admin.ts` - `requireAdmin()`, `requireSuperAdmin()` guards
+- `apps/web/src/lib/auth.ts` - NextAuth v5 configuration (Google OAuth + Prisma Adapter)
+- `apps/web/src/lib/auth-helpers.ts` - `getCurrentUser()` for server-side user fetching (supports both cookie and Bearer JWT auth)
+- `apps/web/src/lib/auth/admin.ts` - `requireAdmin()`, `requireSuperAdmin()` guards
+- `apps/web/src/lib/auth/mobile-jwt.ts` - JWT generation and verification for mobile auth
+- `apps/web/src/lib/auth/mobile-auth.ts` - Mobile auth middleware helper
 
 ### Session Data
 ```typescript
 session.user = { id, email, name?, image?, isAdmin, isSuperAdmin }
 ```
 
+### Mobile Authentication
+- `POST /api/auth/mobile` accepts a Google ID token and returns a signed JWT
+- Mobile clients send JWT as `Bearer` token in `Authorization` header
+- `getCurrentUser()` checks for Bearer token as fallback when no NextAuth session exists
+
 ## API Routes
 
-Routes follow RESTful patterns in `src/app/api/`:
+Routes follow RESTful patterns in `apps/web/src/app/api/`:
+- `/api/auth/mobile` - Mobile token exchange (POST with Google ID token, returns JWT)
 - `/api/books/search` - Multi-provider search
 - `/api/user/books` - CRUD for user's library (GET, POST, PATCH, DELETE)
 - `/api/user/preferences`, `/api/user/book-clubs`, `/api/user/readathons`
 - `/api/user/export` - CSV/ZIP data export
 - `/api/reading-sessions` - Reading session CRUD
-- `/api/charts/*` - Analytics data (11 chart types: books-per-month, pages-per-month, book-format, main-genres, acquisition-method, lgbtq/disability/poc/new-author representation, dnf-per-month, available-years)
-- `/api/admin/*` - Admin operations (books, users, audit-log, stats, data-quality, editions/covers, bulk ops, resync) - require `isAdmin`
+- `/api/charts/*` - Analytics data (11 chart types)
+- `/api/admin/*` - Admin operations - require `isAdmin`
 - `/api/share/*` - Public review sharing
 - `/api/recap/monthly` - Monthly reading recap data for video generation
-- `/api/templates/*` - Admin video template CRUD (GET, POST, PATCH, DELETE) - require `isAdmin`
-- `/api/templates/[id]/background/*` - Template background image upload (presigned URL, sharp resize to 1080x1920, S3 delete)
+- `/api/templates/*` - Admin video template CRUD - require `isAdmin`
 - `/api/user/templates` - Browse published templates (paginated, sortable, searchable)
-- `/api/user/templates/[id]` - Single template detail
-- `/api/user/templates/[id]/select` - Select template for user's recap (atomic usageCount increment)
-- `/api/user/templates/[id]/duplicate` - Fork template as personal unpublished copy
-- `/api/user/templates/mine` - User's personal (duplicated) templates
 
 ## Search System Architecture
 
-**SearchOrchestrator** (`src/lib/search/SearchOrchestrator.ts`)
+**SearchOrchestrator** (`apps/web/src/lib/search/SearchOrchestrator.ts`)
 - Executes all providers in parallel with `Promise.allSettled`
 - Merges and deduplicates via `resultMerger.ts` (ISBN matching + fuzzy title/author)
 
-**Providers** (`src/lib/search/providers/`):
+**Providers** (`apps/web/src/lib/search/providers/`):
 1. **LocalDatabaseProvider** (weight: 10) - Searches existing Book/Edition tables
 2. **HardcoverProvider** (weight: 6) - Hardcover.app GraphQL API
 3. **GoogleBooksProvider** (weight: 5) - Google Books API
 4. **IbdbProvider** (weight: 4) - IBDB.dev API
 
-**Utilities** (`src/lib/search/utils/`):
-- `resultMerger.ts` - Deduplication by ISBN or fuzzy matching
-- `fuzzyMatch.ts` - Levenshtein distance for title/author similarity
-- `hardcoverClient.ts`, `ibdbClient.ts` - API clients
-
 ## Component Patterns
 
-**Wizard Pattern** (`components/modals/AddBookWizard.tsx`)
+**Wizard Pattern** (`apps/web/src/components/modals/AddBookWizard.tsx`)
 - Multi-step form with conditional steps based on book status
 
-**Modal Pattern** (`components/modals/`)
+**Modal Pattern** (`apps/web/src/components/modals/`)
 - Headless UI Dialog with Transition animations
 
-**Context Pattern** (`contexts/ChartDataContext.tsx`)
+**Context Pattern** (`apps/web/src/contexts/ChartDataContext.tsx`)
 - Chart data caching with 30-minute TTL, sessionStorage persistence
 
-**Form Field Components** (`components/forms/`)
+**Form Field Components** (`apps/web/src/components/forms/`)
 - Reusable field components: `AcquisitionMethodField`, `BookClubField`, etc.
 
-**Template Editor Pattern** (`components/templates/TemplateEditorClient.tsx`)
+**Template Editor Pattern** (`apps/web/src/components/templates/TemplateEditorClient.tsx`)
 - `useReducer` for nested config state management with per-section actions
 - 8-tab single-page editor (Colors, Fonts, Timing, Intro, Book Reveal, Stats Reveal, Coming Soon, Outro)
-- `TemplatePreviewPanel` for reactive static preview (color swatches, font samples, layout badges, timing bar, background thumbnails)
-- Timing auto-calculation: admins set sequence totals, sub-timings derived proportionally (`src/lib/video/timingCalculation.ts`)
-- Background image upload: 3-step flow (presigned URL → S3 PUT → server-side resize), per-sequence with global fallback and overlay opacity slider
 
 ## Key Directories
 
 ```
-src/
-├── app/api/          # RESTful endpoints (auth/, books/, user/, admin/, charts/, share/, templates/)
-├── app/dashboard/    # Dashboard pages (templates/ for browse, create, edit, detail)
-├── components/       # React components by domain (dashboard/, modals/, forms/, charts/, admin/, rating/, templates/)
-├── lib/
-│   ├── search/       # Multi-provider search (providers/, utils/, types.ts)
-│   ├── db/           # Database utilities (findOrCreateBook, findOrCreateEdition)
-│   ├── auth/         # Admin auth helpers
-│   ├── video/        # Video template utilities (validateTemplateConfig, timingCalculation)
-│   └── charts/       # Chart data processors
-├── hooks/            # Custom hooks (useBookSearch, useDebounce, useBookClubs, useReadathons, useUsernameCheck)
-├── contexts/         # React contexts (ChartDataContext)
-└── types/            # TypeScript types (book.ts, cawpile.ts, video-template.ts)
+apps/web/
+├── src/
+│   ├── app/api/          # RESTful endpoints (auth/, books/, user/, admin/, charts/, share/, templates/)
+│   ├── app/dashboard/    # Dashboard pages (templates/ for browse, create, edit, detail)
+│   ├── components/       # React components by domain (dashboard/, modals/, forms/, charts/, admin/, rating/, templates/)
+│   ├── lib/
+│   │   ├── search/       # Multi-provider search (providers/, utils/, types.ts)
+│   │   ├── db/           # Database utilities (findOrCreateBook, findOrCreateEdition)
+│   │   ├── auth/         # Admin auth helpers, mobile JWT auth
+│   │   ├── video/        # Video template utilities (validateTemplateConfig, timingCalculation)
+│   │   └── charts/       # Chart data processors
+│   ├── hooks/            # Custom hooks (useBookSearch, useDebounce, useBookClubs, useReadathons, useUsernameCheck)
+│   ├── contexts/         # React contexts (ChartDataContext)
+│   └── types/            # TypeScript types (book.ts, cawpile.ts, video-template.ts)
+├── __tests__/            # Jest tests mirroring src/ structure
+└── prisma/               # Database schema and migrations
 
-__tests__/            # Jest tests mirroring src/ structure
+packages/shared/
+├── src/
+│   ├── types/            # Shared type definitions (book.ts, cawpile.ts, dashboard.ts, profile.ts)
+│   ├── utils/            # Pure utility functions (cawpile.ts, bookType.ts)
+│   └── index.ts          # Barrel exports
+└── dist/                 # Compiled ESM output
 ```
-
-## Key Features
-
-**Cawpile Rating**: 7 facets (1-10 scale), auto-computed average, stored in `CawpileRating` table
-
-**Book Type Detection**: `src/lib/bookTypeDetection.ts` - analyzes categories to determine FICTION/NONFICTION
-
-**Autocomplete Tracking**: `UserBookClub` & `UserReadathon` tables store per-user history with usage counts
-
-**Social Sharing**: `SharedReview` model with privacy controls, `ReviewImageTemplate` for shareable images
-
-**Public Profiles**: User profiles at `/u/[username]` with privacy controls (profileEnabled, showCurrentlyReading, showTbr)
-
-**Monthly Recap**: Video recap generation via integration with video-gen service (`/api/recap/monthly`)
-
-**Template System**: Admin-created video templates with user browsing and selection
-- Browse: `/dashboard/templates` — card grid with search, sort (newest/name/popular), pagination
-- Detail: `/dashboard/templates/[id]` — full config display with select and duplicate actions
-- Create/Edit: `/dashboard/templates/create` and `/dashboard/templates/[id]/edit` — admin-only tabbed editor
-- Background images: global + per-sequence overrides with configurable overlay opacity, S3 upload via presigned URLs, resized to 1080x1920 with sharp
-- Types shared between main app (`src/types/video-template.ts`) and video-gen service (`services/video-gen/src/lib/template-types.ts`) — keep in sync manually
-- `getEffectiveTemplate()` resolves defaults, merges partials, and applies global-to-sequence fallback for background images
 
 ## Data Flow: Adding a Book
 
-1. Search via `SearchModal` → `GET /api/books/search` → `SearchOrchestrator` runs providers in parallel
-2. User selects book → `AddBookWizard` (multi-step form)
-3. `POST /api/user/books` → `findOrCreateBook()` → `findOrCreateEdition()` → create `UserBook`
+1. Search via `SearchModal` -> `GET /api/books/search` -> `SearchOrchestrator` runs providers in parallel
+2. User selects book -> `AddBookWizard` (multi-step form)
+3. `POST /api/user/books` -> `findOrCreateBook()` -> `findOrCreateEdition()` -> create `UserBook`
 4. Autocomplete entries saved to `UserBookClub`/`UserReadathon` tables
 
 ## Environment Variables
 
-See `.env.example` for full list with descriptions.
+See `apps/web/.env.example` for full list with descriptions.
 
 **Required:**
 - `DATABASE_URL` - PostgreSQL connection string (Neon)
@@ -251,10 +281,10 @@ See `.env.example` for full list with descriptions.
 
 ## Important Notes
 
-**Imports**: Use `@/` prefix for `src/` directory (e.g., `import { getCurrentUser } from "@/lib/auth-helpers"`)
+**Imports**: In `apps/web/`, use `@/` prefix for `src/` directory (e.g., `import { getCurrentUser } from "@/lib/auth-helpers"`). Use `@cawpile/shared` for shared types and utilities.
 
-**Database Operations**: Always use `findOrCreateBook()` and `findOrCreateEdition()` from `src/lib/db/` - they handle deduplication automatically
+**Database Operations**: Always use `findOrCreateBook()` and `findOrCreateEdition()` from `apps/web/src/lib/db/` - they handle deduplication automatically
 
 **Styling**: TailwindCSS 4 with dark mode via `prefers-color-scheme`
 
-**Image Domains**: Configured in `next.config.ts` for Google Books (`books.google.com`), Google user content (`*.googleusercontent.com`), and S3 (`*.amazonaws.com`). Images are unoptimized.
+**Image Domains**: Configured in `apps/web/next.config.ts` for Google Books (`books.google.com`), Google user content (`*.googleusercontent.com`), and S3 (`*.amazonaws.com`). Images are unoptimized.

@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@cawpile/shared": [
+        "../../packages/shared/src/index.ts"
       ]
     }
   },
@@ -37,7 +40,11 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts",
-    "services"
+    "scripts"
+  ],
+  "references": [
+    {
+      "path": "../../packages/shared"
+    }
   ]
 }

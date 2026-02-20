@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Transpile the shared monorepo package so Next.js processes its TypeScript source directly
+  transpilePackages: ['@cawpile/shared'],
   images: {
     loader: 'default',
     unoptimized: true,

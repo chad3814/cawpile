@@ -9,6 +9,7 @@ const config: Config = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@cawpile/shared$': '<rootDir>/../../packages/shared/src/index.ts',
     '^nanoid$': '<rootDir>/__mocks__/nanoid.ts',
   },
   testMatch: [

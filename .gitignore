@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -11,14 +11,14 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage/
 
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -41,7 +41,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+# Prisma generated
+**/src/generated/prisma
+
+# Shared package build output
+packages/*/dist/
 
 # Playwright MCP
 .playwright-mcp
@@ -53,8 +57,6 @@ aws_secret
 agent-os
 
 # Video gen service
-services/video-gen/node_modules/
 services/video-gen/out/
-services/video-gen/.env*
 services/video-gen/secrets/
 services/video-gen/build/
