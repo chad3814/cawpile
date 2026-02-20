@@ -1,7 +1,25 @@
 import * as SecureStore from "expo-secure-store";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 const JWT_STORAGE_KEY = "cawpile_jwt";
+
+/**
+ * Lazy-load GoogleSignin to avoid crashing in Expo Go where the
+ * native module is not available. The native module is only loaded
+ * when signIn() or signOut() is actually called, not at import time.
+ */
+let _cachedGoogleSignin: ReturnType<typeof _loadGoogleSignin> | null = null;
+
+function _loadGoogleSignin() {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return (require("@react-native-google-signin/google-signin") as typeof import("@react-native-google-signin/google-signin")).GoogleSignin;
+}
+
+function getGoogleSignin() {
+  if (!_cachedGoogleSignin) {
+    _cachedGoogleSignin = _loadGoogleSignin();
+  }
+  return _cachedGoogleSignin;
+}
 
 /**
  * User data decoded from the JWT payload.
@@ -136,6 +154,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
  */
 export async function signIn(): Promise<AuthUser> {
   // Trigger native Google Sign-In
+  const GoogleSignin = getGoogleSignin();
   await GoogleSignin.hasPlayServices();
   const signInResult = await GoogleSignin.signIn();
 
@@ -185,6 +204,7 @@ export async function signIn(): Promise<AuthUser> {
 export async function signOut(): Promise<void> {
   await clearToken();
   try {
+    const GoogleSignin = getGoogleSignin();
     await GoogleSignin.signOut();
   } catch {
     // Google sign-out may fail if not previously signed in; ignore
