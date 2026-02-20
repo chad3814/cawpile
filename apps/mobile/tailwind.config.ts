@@ -1,10 +1,12 @@
 import type { Config } from "tailwindcss";
+import nativewind from "nativewind/preset";
 
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
   ],
+  presets: [nativewind],
   darkMode: "class",
   theme: {
     extend: {
