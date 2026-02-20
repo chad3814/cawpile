@@ -144,7 +144,7 @@ export async function uploadToS3(params: UploadToS3Params): Promise<UploadResult
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown S3 error'
     console.error(`[S3] Upload failed: ${errorMessage}`)
-    throw new Error(`S3 upload failed: ${errorMessage}`)
+    throw new Error(`S3 upload failed: ${errorMessage}`, { cause: error })
   }
 
   // Generate public URL
