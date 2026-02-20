@@ -10,6 +10,12 @@ import type { BookStatus, DashboardBookData } from "@cawpile/shared";
  * @param status - Optional status filter (WANT_TO_READ, READING, COMPLETED, DNF)
  * @returns TanStack Query result with DashboardBookData[]
  */
+interface LibraryResponse {
+  books: DashboardBookData[];
+  stats: Record<string, number>;
+  total: number;
+}
+
 export function useLibrary(status?: BookStatus) {
   return useQuery<DashboardBookData[]>({
     queryKey: bookKeys.list(status),
@@ -17,7 +23,8 @@ export function useLibrary(status?: BookStatus) {
       const path = status
         ? `/api/user/books?status=${status}`
         : "/api/user/books";
-      return api.get<DashboardBookData[]>(path);
+      const response = await api.get<LibraryResponse>(path);
+      return response.books;
     },
   });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth-helpers"
 import { SearchOrchestrator } from "@/lib/search/SearchOrchestrator"
 import { LocalDatabaseProvider } from "@/lib/search/providers/LocalDatabaseProvider"
 import { GoogleBooksProvider } from "@/lib/search/providers/GoogleBooksProvider"
@@ -9,9 +9,9 @@ import { parseTaggedSearch } from "@/lib/search/utils/tagParser"
 import { handleTaggedSearch } from "@/lib/search/handlers/taggedSearchHandler"
 
 export async function GET(request: NextRequest) {
-  // Check authentication
-  const session = await auth()
-  if (!session) {
+  // Check authentication (supports both web session and mobile JWT)
+  const user = await getCurrentUser()
+  if (!user) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401 }

@@ -165,7 +165,7 @@ describe("Library screen", () => {
       }),
     ];
 
-    mockApiGet.mockResolvedValue(mockBooks);
+    mockApiGet.mockResolvedValue({ books: mockBooks, stats: {}, total: mockBooks.length });
 
     const { useLibrary } = require("@/hooks/queries/useLibrary");
 
@@ -197,7 +197,7 @@ describe("Library screen", () => {
 
   // ---------- Test 2 ----------
   it("status filter chips filter the displayed books with ?status= param", async () => {
-    mockApiGet.mockResolvedValue([]);
+    mockApiGet.mockResolvedValue({ books: [], stats: {}, total: 0 });
 
     const { useLibrary } = require("@/hooks/queries/useLibrary");
 
@@ -224,7 +224,7 @@ describe("Library screen", () => {
   // ---------- Test 3 ----------
   it("pull-to-refresh triggers query invalidation and re-fetch", async () => {
     const mockBooks = [createMockBook()];
-    mockApiGet.mockResolvedValue(mockBooks);
+    mockApiGet.mockResolvedValue({ books: mockBooks, stats: {}, total: mockBooks.length });
 
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -290,7 +290,7 @@ describe("Library screen", () => {
 
   // ---------- Test 5 ----------
   it("empty state renders appropriate messaging per status filter", async () => {
-    mockApiGet.mockResolvedValue([]);
+    mockApiGet.mockResolvedValue({ books: [], stats: {}, total: 0 });
 
     const { useLibrary } = require("@/hooks/queries/useLibrary");
 

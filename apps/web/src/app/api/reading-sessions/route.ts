@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
-  const session = await auth()
+  const user = await getCurrentUser()
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const userBook = await prisma.userBook.findFirst({
       where: {
         id: userBookId,
-        userId: session.user.id
+        userId: user.id
       },
       include: {
         edition: {
@@ -104,9 +104,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await auth()
+  const user = await getCurrentUser()
 
-  if (!session?.user?.id) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
     const userBook = await prisma.userBook.findFirst({
       where: {
         id: userBookId,
-        userId: session.user.id
+        userId: user.id
       }
     })
 
