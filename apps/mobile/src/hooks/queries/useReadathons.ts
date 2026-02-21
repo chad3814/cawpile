@@ -11,7 +11,8 @@ export function useReadathons() {
   return useQuery<UserReadathon[]>({
     queryKey: userKeys.readathons(),
     queryFn: async () => {
-      return api.get<UserReadathon[]>("/api/user/readathons");
+      const response = await api.get<{ readathons: UserReadathon[] }>("/api/user/readathons");
+      return response.readathons;
     },
   });
 }

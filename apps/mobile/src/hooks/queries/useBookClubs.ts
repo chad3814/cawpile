@@ -11,7 +11,8 @@ export function useBookClubs() {
   return useQuery<UserBookClub[]>({
     queryKey: userKeys.bookClubs(),
     queryFn: async () => {
-      return api.get<UserBookClub[]>("/api/user/book-clubs");
+      const response = await api.get<{ bookClubs: UserBookClub[] }>("/api/user/book-clubs");
+      return response.bookClubs;
     },
   });
 }
