@@ -24,8 +24,8 @@
     "remotion": "^4.0.0"
   },
   "overrides": {
-    "fast-xml-parser": "5.3.6",
-    "minimatch": "10.2.1",
+    "fast-xml-parser": "^5.3.8",
+    "minimatch": "^10.2.3",
     "ajv-formats": {
       "ajv": "8.18.0"
     },
