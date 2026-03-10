@@ -127,26 +127,56 @@ export async function GET(request: Request) {
       },
     })
 
-    // Fetch currently reading books
-    const currentlyReadingBooks = await prisma.userBook.findMany({
-      where: {
-        userId: user.id,
-        status: 'READING',
-      },
-      include: {
-        edition: {
-          include: {
-            book: true,
-            googleBook: true,
-            hardcoverBook: true,
-            ibdbBook: true,
+    // Fetch "coming soon" books: books finished in the next month + currently reading
+    const nextMonthStart = new Date(year, month, 1) // endDate is already this
+    const nextMonthEnd = new Date(year, month + 1, 1)
+
+    const [currentlyReadingBooks, nextMonthBooks] = await Promise.all([
+      prisma.userBook.findMany({
+        where: {
+          userId: user.id,
+          status: 'READING',
+        },
+        include: {
+          edition: {
+            include: {
+              book: true,
+              googleBook: true,
+              hardcoverBook: true,
+              ibdbBook: true,
+            },
           },
         },
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    })
+        orderBy: {
+          updatedAt: 'desc',
+        },
+      }),
+      prisma.userBook.findMany({
+        where: {
+          userId: user.id,
+          finishDate: {
+            gte: nextMonthStart,
+            lt: nextMonthEnd,
+          },
+          status: {
+            in: ['COMPLETED', 'DNF'],
+          },
+        },
+        include: {
+          edition: {
+            include: {
+              book: true,
+              googleBook: true,
+              hardcoverBook: true,
+              ibdbBook: true,
+            },
+          },
+        },
+        orderBy: {
+          finishDate: 'asc',
+        },
+      }),
+    ])
 
     // Collect all raw cover URLs and cache them to S3 in parallel
     const allRawCoverUrls = [
@@ -154,6 +184,9 @@ export async function GET(request: Request) {
         getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
       ),
       ...currentlyReadingBooks.map((ub) =>
+        getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
+      ),
+      ...nextMonthBooks.map((ub) =>
         getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
       ),
     ]
@@ -201,22 +234,40 @@ export async function GET(request: Request) {
       }
     })
 
-    // Transform currently reading
-    const currentlyReading: RecapCurrentlyReading[] = currentlyReadingBooks.map(
-      (ub) => {
-        const displayTitle = ub.edition.title || ub.edition.book.title
-        const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
-        const coverUrl = getCachedUrl(rawCoverUrl)
+    // Transform currently reading + next month's finished books into "coming soon"
+    const comingSoonIds = new Set<string>()
+    const currentlyReading: RecapCurrentlyReading[] = []
 
-        return {
-          id: ub.id,
-          title: displayTitle,
-          authors: ub.edition.book.authors,
-          coverUrl,
-          progress: ub.progress,
-        }
-      }
-    )
+    // Add currently reading books first
+    for (const ub of currentlyReadingBooks) {
+      comingSoonIds.add(ub.id)
+      const displayTitle = ub.edition.title || ub.edition.book.title
+      const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
+      const coverUrl = getCachedUrl(rawCoverUrl)
+      currentlyReading.push({
+        id: ub.id,
+        title: displayTitle,
+        authors: ub.edition.book.authors,
+        coverUrl,
+        progress: ub.progress,
+      })
+    }
+
+    // Add next month's finished books (skip duplicates)
+    for (const ub of nextMonthBooks) {
+      if (comingSoonIds.has(ub.id)) continue
+      comingSoonIds.add(ub.id)
+      const displayTitle = ub.edition.title || ub.edition.book.title
+      const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
+      const coverUrl = getCachedUrl(rawCoverUrl)
+      currentlyReading.push({
+        id: ub.id,
+        title: displayTitle,
+        authors: ub.edition.book.authors,
+        coverUrl,
+        progress: null,
+      })
+    }
 
     // Calculate stats
     const completedBooks = books.filter((b) => b.status === 'COMPLETED')

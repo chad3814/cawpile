@@ -30,7 +30,7 @@ export interface RecapCurrentlyReading {
   title: string
   authors: string[]
   coverUrl: string | null
-  progress: number // 0-100
+  progress: number | null // 0-100, null for next month's finished books
 }
 
 export interface RecapStats {

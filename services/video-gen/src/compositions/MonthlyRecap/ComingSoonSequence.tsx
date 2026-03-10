@@ -105,7 +105,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, index }) => {
       </div>
 
       {/* Progress bar */}
-      {config.showProgress && (
+      {config.showProgress && book.progress != null && (
         <>
           <div
             style={{

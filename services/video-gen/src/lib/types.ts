@@ -32,7 +32,7 @@ export interface RecapCurrentlyReading {
   title: string
   authors: string[]
   coverUrl: string | null
-  progress: number
+  progress: number | null
 }
 
 export interface RecapStats {
