@@ -99,6 +99,7 @@ This repo contains two independently deployable services:
 
 **CawpileRating** (7 facets, 1-10 scale each, nullable for skipped)
 - Fiction: Characters, Atmosphere, Writing, Plot, Intrigue, Logic, Enjoyment
+- Non-Fiction: Credibility, Authenticity, Writing, Personal Impact, Intrigue, Logic, Enjoyment
 - Auto-computed `average` field
 
 ### Key Constraints
