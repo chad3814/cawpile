@@ -71,7 +71,7 @@ const sampleData: MonthlyRecapExport = {
       pageCount: 419,
     },
   ],
-  currentlyReading: [
+  comingSoon: [
     {
       id: '4',
       title: 'The Name of the Wind',

@@ -128,7 +128,6 @@ export async function GET(request: Request) {
     })
 
     // Fetch "coming soon" books: books finished in the next month + currently reading
-    const nextMonthStart = new Date(year, month, 1) // endDate is already this
     const nextMonthEnd = new Date(year, month + 1, 1)
 
     const [currentlyReadingBooks, nextMonthBooks] = await Promise.all([
@@ -155,7 +154,7 @@ export async function GET(request: Request) {
         where: {
           userId: user.id,
           finishDate: {
-            gte: nextMonthStart,
+            gte: endDate,
             lt: nextMonthEnd,
           },
           status: {
@@ -236,7 +235,7 @@ export async function GET(request: Request) {
 
     // Transform currently reading + next month's finished books into "coming soon"
     const comingSoonIds = new Set<string>()
-    const currentlyReading: RecapCurrentlyReading[] = []
+    const comingSoon: RecapCurrentlyReading[] = []
 
     // Add currently reading books first
     for (const ub of currentlyReadingBooks) {
@@ -244,7 +243,7 @@ export async function GET(request: Request) {
       const displayTitle = ub.edition.title || ub.edition.book.title
       const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
       const coverUrl = getCachedUrl(rawCoverUrl)
-      currentlyReading.push({
+      comingSoon.push({
         id: ub.id,
         title: displayTitle,
         authors: ub.edition.book.authors,
@@ -260,7 +259,7 @@ export async function GET(request: Request) {
       const displayTitle = ub.edition.title || ub.edition.book.title
       const rawCoverUrl = getCoverImageUrl(ub.edition, ub.preferredCoverProvider)
       const coverUrl = getCachedUrl(rawCoverUrl)
-      currentlyReading.push({
+      comingSoon.push({
         id: ub.id,
         title: displayTitle,
         authors: ub.edition.book.authors,
@@ -336,7 +335,7 @@ export async function GET(request: Request) {
         generatedAt: new Date().toISOString(),
       },
       books,
-      currentlyReading,
+      comingSoon,
       stats,
     }
 

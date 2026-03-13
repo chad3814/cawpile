@@ -34,7 +34,7 @@ function createValidMonthlyRecapExport(): MonthlyRecapExport {
         pageCount: 300,
       },
     ],
-    currentlyReading: [],
+    comingSoon: [],
     stats: {
       totalBooks: 1,
       completedCount: 1,

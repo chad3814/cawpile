@@ -61,7 +61,7 @@ export interface MonthlyRecapExport {
     generatedAt: string
   }
   books: RecapBook[]
-  currentlyReading: RecapCurrentlyReading[]
+  comingSoon: RecapCurrentlyReading[]
   stats: RecapStats
 }
 

@@ -40,7 +40,7 @@ export function calculateDuration(
   }
 
   const statsFrames = timing.statsTotal
-  const comingSoonFrames = data.currentlyReading.length > 0 ? timing.comingSoonTotal : 0
+  const comingSoonFrames = data.comingSoon.length > 0 ? timing.comingSoonTotal : 0
   const outroFrames = timing.outroTotal
 
   // Subtract overlaps between sequences
@@ -50,7 +50,7 @@ export function calculateDuration(
     overlaps = timing.transitionOverlap * (
       1 + // intro -> books
       (data.books.length > 0 ? 1 : 0) + // books -> stats
-      (data.currentlyReading.length > 0 ? 1 : 0) + // stats -> coming soon
+      (data.comingSoon.length > 0 ? 1 : 0) + // stats -> coming soon
       1 // -> outro
     )
   } else {
@@ -58,7 +58,7 @@ export function calculateDuration(
     overlaps = timing.transitionOverlap * (
       1 + // intro -> books
       (data.books.length > 0 ? data.books.length : 0) + // between books and to stats
-      (data.currentlyReading.length > 0 ? 1 : 0) + // stats -> coming soon
+      (data.comingSoon.length > 0 ? 1 : 0) + // stats -> coming soon
       1 // -> outro
     )
   }
@@ -89,8 +89,8 @@ const MonthlyRecapContent: React.FC<{ data: MonthlyRecapExport }> = ({ data }) =
   const statsStart = currentFrame
   currentFrame += timing.statsTotal - timing.transitionOverlap
 
-  const comingSoonStart = data.currentlyReading.length > 0 ? currentFrame : -1
-  if (data.currentlyReading.length > 0) {
+  const comingSoonStart = data.comingSoon.length > 0 ? currentFrame : -1
+  if (data.comingSoon.length > 0) {
     currentFrame += timing.comingSoonTotal - timing.transitionOverlap
   }
 
@@ -124,9 +124,9 @@ const MonthlyRecapContent: React.FC<{ data: MonthlyRecapExport }> = ({ data }) =
       </Sequence>
 
       {/* Coming Soon (only if there are currently reading books) */}
-      {data.currentlyReading.length > 0 && (
+      {data.comingSoon.length > 0 && (
         <Sequence from={comingSoonStart} durationInFrames={timing.comingSoonTotal}>
-          <ComingSoonSequence books={data.currentlyReading} />
+          <ComingSoonSequence books={data.comingSoon} />
         </Sequence>
       )}
 

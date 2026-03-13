@@ -59,7 +59,7 @@ export interface MonthlyRecapExport {
     generatedAt: string // ISO date
   }
   books: RecapBook[]
-  currentlyReading: RecapCurrentlyReading[]
+  comingSoon: RecapCurrentlyReading[]
   stats: RecapStats
 }
 

@@ -14,7 +14,7 @@ function createTestData(overrides: Partial<MonthlyRecapExport> = {}): MonthlyRec
       generatedAt: '2026-01-31T00:00:00Z',
     },
     books: [],
-    currentlyReading: [],
+    comingSoon: [],
     stats: {
       totalBooks: 0,
       completedCount: 0,
@@ -72,9 +72,9 @@ describe('calculateDuration', () => {
       expect(duration).toBe(expected)
     })
 
-    it('should include coming soon frames when currentlyReading has books', () => {
+    it('should include coming soon frames when comingSoon has books', () => {
       const data = createTestData({
-        currentlyReading: [
+        comingSoon: [
           { id: 'cr1', title: 'Reading Now', authors: [], coverUrl: null, progress: 50 },
         ],
       })
@@ -95,7 +95,7 @@ describe('calculateDuration', () => {
           { id: '1', title: 'Book 1', authors: [], coverUrl: null, status: 'COMPLETED', finishDate: '2026-01-15', rating: null, pageCount: 100 },
           { id: '2', title: 'Book 2', authors: [], coverUrl: null, status: 'COMPLETED', finishDate: '2026-01-20', rating: null, pageCount: 200 },
         ],
-        currentlyReading: [
+        comingSoon: [
           { id: 'cr1', title: 'Reading Now', authors: [], coverUrl: null, progress: 50 },
         ],
       })
