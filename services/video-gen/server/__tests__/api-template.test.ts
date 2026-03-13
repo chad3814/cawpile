@@ -12,7 +12,7 @@ describe('API Template Handling', () => {
     meta: { month: 1, year: 2026, monthName: 'January', generatedAt: '2026-01-31T00:00:00Z' },
     books: [],
     stats: { totalBooks: 0, completedCount: 0, dnfCount: 0, totalPages: 0, averageRating: null, topRatedBook: null, lowestRatedBook: null },
-    currentlyReading: [],
+    comingSoon: [],
   }
 
   describe('parseRenderStreamQuery with template', () => {

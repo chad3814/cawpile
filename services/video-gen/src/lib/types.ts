@@ -32,7 +32,7 @@ export interface RecapCurrentlyReading {
   title: string
   authors: string[]
   coverUrl: string | null
-  progress: number
+  progress: number | null
 }
 
 export interface RecapStats {
@@ -61,7 +61,7 @@ export interface MonthlyRecapExport {
     generatedAt: string
   }
   books: RecapBook[]
-  currentlyReading: RecapCurrentlyReading[]
+  comingSoon: RecapCurrentlyReading[]
   stats: RecapStats
 }
 

@@ -96,7 +96,7 @@ interface MonthlyRecapExport {
     } | null
     pageCount: number | null
   }>
-  currentlyReading: Array<{
+  comingSoon: Array<{
     id: string
     title: string
     authors: string[]
