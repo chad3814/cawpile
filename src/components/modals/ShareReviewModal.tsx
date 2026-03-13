@@ -257,10 +257,10 @@ export default function ShareReviewModal({
     }
   }
 
-  const handleDownloadImage = () => {
+  const handleDownloadImage = async () => {
     if (!generatedImageUrl) return
     const filename = generateImageFilename(displayTitle)
-    downloadImage(generatedImageUrl, filename)
+    await downloadImage(generatedImageUrl, filename)
   }
 
   const handleBackFromPreview = () => {

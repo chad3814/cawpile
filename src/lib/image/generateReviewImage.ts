@@ -47,23 +47,56 @@ export function truncateReviewText(text: string | null | undefined, maxChars: nu
 }
 
 /**
- * Triggers a browser download of an image from a data URL.
- * Works on both desktop and mobile browsers.
+ * Converts a data URL to a Blob.
  */
-export function downloadImage(dataUrl: string, filename: string): void {
-  // Create a temporary anchor element
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(',')
+  const mime = header.match(/:(.*?);/)?.[1] || 'image/png'
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return new Blob([bytes], { type: mime })
+}
+
+/**
+ * Triggers a browser download of an image from a data URL.
+ * Uses the Web Share API on mobile browsers (where the `download` attribute
+ * on anchor elements is not supported), and falls back to anchor download
+ * on desktop browsers.
+ */
+export async function downloadImage(dataUrl: string, filename: string): Promise<void> {
+  const blob = dataUrlToBlob(dataUrl)
+
+  // Use Web Share API if available (works on mobile Safari, Chrome, etc.)
+  if (navigator.share) {
+    const file = new File([blob], filename, { type: 'image/png' })
+    try {
+      await navigator.share({
+        files: [file],
+        title: filename,
+      })
+      return
+    } catch (err) {
+      // User cancelled share or share failed — fall through to anchor download
+      if (err instanceof Error && err.name === 'AbortError') {
+        return // User deliberately cancelled
+      }
+    }
+  }
+
+  // Fallback: anchor download (works on desktop browsers)
+  const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
-  link.href = dataUrl
+  link.href = url
   link.download = filename
 
-  // Append to body (required for Firefox)
   document.body.appendChild(link)
-
-  // Trigger download
   link.click()
-
-  // Clean up
   document.body.removeChild(link)
+
+  URL.revokeObjectURL(url)
 }
 
 /**
