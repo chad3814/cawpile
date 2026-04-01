@@ -14,15 +14,17 @@ interface UpdateProgressModalProps {
     pageCount?: number | null
   }
   onUpdate: (bookId: string, progress: number) => Promise<void>
+  onDNF?: () => void
 }
 
 type ProgressType = 'percentage' | 'pages' | 'time'
 
-export default function UpdateProgressModal({ 
-  isOpen, 
-  onClose, 
+export default function UpdateProgressModal({
+  isOpen,
+  onClose,
   book,
-  onUpdate 
+  onUpdate,
+  onDNF,
 }: UpdateProgressModalProps) {
   const [progressType, setProgressType] = useState<ProgressType>('percentage')
   const [progressValue, setProgressValue] = useState(book.currentProgress.toString())
@@ -191,20 +193,30 @@ export default function UpdateProgressModal({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={handleClose}
-                    className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-secondary border border-border rounded-md hover:bg-accent transition-colors focus-ring"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors focus-ring"
-                  >
-                    {isSubmitting ? 'Updating...' : 'Update Progress'}
-                  </button>
+                <div className="flex justify-between items-center">
+                  {onDNF ? (
+                    <button
+                      onClick={onDNF}
+                      className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive/10 border border-destructive/30 rounded-md hover:bg-destructive/20 transition-colors focus-ring"
+                    >
+                      Mark as DNF
+                    </button>
+                  ) : <span />}
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleClose}
+                      className="px-4 py-2 text-sm font-medium text-secondary-foreground bg-secondary border border-border rounded-md hover:bg-accent transition-colors focus-ring"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors focus-ring"
+                    >
+                      {isSubmitting ? 'Updating...' : 'Update Progress'}
+                    </button>
+                  </div>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
