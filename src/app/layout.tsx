@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import SessionProvider from "@/lib/auth-client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import FeatureNoticeContainer from "@/components/FeatureNoticeContainer";
 import { auth } from "@/lib/auth";
 import "./globals.css";
 
@@ -53,6 +54,7 @@ export default async function RootLayout({
             {children}
           </main>
           <Footer />
+          <FeatureNoticeContainer />
         </SessionProvider>
       </body>
     </html>
