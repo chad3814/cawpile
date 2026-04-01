@@ -1,6 +1,7 @@
 import React from 'react'
 import { Composition } from 'remotion'
 import { MonthlyRecap, calculateDuration } from './compositions/MonthlyRecap'
+import { LitRPGSpell, DURATION_FRAMES } from './compositions/LitRPGSpell'
 import { VIDEO_CONFIG } from './lib/theme'
 import type { MonthlyRecapExport } from './lib/types'
 
@@ -121,6 +122,14 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           data: sampleData,
         }}
+      />
+      <Composition
+        id="LitRPGSpell"
+        component={LitRPGSpell}
+        durationInFrames={DURATION_FRAMES}
+        fps={VIDEO_CONFIG.fps}
+        width={VIDEO_CONFIG.width}
+        height={VIDEO_CONFIG.height}
       />
     </>
   )

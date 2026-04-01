@@ -6,6 +6,7 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "render": "remotion render MonthlyRecap out/video.mp4",
+    "render:litrpg": "remotion render LitRPGSpell out/litrpg.mp4",
     "server": "tsx server/index.ts",
     "lint": "eslint src/ server/",
     "test": "vitest",
