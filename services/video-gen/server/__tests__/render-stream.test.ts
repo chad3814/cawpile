@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import express from 'express'
-import type { MonthlyRecapExport } from '../../src/lib/types'
-import { parseRenderStreamQuery } from '../lib/validation'
+import { randomUUID } from 'crypto'
+import type { MonthlyRecapExport, RenderRequest } from '../../src/lib/types'
+import { parseRenderStreamJobId } from '../lib/validation'
 import {
   setupSSEHeaders,
   sendProgressEvent,
@@ -13,21 +14,51 @@ import {
   mapRenderProgress,
 } from '../lib/sse'
 
+// In-memory job store shared between endpoints in the test app
+interface PendingJob {
+  request: RenderRequest;
+  createdAt: number;
+}
+
 /**
  * Create a minimal Express app for testing endpoint behavior
  * Note: These tests focus on SSE setup and validation, not the full render pipeline
  */
 function createTestApp() {
   const app = express()
+  app.use(express.json())
+
+  const pendingJobs = new Map<string, PendingJob>()
+
+  app.post('/render-stream/init', (req, res) => {
+    const { userId, data } = req.body as Partial<RenderRequest>
+
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      return res.status(400).json({ error: 'userId is required' })
+    }
+
+    if (!data || !data.meta || !data.books || !data.stats) {
+      return res.status(400).json({ error: 'Invalid request body. Expected MonthlyRecapExport format in data field.' })
+    }
+
+    const jobId = randomUUID()
+    pendingJobs.set(jobId, { request: { userId, data }, createdAt: Date.now() })
+    return res.json({ jobId })
+  })
 
   app.get('/render-stream', async (req, res) => {
-    const queryData = req.query.data as string | undefined
-    const queryUserId = req.query.userId as string | undefined
-    const validationResult = parseRenderStreamQuery(queryData, queryUserId)
+    const jobIdResult = parseRenderStreamJobId(req.query.jobId as string | undefined)
 
-    if (!validationResult.valid) {
-      return res.status(400).json({ error: validationResult.error })
+    if (!jobIdResult.valid) {
+      return res.status(400).json({ error: jobIdResult.error })
     }
+
+    const pendingJob = pendingJobs.get(jobIdResult.jobId)
+    if (!pendingJob) {
+      return res.status(404).json({ error: 'Job not found or expired' })
+    }
+
+    pendingJobs.delete(jobIdResult.jobId)
 
     // Set up SSE headers for valid requests
     setupSSEHeaders(res)
@@ -45,13 +76,18 @@ function createTestApp() {
 
   // Error simulation endpoint
   app.get('/render-stream-error', async (req, res) => {
-    const queryData = req.query.data as string | undefined
-    const queryUserId = req.query.userId as string | undefined
-    const validationResult = parseRenderStreamQuery(queryData, queryUserId)
+    const jobIdResult = parseRenderStreamJobId(req.query.jobId as string | undefined)
 
-    if (!validationResult.valid) {
-      return res.status(400).json({ error: validationResult.error })
+    if (!jobIdResult.valid) {
+      return res.status(400).json({ error: jobIdResult.error })
     }
+
+    const pendingJob = pendingJobs.get(jobIdResult.jobId)
+    if (!pendingJob) {
+      return res.status(404).json({ error: 'Job not found or expired' })
+    }
+
+    pendingJobs.delete(jobIdResult.jobId)
 
     setupSSEHeaders(res)
     sendProgressEvent(res, 0, 'bundling')
@@ -61,13 +97,18 @@ function createTestApp() {
 
   // S3 upload failure simulation endpoint
   app.get('/render-stream-s3-error', async (req, res) => {
-    const queryData = req.query.data as string | undefined
-    const queryUserId = req.query.userId as string | undefined
-    const validationResult = parseRenderStreamQuery(queryData, queryUserId)
+    const jobIdResult = parseRenderStreamJobId(req.query.jobId as string | undefined)
 
-    if (!validationResult.valid) {
-      return res.status(400).json({ error: validationResult.error })
+    if (!jobIdResult.valid) {
+      return res.status(400).json({ error: jobIdResult.error })
     }
+
+    const pendingJob = pendingJobs.get(jobIdResult.jobId)
+    if (!pendingJob) {
+      return res.status(404).json({ error: 'Job not found or expired' })
+    }
+
+    pendingJobs.delete(jobIdResult.jobId)
 
     setupSSEHeaders(res)
     sendProgressEvent(res, 0, 'bundling')
@@ -79,13 +120,18 @@ function createTestApp() {
 
   // Progress deduplication test endpoint
   app.get('/render-stream-dedup', async (req, res) => {
-    const queryData = req.query.data as string | undefined
-    const queryUserId = req.query.userId as string | undefined
-    const validationResult = parseRenderStreamQuery(queryData, queryUserId)
+    const jobIdResult = parseRenderStreamJobId(req.query.jobId as string | undefined)
 
-    if (!validationResult.valid) {
-      return res.status(400).json({ error: validationResult.error })
+    if (!jobIdResult.valid) {
+      return res.status(400).json({ error: jobIdResult.error })
     }
+
+    const pendingJob = pendingJobs.get(jobIdResult.jobId)
+    if (!pendingJob) {
+      return res.status(404).json({ error: 'Job not found or expired' })
+    }
+
+    pendingJobs.delete(jobIdResult.jobId)
 
     setupSSEHeaders(res)
 
@@ -109,7 +155,7 @@ function createTestApp() {
     res.end()
   })
 
-  return app
+  return { app, pendingJobs }
 }
 
 /**
@@ -161,17 +207,72 @@ function createValidMonthlyRecapExport(): MonthlyRecapExport {
   }
 }
 
+/**
+ * Helper: POST to /render-stream/init and return the jobId
+ */
+async function initJob(
+  app: express.Express,
+  validData: MonthlyRecapExport,
+  userId = 'user-123'
+): Promise<string> {
+  const response = await request(app)
+    .post('/render-stream/init')
+    .send({ userId, data: validData })
+    .set('Content-Type', 'application/json')
+
+  expect(response.status).toBe(200)
+  expect(response.body.jobId).toBeDefined()
+  return response.body.jobId as string
+}
+
+describe('/render-stream/init Endpoint', () => {
+  const { app } = createTestApp()
+
+  it('should return a jobId for a valid request', async () => {
+    const validData = createValidMonthlyRecapExport()
+    const response = await request(app)
+      .post('/render-stream/init')
+      .send({ userId: 'user-123', data: validData })
+      .set('Content-Type', 'application/json')
+
+    expect(response.status).toBe(200)
+    expect(typeof response.body.jobId).toBe('string')
+    expect(response.body.jobId.length).toBeGreaterThan(0)
+  })
+
+  it('should return 400 for missing userId', async () => {
+    const validData = createValidMonthlyRecapExport()
+    const response = await request(app)
+      .post('/render-stream/init')
+      .send({ data: validData })
+      .set('Content-Type', 'application/json')
+
+    expect(response.status).toBe(400)
+    expect(response.body.error).toContain('userId')
+  })
+
+  it('should return 400 for missing data', async () => {
+    const response = await request(app)
+      .post('/render-stream/init')
+      .send({ userId: 'user-123' })
+      .set('Content-Type', 'application/json')
+
+    expect(response.status).toBe(400)
+    expect(response.body.error).toContain('data')
+  })
+})
+
 describe('/render-stream Endpoint', () => {
-  const app = createTestApp()
+  const { app } = createTestApp()
 
   describe('SSE Headers', () => {
     it('should set correct SSE headers for valid request', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       expect(response.headers['content-type']).toContain('text/event-stream')
       expect(response.headers['cache-control']).toBe('no-cache')
@@ -180,46 +281,44 @@ describe('/render-stream Endpoint', () => {
   })
 
   describe('Request Validation', () => {
-    it('should return HTTP 400 for malformed request (not SSE)', async () => {
+    it('should return HTTP 400 for missing jobId', async () => {
       const response = await request(app)
         .get('/render-stream')
-        .query({ data: encodeURIComponent('{invalid}'), userId: 'user-123' })
 
       expect(response.status).toBe(400)
-      expect(response.headers['content-type']).toContain('application/json')
-      expect(response.body.error).toContain('Invalid JSON')
+      expect(response.body.error).toContain('jobId')
     })
 
-    it('should return HTTP 400 for missing data parameter', async () => {
+    it('should return HTTP 404 for unknown jobId', async () => {
       const response = await request(app)
         .get('/render-stream')
-        .query({ userId: 'user-123' })
+        .query({ jobId: 'nonexistent-job-id' })
 
-      expect(response.status).toBe(400)
-      expect(response.body.error).toContain('Missing required query parameter')
+      expect(response.status).toBe(404)
+      expect(response.body.error).toContain('Job not found')
     })
 
-    it('should return HTTP 400 for missing userId', async () => {
+    it('should return HTTP 404 when the same jobId is used twice (consumed on first use)', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
-      const response = await request(app)
-        .get('/render-stream')
-        .query({ data: encodedData })
+      // First use: should succeed
+      await request(app).get('/render-stream').query({ jobId })
 
-      expect(response.status).toBe(400)
-      expect(response.body.error).toContain('userId is required')
+      // Second use: jobId consumed, should fail
+      const response = await request(app).get('/render-stream').query({ jobId })
+      expect(response.status).toBe(404)
     })
   })
 
   describe('SSE Events', () => {
     it('should emit progress events with correct format', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       // Check that the response contains progress events
       expect(response.text).toContain('event: progress')
@@ -230,11 +329,11 @@ describe('/render-stream Endpoint', () => {
 
     it('should emit complete event with filename and s3Url', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       expect(response.text).toContain('event: complete')
       expect(response.text).toContain('"filename":"test-video.mp4"')
@@ -243,11 +342,11 @@ describe('/render-stream Endpoint', () => {
 
     it('should emit error event on render failure', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream-error')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       expect(response.text).toContain('event: error')
       expect(response.text).toContain('"message":"Render failed: simulated error"')
@@ -257,11 +356,11 @@ describe('/render-stream Endpoint', () => {
   describe('Strategic Gap Tests', () => {
     it('should emit error event on S3 upload failure', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream-s3-error')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       expect(response.text).toContain('event: error')
       expect(response.text).toContain('S3 upload failed')
@@ -269,11 +368,11 @@ describe('/render-stream Endpoint', () => {
 
     it('should deduplicate progress events with same percentage', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream-dedup')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       // Count occurrences of progress 0 - should appear exactly once
       const progressZeroMatches = response.text.match(/"progress":0/g)
@@ -286,11 +385,11 @@ describe('/render-stream Endpoint', () => {
 
     it('should transition from bundling to rendering phase at 25%', async () => {
       const validData = createValidMonthlyRecapExport()
-      const encodedData = encodeURIComponent(JSON.stringify(validData))
+      const jobId = await initJob(app, validData)
 
       const response = await request(app)
         .get('/render-stream')
-        .query({ data: encodedData, userId: 'user-123' })
+        .query({ jobId })
 
       // Verify bundling phase ends at 25 and rendering starts after
       expect(response.text).toContain('"progress":25,"phase":"bundling"')

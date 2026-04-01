@@ -10,6 +10,23 @@ export type ValidationResult =
   | { valid: false; error: string }
 
 /**
+ * Result of validating a jobId query parameter
+ */
+export type JobIdValidationResult =
+  | { valid: true; jobId: string }
+  | { valid: false; error: string }
+
+/**
+ * Validate the jobId query parameter for GET /render-stream
+ */
+export function parseRenderStreamJobId(queryJobId: string | undefined): JobIdValidationResult {
+  if (!queryJobId || typeof queryJobId !== 'string' || queryJobId.trim() === '') {
+    return { valid: false, error: 'Missing required query parameter: jobId' }
+  }
+  return { valid: true, jobId: queryJobId.trim() }
+}
+
+/**
  * Parse and validate the render-stream query parameters
  *
  * @param queryData - The URL-encoded JSON string from the `data` query parameter

@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import { randomUUID } from 'crypto'
 import { bundle } from '@remotion/bundler'
 import { renderMedia, selectComposition } from '@remotion/renderer'
 import path from 'path'
@@ -11,7 +12,7 @@ import { VIDEO_CONFIG } from '../src/lib/theme'
 import { validateAwsEnv } from './lib/validateEnv'
 import { generateS3Key, uploadToS3 } from './lib/s3'
 import { deleteLocalFile } from './lib/cleanup'
-import { parseRenderStreamQuery } from './lib/validation'
+import { parseRenderStreamJobId } from './lib/validation'
 import { validateTemplate } from './lib/template-validation'
 import {
   setupSSEHeaders,
@@ -25,6 +26,23 @@ import {
 
 const app = express()
 const PORT = process.env.PORT || 3001
+
+// In-memory job store for render-stream init
+interface PendingJob {
+  request: RenderRequest;
+  createdAt: number;
+}
+const pendingJobs = new Map<string, PendingJob>()
+const JOB_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
+function cleanExpiredJobs(): void {
+  const now = Date.now()
+  for (const [id, job] of pendingJobs) {
+    if (now - job.createdAt > JOB_TTL_MS) {
+      pendingJobs.delete(id)
+    }
+  }
+}
 
 // Middleware
 app.use(cors())
@@ -41,19 +59,58 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Render stream endpoint with SSE progress
-app.get('/render-stream', async (req, res) => {
-  // Validate query parameters before initiating SSE
-  const queryData = req.query.data as string | undefined
-  const queryUserId = req.query.userId as string | undefined
-  const queryTemplate = req.query.template as string | undefined
-  const validationResult = parseRenderStreamQuery(queryData, queryUserId, queryTemplate)
+// Init endpoint: accepts render data via POST, returns a short-lived jobId
+// This avoids 414 URI Too Long errors when data is sent as query parameters
+app.post('/render-stream/init', (req, res) => {
+  cleanExpiredJobs()
 
-  if (!validationResult.valid) {
-    return res.status(400).json({ error: validationResult.error })
+  const { userId, data, template: rawTemplate } = req.body as Partial<RenderRequest>
+
+  if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+    return res.status(400).json({ error: 'userId is required' })
   }
 
-  const { userId, data, template } = validationResult.data
+  if (!data || !data.meta || !data.books || !data.stats) {
+    return res.status(400).json({ error: 'Invalid request body. Expected MonthlyRecapExport format in data field.' })
+  }
+
+  let template: Partial<VideoTemplate> | undefined
+  if (rawTemplate) {
+    const templateValidation = validateTemplate(rawTemplate)
+    if (templateValidation.warnings.length > 0) {
+      console.log(`[Init] Template validation warnings: ${templateValidation.warnings.join(', ')}`)
+    }
+    template = rawTemplate
+  }
+
+  const request: RenderRequest = { userId, data }
+  if (template) {
+    request.template = template
+  }
+
+  const jobId = randomUUID()
+  pendingJobs.set(jobId, { request, createdAt: Date.now() })
+
+  return res.json({ jobId })
+})
+
+// Render stream endpoint with SSE progress
+app.get('/render-stream', async (req, res) => {
+  const jobIdResult = parseRenderStreamJobId(req.query.jobId as string | undefined)
+
+  if (!jobIdResult.valid) {
+    return res.status(400).json({ error: jobIdResult.error })
+  }
+
+  const pendingJob = pendingJobs.get(jobIdResult.jobId)
+  if (!pendingJob) {
+    return res.status(404).json({ error: 'Job not found or expired' })
+  }
+
+  // Consume the job (remove from store)
+  pendingJobs.delete(jobIdResult.jobId)
+
+  const { userId, data, template } = pendingJob.request
 
   // Set up SSE headers
   setupSSEHeaders(res)
