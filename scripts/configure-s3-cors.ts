@@ -18,7 +18,7 @@ const corsConfig = {
       AllowedOrigins: ['*'],
       AllowedHeaders: ['*'],
       MaxAgeSeconds: 3000,
-    },
+      MaxAgeSeconds: 3600,
   ],
 };
 
