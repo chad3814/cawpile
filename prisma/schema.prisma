@@ -37,8 +37,20 @@ model User {
   sharedReviews SharedReview[]
   selectedTemplate  VideoTemplate? @relation("SelectedTemplate", fields: [selectedTemplateId], references: [id], onDelete: SetNull)
   createdTemplates  VideoTemplate[] @relation("CreatedTemplates")
+  seenNotices   SeenNotice[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+}
+
+model SeenNotice {
+  id       String   @id @default(cuid())
+  noticeId String
+  userId   String
+  seenAt   DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, noticeId])
+  @@index([userId])
 }
 
 // NextAuth Account model
