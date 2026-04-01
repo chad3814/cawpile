@@ -129,6 +129,8 @@ Routes follow RESTful patterns in `src/app/api/`:
 - `/api/books/search` - Multi-provider search
 - `/api/user/books` - CRUD for user's library (GET, POST, PATCH, DELETE)
 - `/api/user/preferences`, `/api/user/book-clubs`, `/api/user/readathons`
+- `/api/user/notices` - GET unseen applicable feature notices for current user
+- `/api/user/notices/seen` - POST to mark a notice as seen
 - `/api/user/export` - CSV/ZIP data export
 - `/api/reading-sessions` - Reading session CRUD
 - `/api/charts/*` - Analytics data (11 chart types: books-per-month, pages-per-month, book-format, main-genres, acquisition-method, lgbtq/disability/poc/new-author representation, dnf-per-month, available-years)
@@ -214,6 +216,11 @@ __tests__/            # Jest tests mirroring src/ structure
 **Public Profiles**: User profiles at `/u/[username]` with privacy controls (profileEnabled, showCurrentlyReading, showTbr)
 
 **Monthly Recap**: Video recap generation via integration with video-gen service (`/api/recap/monthly`)
+
+**Feature Notices**: Per-user modal alerts for new features or required settings. Notices are hardcoded with async targeting functions and dismissed state is tracked in the `SeenNotice` table. See `docs/feature-notices.md` for how to add a notice.
+- Registry: `src/lib/notices.ts` (server-only, targeting) + `src/lib/notice-components.ts` (client-safe, components)
+- Container: `src/components/FeatureNoticeContainer.tsx` — mounted in root layout, shows one notice at a time
+- API: `GET /api/user/notices`, `POST /api/user/notices/seen`
 
 **Template System**: Admin-created video templates with user browsing and selection
 - Browse: `/dashboard/templates` — card grid with search, sort (newest/name/popular), pagination
