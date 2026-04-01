@@ -17,7 +17,6 @@ const corsConfig = {
       // so there is no meaningful security gain from restricting the origin here.
       AllowedOrigins: ['*'],
       AllowedHeaders: ['*'],
-      MaxAgeSeconds: 3000,
       MaxAgeSeconds: 3600,
   ],
 };
