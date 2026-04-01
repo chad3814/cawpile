@@ -12,7 +12,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "postinstall": "prisma generate",
-    "make-admin": "tsx scripts/fix-admin-user.ts"
+    "make-admin": "tsx scripts/fix-admin-user.ts",
+    "configure-s3-cors": "tsx scripts/configure-s3-cors.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
