@@ -1,11 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { CheckIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { useUsernameCheck } from '@/hooks/useUsernameCheck';
 import type { NoticeComponentProps } from '@/lib/notices-types';
 
+function deriveUsernameFromEmail(email: string): string {
+  const localPart = email.split('@')[0];
+  return localPart.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 128);
+}
+
 export default function UsernameNotice({ onDismiss }: NoticeComponentProps) {
+  const { data: session } = useSession();
   const [username, setUsername] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -13,10 +20,12 @@ export default function UsernameNotice({ onDismiss }: NoticeComponentProps) {
   const { isChecking, isAvailable, message, error } = useUsernameCheck(username, null, 300);
 
   useEffect(() => {
-    setUsername('');
+    if (session?.user?.email) {
+      setUsername(deriveUsernameFromEmail(session.user.email));
+    }
     setIsSubmitting(false);
     setSubmitError(null);
-  }, []);
+  }, [session?.user?.email]);
 
   const canSave = username.trim().length > 0 && isAvailable === true && !isChecking && !isSubmitting;
 
