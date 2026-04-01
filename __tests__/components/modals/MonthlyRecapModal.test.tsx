@@ -131,6 +131,12 @@ beforeEach(() => {
         json: () => Promise.resolve(mockExportData),
       })
     }
+    if (url.includes('/render-stream/init')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ jobId: 'mock-job-id-123' }),
+      })
+    }
     return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
   })
 })
@@ -159,18 +165,18 @@ describe('Task Group 1: SSE Connection Infrastructure', () => {
       fireEvent.click(generateButton)
     })
 
-    // Verify EventSource was created with correct URL
+    // Verify EventSource was created with a jobId from the init call
     await waitFor(() => {
       const eventSource = MockEventSource.getLastInstance()
       expect(eventSource).toBeDefined()
       expect(eventSource?.url).toContain('/render-stream')
-      expect(eventSource?.url).toContain('data=')
-      // Verify the URL contains encoded JSON data
-      const urlParams = new URLSearchParams(eventSource?.url.split('?')[1])
-      const encodedData = urlParams.get('data')
-      expect(encodedData).toBeTruthy()
-      const decodedData = JSON.parse(decodeURIComponent(encodedData!))
-      expect(decodedData).toHaveProperty('metadata')
+      expect(eventSource?.url).toContain('jobId=mock-job-id-123')
+      // Verify the init POST request was made with the data payload
+      const fetchMock = global.fetch as jest.Mock
+      const initCall = fetchMock.mock.calls.find(([url]: [string]) => (url as string).includes('/render-stream/init'))
+      expect(initCall).toBeDefined()
+      const requestBody = JSON.parse(initCall[1].body as string)
+      expect(requestBody).toHaveProperty('data')
     })
   })
 
@@ -642,7 +648,7 @@ describe('SSE URL Configuration with Environment Variable', () => {
     })
   })
 
-  test('userId is included as query parameter in SSE URL', async () => {
+  test('userId is included in the render-stream init POST request body', async () => {
     const mockOnClose = jest.fn()
 
     await act(async () => {
@@ -659,13 +665,15 @@ describe('SSE URL Configuration with Environment Variable', () => {
     })
 
     await waitFor(() => {
-      const eventSource = MockEventSource.getLastInstance()
-      expect(eventSource).toBeDefined()
-      expect(eventSource?.url).toContain('userId=test-user-123')
+      const fetchMock = global.fetch as jest.Mock
+      const initCall = fetchMock.mock.calls.find(([url]: [string]) => (url as string).includes('/render-stream/init'))
+      expect(initCall).toBeDefined()
+      const requestBody = JSON.parse(initCall[1].body as string)
+      expect(requestBody.userId).toBe('test-user-123')
     })
   })
 
-  test('URL encoding of data parameter remains correct', async () => {
+  test('recap data is sent correctly in the render-stream init POST request body', async () => {
     const mockOnClose = jest.fn()
 
     await act(async () => {
@@ -682,19 +690,15 @@ describe('SSE URL Configuration with Environment Variable', () => {
     })
 
     await waitFor(() => {
-      const eventSource = MockEventSource.getLastInstance()
-      expect(eventSource).toBeDefined()
-
-      // Parse URL parameters
-      const url = new URL(eventSource!.url)
-      const encodedData = url.searchParams.get('data')
-      expect(encodedData).toBeTruthy()
-
-      // Verify data can be decoded properly
-      const decodedData = JSON.parse(decodeURIComponent(encodedData!))
-      expect(decodedData).toHaveProperty('metadata')
-      expect(decodedData.metadata).toHaveProperty('month')
-      expect(decodedData.metadata).toHaveProperty('year')
+      const fetchMock = global.fetch as jest.Mock
+      const initCall = fetchMock.mock.calls.find(([url]: [string]) => (url as string).includes('/render-stream/init'))
+      expect(initCall).toBeDefined()
+      const requestBody = JSON.parse(initCall[1].body as string)
+      // Verify the data payload is sent in the POST body
+      expect(requestBody).toHaveProperty('data')
+      expect(requestBody.data).toHaveProperty('metadata')
+      expect(requestBody.data.metadata).toHaveProperty('month')
+      expect(requestBody.data.metadata).toHaveProperty('year')
     })
   })
 })
@@ -926,7 +930,7 @@ describe('Session Handling for userId', () => {
       expect(eventSource).toBeDefined()
       // URL should still be valid even without userId
       expect(eventSource?.url).toContain('/render-stream')
-      expect(eventSource?.url).toContain('data=')
+      expect(eventSource?.url).toContain('jobId=')
     })
   })
 })

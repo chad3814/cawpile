@@ -165,10 +165,22 @@ export default function MonthlyRecapModal({
         setExportData(data)
       }
 
-      // Build SSE URL with encoded data and userId
-      const encodedData = encodeURIComponent(JSON.stringify(data))
+      // POST the render data to get a short-lived jobId, then open SSE with just the jobId.
+      // This avoids 414 URI Too Long errors caused by large query strings.
       const userId = session?.user?.id || ''
-      const sseUrl = `${RENDER_SERVER_URL}/render-stream?data=${encodedData}&userId=${userId}`
+      const initResponse = await fetch(`${RENDER_SERVER_URL}/render-stream/init`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, data }),
+      })
+
+      if (!initResponse.ok) {
+        const errBody = await initResponse.json().catch(() => ({})) as { error?: string }
+        throw new Error(errBody.error || 'Failed to initialize render job')
+      }
+
+      const { jobId } = await initResponse.json() as { jobId: string }
+      const sseUrl = `${RENDER_SERVER_URL}/render-stream?jobId=${jobId}`
 
       // Create EventSource connection
       const eventSource = new EventSource(sseUrl)
