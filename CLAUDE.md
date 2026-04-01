@@ -13,6 +13,7 @@ Cawpile is a book reading tracker with a custom CAWPILE rating system, built wit
 - `npm run build` - Build for production with Turbopack (runs `prisma generate` automatically)
 - `npm run lint` - Run ESLint for code quality checks
 - `npm run make-admin` - Promote a user to admin (runs `scripts/fix-admin-user.ts`)
+- `npm run configure-s3-cors` - Set CORS policy on the S3 bucket (required once per bucket to allow browser presigned URL uploads)
 
 ### Database
 - `npx prisma migrate dev` - Create and apply migrations in development
