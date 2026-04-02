@@ -1,17 +1,19 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 interface HeroScrollRowProps {
-  children: React.ReactNode
+  children: ReactNode
+  title?: string
 }
 
 /**
  * Paged hero carousel. The container clips overflow; left/right arrow buttons
- * advance the track by one container-width at a time via CSS transform.
+ * in the title row advance the track by one container-width at a time via CSS transform.
  */
-export default function HeroScrollRow({ children }: HeroScrollRowProps) {
+export default function HeroScrollRow({ children, title }: HeroScrollRowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(0)
@@ -35,17 +37,34 @@ export default function HeroScrollRow({ children }: HeroScrollRowProps) {
   const offset = Math.min(rawOffset, maxOffset)
   const canGoBack = offset > 0
   const canGoForward = offset < maxOffset
+  const hasOverflow = maxOffset > 0
 
   return (
-    <div className="relative">
-      {canGoBack && (
-        <button
-          onClick={() => setPage(p => p - 1)}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-card border border-border rounded-full p-1.5 shadow-md hover:bg-muted transition-colors"
-          aria-label="Previous"
-        >
-          <ChevronLeftIcon className="h-5 w-5 text-foreground" />
-        </button>
+    <div>
+      {title && (
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+          {hasOverflow && (
+            <div className="flex gap-1">
+              <button
+                onClick={() => setPage(p => p - 1)}
+                disabled={!canGoBack}
+                className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+                aria-label="Previous"
+              >
+                <ChevronLeftIcon className="h-4 w-4 text-foreground" />
+              </button>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={!canGoForward}
+                className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+                aria-label="Next"
+              >
+                <ChevronRightIcon className="h-4 w-4 text-foreground" />
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       <div ref={containerRef} className="overflow-hidden">
@@ -57,16 +76,6 @@ export default function HeroScrollRow({ children }: HeroScrollRowProps) {
           {children}
         </div>
       </div>
-
-      {canGoForward && (
-        <button
-          onClick={() => setPage(p => p + 1)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-card border border-border rounded-full p-1.5 shadow-md hover:bg-muted transition-colors"
-          aria-label="Next"
-        >
-          <ChevronRightIcon className="h-5 w-5 text-foreground" />
-        </button>
-      )}
     </div>
   )
 }

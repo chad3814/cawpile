@@ -21,13 +21,9 @@ export default function BookGrid({ books }: BookGridProps) {
 
   return (
     <div>
-      {/* Currently Reading Section */}
       {readingBooks.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Currently Reading
-          </h2>
-          <HeroScrollRow>
+          <HeroScrollRow title="Currently Reading">
             {readingBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
                 <BookCard book={book} />
@@ -37,13 +33,9 @@ export default function BookGrid({ books }: BookGridProps) {
         </div>
       )}
 
-      {/* TBR Section */}
       {tbrBooks.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            To Be Read
-          </h2>
-          <HeroScrollRow>
+          <HeroScrollRow title="To Be Read">
             {tbrBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
                 <BookCard book={book} />
@@ -53,13 +45,9 @@ export default function BookGrid({ books }: BookGridProps) {
         </div>
       )}
 
-      {/* Completed Section */}
       {completedBooks.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Completed
-          </h2>
-          <HeroScrollRow>
+          <HeroScrollRow title="Completed">
             {completedBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
                 <BookCard book={book} />
