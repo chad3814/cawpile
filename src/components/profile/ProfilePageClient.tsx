@@ -40,13 +40,13 @@ export default function ProfilePageClient({
       {/* Currently Reading Section */}
       {user.showCurrentlyReading && (
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Currently Reading
-          </h2>
           {currentlyReading.length > 0 ? (
-            <ProfileBookGrid books={currentlyReading} />
+            <ProfileBookGrid books={currentlyReading} title="Currently Reading" />
           ) : (
-            <ProfileEmptyState variant="currently-reading" />
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Currently Reading</h2>
+              <ProfileEmptyState variant="currently-reading" />
+            </>
           )}
         </div>
       )}
@@ -54,21 +54,23 @@ export default function ProfilePageClient({
       {/* TBR Section */}
       {user.showTbr && (
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Want to Read
-          </h2>
           {tbr && tbr.books.length > 0 ? (
-            <TbrSection tbr={tbr} />
+            <TbrSection tbr={tbr} title="Want to Read" />
           ) : (
-            <ProfileEmptyState variant="tbr" />
+            <>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Want to Read</h2>
+              <ProfileEmptyState variant="tbr" />
+            </>
           )}
         </div>
       )}
 
       {/* Shared Reviews Section */}
-      <div className="mt-8">
-        <SharedReviewsSection reviews={sharedReviews} />
-      </div>
+      {hasSharedReviews && (
+        <div className="mt-8">
+          <SharedReviewsSection reviews={sharedReviews} />
+        </div>
+      )}
 
       {/* No Content State */}
       {hasNoContent && (

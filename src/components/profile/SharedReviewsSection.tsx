@@ -1,6 +1,6 @@
 'use client'
 
-import SharedReviewsViewSwitcher from './SharedReviewsViewSwitcher'
+import SharedReviewsCarousel from './SharedReviewsCarousel'
 import ProfileEmptyState from './ProfileEmptyState'
 import { ProfileSharedReview } from '@/types/profile'
 
@@ -17,12 +17,5 @@ export default function SharedReviewsSection({ reviews }: SharedReviewsSectionPr
     return <ProfileEmptyState variant="reviews" />
   }
 
-  return (
-    <div>
-      <h2 className="text-xl font-semibold text-foreground mb-4">
-        Shared Reviews
-      </h2>
-      <SharedReviewsViewSwitcher reviews={reviews} />
-    </div>
-  )
+  return <SharedReviewsCarousel reviews={reviews} title="Shared Reviews" />
 }
