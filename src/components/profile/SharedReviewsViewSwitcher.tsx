@@ -1,7 +1,6 @@
 'use client'
 
 import SharedReviewCard from './SharedReviewCard'
-import HeroScrollRow from '@/components/HeroScrollRow'
 import { ProfileSharedReview } from '@/types/profile'
 
 interface SharedReviewsViewSwitcherProps {
@@ -9,16 +8,14 @@ interface SharedReviewsViewSwitcherProps {
 }
 
 /**
- * Horizontal scroll carousel for shared reviews section
+ * Vertical column grid for shared reviews section (4 columns, fills downward)
  */
 export default function SharedReviewsViewSwitcher({ reviews }: SharedReviewsViewSwitcherProps) {
   return (
-    <HeroScrollRow>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {reviews.map((review) => (
-        <div key={review.id} className="shrink-0 w-64">
-          <SharedReviewCard review={review} />
-        </div>
+        <SharedReviewCard key={review.id} review={review} />
       ))}
-    </HeroScrollRow>
+    </div>
   )
 }

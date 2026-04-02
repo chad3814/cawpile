@@ -108,17 +108,14 @@ describe('getProfileTbr', () => {
     )
   })
 
-  test('should limit results to 5 books', async () => {
+  test('should fetch all books without a limit', async () => {
     ;(mockPrisma.userBook.findMany as jest.Mock).mockResolvedValue(mockTbrBooks)
     ;(mockPrisma.userBook.count as jest.Mock).mockResolvedValue(10)
 
     await getProfileTbr(mockUserId)
 
-    expect(mockPrisma.userBook.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        take: 5
-      })
-    )
+    const call = (mockPrisma.userBook.findMany as jest.Mock).mock.calls[0][0]
+    expect(call).not.toHaveProperty('take')
   })
 
   test('should return total count alongside limited results', async () => {
