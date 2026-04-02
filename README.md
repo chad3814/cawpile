@@ -156,4 +156,4 @@ __tests__/                 # Jest tests mirroring src/ structure
 
 ## License
 
-Private project - All rights reserved
+MIT License — see [LICENSE](LICENSE) for details.
