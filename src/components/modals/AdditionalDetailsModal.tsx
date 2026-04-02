@@ -46,18 +46,22 @@ export default function AdditionalDetailsModal({
   const [authorPoc, setAuthorPoc] = useState<RepresentationValue | ''>('')
   const [authorPocDetails, setAuthorPocDetails] = useState('')
 
-  // Initialize form state from initialData when modal opens or initialData changes
+  // Initialize form state from initialData only when the modal opens.
+  // Intentionally excludes initialData from deps — re-initializing on every
+  // router.refresh() (which updates initialData from the server) would wipe
+  // unsaved selections made before navigating to the review modal and back.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (isOpen && initialData) {
-      setLgbtqRepresentation(initialData.lgbtqRepresentation ?? '')
-      setLgbtqDetails(initialData.lgbtqDetails ?? '')
-      setDisabilityRepresentation(initialData.disabilityRepresentation ?? '')
-      setDisabilityDetails(initialData.disabilityDetails ?? '')
-      setIsNewAuthor(initialData.isNewAuthor ?? null)
-      setAuthorPoc(initialData.authorPoc ?? '')
-      setAuthorPocDetails(initialData.authorPocDetails ?? '')
+    if (isOpen) {
+      setLgbtqRepresentation(initialData?.lgbtqRepresentation ?? '')
+      setLgbtqDetails(initialData?.lgbtqDetails ?? '')
+      setDisabilityRepresentation(initialData?.disabilityRepresentation ?? '')
+      setDisabilityDetails(initialData?.disabilityDetails ?? '')
+      setIsNewAuthor(initialData?.isNewAuthor ?? null)
+      setAuthorPoc(initialData?.authorPoc ?? '')
+      setAuthorPocDetails(initialData?.authorPocDetails ?? '')
     }
-  }, [isOpen, initialData])
+  }, [isOpen])
 
   const handleSave = async () => {
     setIsSubmitting(true)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
@@ -51,6 +51,7 @@ const formatIcons = {
 export default function BookCard({ book }: BookCardProps) {
   const router = useRouter()
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
+  const refreshAfterRating = useRef(false)
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
   const [showRatingPreview, setShowRatingPreview] = useState(false)
   const [isChangingFormat, setIsChangingFormat] = useState(false)
@@ -93,12 +94,15 @@ export default function BookCard({ book }: BookCardProps) {
         throw new Error('Failed to update progress')
       }
 
-      // If progress is 100% and book doesn't have a rating, prompt for rating
+      // If progress is 100% and book doesn't have a rating, prompt for rating.
+      // Delay the refresh until the rating modal closes — calling router.refresh()
+      // while opening the modal causes a re-render that resets isRatingModalOpen.
       if (progress === 100 && !book.cawpileRating) {
+        refreshAfterRating.current = true
         setIsRatingModalOpen(true)
+      } else {
+        router.refresh()
       }
-
-      router.refresh()
     } catch (error) {
       console.error('Error updating progress:', error)
     }
@@ -122,12 +126,15 @@ export default function BookCard({ book }: BookCardProps) {
         throw new Error('Failed to mark book as complete')
       }
 
-      // If book doesn't have a rating, prompt for rating
+      // If book doesn't have a rating, prompt for rating.
+      // Delay the refresh until the rating modal closes — calling router.refresh()
+      // while opening the modal causes a re-render that resets isRatingModalOpen.
       if (!book.cawpileRating) {
+        refreshAfterRating.current = true
         setIsRatingModalOpen(true)
+      } else {
+        router.refresh()
       }
-
-      router.refresh()
     } catch (error) {
       console.error('Error marking book as complete:', error)
     }
@@ -486,13 +493,23 @@ export default function BookCard({ book }: BookCardProps) {
           pageCount: book.edition.googleBook?.pageCount,
         }}
         onUpdate={handleUpdateProgress}
+        onDNF={() => {
+          setIsProgressModalOpen(false)
+          setIsMarkDNFModalOpen(true)
+        }}
       />
     )}
 
     {/* CAWPILE Rating Modal */}
     <CawpileRatingModal
       isOpen={isRatingModalOpen}
-      onClose={() => setIsRatingModalOpen(false)}
+      onClose={() => {
+        setIsRatingModalOpen(false)
+        if (refreshAfterRating.current) {
+          refreshAfterRating.current = false
+          router.refresh()
+        }
+      }}
       bookId={book.id}
       bookType={bookType}
       bookTitle={displayTitle}
