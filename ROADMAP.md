@@ -11,8 +11,8 @@
   - When collapsed and the book is in progress, render the progress bar overlaid on the cover image
   - When expanded, render the progress bar in the info section as currently
 - [X] **Split Library into TBR and Completed** — break the single library section into distinct TBR and Completed subsections
-- [ ] **Hero-scroll library sections** — each Your Library subsection (Currently Reading, TBR, Completed) shows a few items and scrolls horizontally like a hero carousel
-- [ ] **Profile page hero sections** — remove the icon/table toggle; each profile section scrolls like a hero carousel matching the library sections
+- [X] **Hero-scroll library sections** — each Your Library subsection (Currently Reading, TBR, Completed) shows a few items and scrolls horizontally like a hero carousel
+- [X] **Profile page hero sections** — remove the icon/table toggle; each profile section scrolls like a hero carousel matching the library sections
 - [ ] **Dashboard tab layout** — replace horizontal tabs with a vertical sidebar, with sub-items for in-page anchors:
   - **Books** — site-wide book info
   - **Authors** — site-wide author info
