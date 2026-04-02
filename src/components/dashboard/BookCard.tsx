@@ -18,7 +18,7 @@ import { BookType, convertToStars } from '@/types/cawpile'
 import { RepresentationValue } from '@/types/book'
 import type { DashboardBookData } from '@/types/dashboard'
 import { useRouter } from 'next/navigation'
-import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon } from '@heroicons/react/24/outline'
+import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
@@ -50,6 +50,7 @@ const formatIcons = {
 
 export default function BookCard({ book }: BookCardProps) {
   const router = useRouter()
+  const [isExpanded, setIsExpanded] = useState(false)
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false)
   const refreshAfterRating = useRef(false)
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false)
@@ -377,108 +378,139 @@ export default function BookCard({ book }: BookCardProps) {
             </svg>
           </div>
         )}
-      </div>
 
-      {/* Book Details */}
-      <div className="p-4">
-        {/* Title and Author */}
-        <h3 className="font-semibold text-card-foreground line-clamp-2 mb-1">
-          {displayTitle}
-        </h3>
-        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
-          {authors.join(', ')}
-        </p>
-
-        {/* Rating Display */}
-        {book.cawpileRating && (
-          <div
-            className="mb-3 relative"
-            onMouseEnter={() => setShowRatingPreview(true)}
-            onMouseLeave={() => setShowRatingPreview(false)}
-          >
-            <StarRating
-              rating={book.cawpileRating.average}
-              showAverage={true}
-              size="sm"
-            />
-
-            {/* Rating Preview on Hover */}
-            {showRatingPreview && (
-              <div className="absolute z-10 left-0 right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-                <CawpileFacetDisplay
-                  rating={book.cawpileRating}
-                  bookType={bookType}
-                  compact={true}
-                />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Status Badge and Format */}
-        <div className="flex items-center justify-between mb-3">
-          <span className={statusColors[book.status]}>
-            {statusLabels[book.status]}
-          </span>
-          <div className="flex gap-1">
-            {selectedFormat.map((fmt) => (
-              <span key={fmt} className="text-lg" title={fmt}>
-                {formatIcons[fmt]}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Tracking Badges */}
-        <TrackingBadges
-          isReread={book.isReread}
-          bookClubName={book.bookClubName}
-          readathonName={book.readathonName}
-          isNewAuthor={book.isNewAuthor}
-          lgbtqRepresentation={book.lgbtqRepresentation}
-          disabilityRepresentation={book.disabilityRepresentation}
-          authorPoc={book.authorPoc}
-        />
-
-        {/* Progress Bar (for reading books) */}
-        {book.status === 'READING' && (
-          <div>
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+        {/* Progress bar overlay — only when collapsed and currently reading */}
+        {!isExpanded && book.status === 'READING' && (
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-2 pt-4 pb-2 bg-gradient-to-t from-black/70 to-transparent">
+            <div className="flex justify-between text-xs text-white mb-1">
               <span>Progress</span>
               <span>{Math.round(book.progress)}%</span>
             </div>
-            <div className="w-full bg-border rounded-full h-2 mb-2">
+            <div className="w-full bg-white/30 rounded-full h-1.5">
               <div
-                className="bg-primary h-2 rounded-full transition-all"
+                className="bg-white h-1.5 rounded-full transition-all"
                 style={{ width: `${book.progress}%` }}
               />
             </div>
-            <button
-              onClick={() => setIsProgressModalOpen(true)}
-              className="w-full text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-            >
-              Update Progress
-            </button>
           </div>
         )}
-
-        {/* Completion Date (for completed books) */}
-        {book.status === 'COMPLETED' && book.finishDate && (
-          <p className="text-xs text-muted-foreground">
-            Finished {new Date(book.finishDate).toLocaleDateString()}
-          </p>
-        )}
-
-        {/* Rating Action */}
-        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setIsRatingModalOpen(true)}
-            className="w-full text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            {book.cawpileRating ? 'Edit Rating' : 'Rate Book'}
-          </button>
-        </div>
       </div>
+
+      {/* Title row — always visible, toggles the info section */}
+      <button
+        onClick={() => setIsExpanded((prev) => !prev)}
+        className="w-full px-3 py-2 flex items-start justify-between text-left"
+        aria-expanded={isExpanded}
+      >
+        <h3 className="font-semibold text-card-foreground line-clamp-2 text-sm flex-1 mr-1">
+          {displayTitle}
+        </h3>
+        <ChevronDownIcon
+          className={`h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform duration-200 ${
+            isExpanded ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Collapsable info section */}
+      {isExpanded && (
+        <div className="px-3 pb-4">
+          {/* Author */}
+          <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
+            {authors.join(', ')}
+          </p>
+
+          {/* Rating Display */}
+          {book.cawpileRating && (
+            <div
+              className="mb-3 relative"
+              onMouseEnter={() => setShowRatingPreview(true)}
+              onMouseLeave={() => setShowRatingPreview(false)}
+            >
+              <StarRating
+                rating={book.cawpileRating.average}
+                showAverage={true}
+                size="sm"
+              />
+
+              {/* Rating Preview on Hover */}
+              {showRatingPreview && (
+                <div className="absolute z-10 left-0 right-0 mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                  <CawpileFacetDisplay
+                    rating={book.cawpileRating}
+                    bookType={bookType}
+                    compact={true}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Status Badge and Format */}
+          <div className="flex items-center justify-between mb-3">
+            <span className={statusColors[book.status]}>
+              {statusLabels[book.status]}
+            </span>
+            <div className="flex gap-1">
+              {selectedFormat.map((fmt) => (
+                <span key={fmt} className="text-lg" title={fmt}>
+                  {formatIcons[fmt]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Tracking Badges */}
+          <TrackingBadges
+            isReread={book.isReread}
+            bookClubName={book.bookClubName}
+            readathonName={book.readathonName}
+            isNewAuthor={book.isNewAuthor}
+            lgbtqRepresentation={book.lgbtqRepresentation}
+            disabilityRepresentation={book.disabilityRepresentation}
+            authorPoc={book.authorPoc}
+          />
+
+          {/* Progress Bar (for reading books) */}
+          {book.status === 'READING' && (
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Progress</span>
+                <span>{Math.round(book.progress)}%</span>
+              </div>
+              <div className="w-full bg-border rounded-full h-2 mb-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all"
+                  style={{ width: `${book.progress}%` }}
+                />
+              </div>
+              <button
+                onClick={() => setIsProgressModalOpen(true)}
+                className="w-full text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                Update Progress
+              </button>
+            </div>
+          )}
+
+          {/* Completion Date (for completed books) */}
+          {book.status === 'COMPLETED' && book.finishDate && (
+            <p className="text-xs text-muted-foreground">
+              Finished {new Date(book.finishDate).toLocaleDateString()}
+            </p>
+          )}
+
+          {/* Rating Action */}
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setIsRatingModalOpen(true)}
+              className="w-full text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              {book.cawpileRating ? 'Edit Rating' : 'Rate Book'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
 
     {/* Update Progress Modal */}
