@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import SharedReviewCard from './SharedReviewCard'
 import { ProfileSharedReview } from '@/types/profile'
@@ -24,7 +24,7 @@ export default function SharedReviewsCarousel({ reviews, title }: SharedReviewsC
   const [containerWidth, setContainerWidth] = useState(0)
   const [cols, setCols] = useState(2)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const measure = () => {
       if (!containerRef.current) return
       const w = containerRef.current.clientWidth
