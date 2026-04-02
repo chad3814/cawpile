@@ -11,7 +11,7 @@ export interface ProfileTbrResult {
 
 /**
  * Fetch TBR (Want to Read) books for a user's public profile
- * Returns up to 5 books ordered by most recently added, plus total count
+ * Returns all books ordered by most recently added, plus total count
  * Includes multi-provider cover images (hardcoverBook, googleBook, ibdbBook)
  */
 export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
@@ -23,7 +23,7 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
     }
   })
 
-  // Fetch up to 5 TBR books, ordered by most recently added
+  // Fetch all TBR books, ordered by most recently added
   const userBooks = await prisma.userBook.findMany({
     where: {
       userId: userId,
@@ -50,8 +50,7 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
     },
     orderBy: {
       createdAt: 'desc'
-    },
-    take: 5
+    }
   })
 
   const books: ProfileBookData[] = userBooks.map((book) => ({
