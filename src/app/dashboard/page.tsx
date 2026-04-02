@@ -46,7 +46,6 @@ export default async function DashboardPage() {
   const userWithPreferences = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
-      dashboardLayout: true,
       readingGoal: true,
       librarySortBy: true,
       librarySortOrder: true,
@@ -111,10 +110,6 @@ export default async function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <DashboardClient
         books={userBooks}
-        initialLayout={userWithPreferences?.dashboardLayout || 'GRID'}
-        initialSortBy={sortBy}
-        initialSortOrder={sortOrder}
-        userName={user?.name?.split(" ")[0]}
       />
 
       {/* Statistics */}
