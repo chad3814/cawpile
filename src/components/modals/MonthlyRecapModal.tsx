@@ -44,9 +44,13 @@ export default function MonthlyRecapModal({
 }: MonthlyRecapModalProps) {
   const { data: session } = useSession()
   const currentDate = new Date()
-  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
+  const isEarlyInMonth = currentDate.getDate() <= 10
+  const defaultDate = isEarlyInMonth
+    ? new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    : currentDate
+  const [selectedMonth, setSelectedMonth] = useState(defaultDate.getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(
-    initialYear || currentDate.getFullYear()
+    isEarlyInMonth ? defaultDate.getFullYear() : (initialYear || currentDate.getFullYear())
   )
   const [preview, setPreview] = useState<MonthlyRecapPreview | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)

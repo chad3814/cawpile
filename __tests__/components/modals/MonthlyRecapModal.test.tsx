@@ -902,6 +902,124 @@ describe('Video Proxy Download Behavior', () => {
   })
 })
 
+describe('Default Month Selection', () => {
+  test('defaults to current month when day of month is > 10', async () => {
+    // March 15 — day 15 > 10, so default to current month (March = 3)
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date(2025, 2, 15)) // March 15, 2025
+
+    const mockOnClose = jest.fn()
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    // The preview fetch URL should use month=3 (March)
+    await waitFor(() => {
+      const fetchMock = global.fetch as jest.Mock
+      const previewCall = fetchMock.mock.calls.find(([url]: [string]) =>
+        (url as string).includes('/api/recap/monthly') && (url as string).includes('preview=true')
+      )
+      expect(previewCall).toBeDefined()
+      expect(previewCall[0]).toContain('month=3')
+      expect(previewCall[0]).toContain('year=2025')
+    })
+
+    jest.useRealTimers()
+  })
+
+  test('defaults to previous month when day of month is ≤ 10', async () => {
+    // March 5 — day 5 ≤ 10, so default to previous month (February = 2)
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date(2025, 2, 5)) // March 5, 2025
+
+    const mockOnClose = jest.fn()
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      const fetchMock = global.fetch as jest.Mock
+      const previewCall = fetchMock.mock.calls.find(([url]: [string]) =>
+        (url as string).includes('/api/recap/monthly') && (url as string).includes('preview=true')
+      )
+      expect(previewCall).toBeDefined()
+      expect(previewCall[0]).toContain('month=2')
+      expect(previewCall[0]).toContain('year=2025')
+    })
+
+    jest.useRealTimers()
+  })
+
+  test('defaults to December of previous year when day ≤ 10 and current month is January', async () => {
+    // January 3 — day 3 ≤ 10, so default to December of prior year
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date(2025, 0, 3)) // January 3, 2025
+
+    const mockOnClose = jest.fn()
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      const fetchMock = global.fetch as jest.Mock
+      const previewCall = fetchMock.mock.calls.find(([url]: [string]) =>
+        (url as string).includes('/api/recap/monthly') && (url as string).includes('preview=true')
+      )
+      expect(previewCall).toBeDefined()
+      expect(previewCall[0]).toContain('month=12')
+      expect(previewCall[0]).toContain('year=2024')
+    })
+
+    jest.useRealTimers()
+  })
+
+  test('defaults to current month when day of month is exactly 11', async () => {
+    // March 11 — day 11 > 10, so default to current month (March = 3)
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date(2025, 2, 11)) // March 11, 2025
+
+    const mockOnClose = jest.fn()
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      const fetchMock = global.fetch as jest.Mock
+      const previewCall = fetchMock.mock.calls.find(([url]: [string]) =>
+        (url as string).includes('/api/recap/monthly') && (url as string).includes('preview=true')
+      )
+      expect(previewCall).toBeDefined()
+      expect(previewCall[0]).toContain('month=3')
+      expect(previewCall[0]).toContain('year=2025')
+    })
+
+    jest.useRealTimers()
+  })
+
+  test('defaults to previous month when day of month is exactly 10', async () => {
+    // March 10 — day 10 ≤ 10, so default to previous month (February = 2)
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date(2025, 2, 10)) // March 10, 2025
+
+    const mockOnClose = jest.fn()
+    await act(async () => {
+      render(<MonthlyRecapModal isOpen={true} onClose={mockOnClose} />)
+    })
+
+    await waitFor(() => {
+      const fetchMock = global.fetch as jest.Mock
+      const previewCall = fetchMock.mock.calls.find(([url]: [string]) =>
+        (url as string).includes('/api/recap/monthly') && (url as string).includes('preview=true')
+      )
+      expect(previewCall).toBeDefined()
+      expect(previewCall[0]).toContain('month=2')
+      expect(previewCall[0]).toContain('year=2025')
+    })
+
+    jest.useRealTimers()
+  })
+})
+
 describe('Session Handling for userId', () => {
   test('handles undefined userId gracefully when session is not available', async () => {
     // Mock unauthenticated session
