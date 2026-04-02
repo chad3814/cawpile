@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
+  redirectProxyUrl: process.env.AUTH_REDIRECT_PROXY_URL,
   adapter: PrismaAdapter(prisma),
   providers: [
     Google({
