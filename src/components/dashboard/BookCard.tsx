@@ -412,7 +412,7 @@ export default function BookCard({ book }: BookCardProps) {
         />
       </button>
 
-      {/* Collapsable info section */}
+      {/* Collapsible info section */}
       {isExpanded && (
         <div className="px-3 pb-4">
           {/* Author */}
