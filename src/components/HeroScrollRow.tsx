@@ -22,8 +22,16 @@ export default function HeroScrollRow({ children, title }: HeroScrollRowProps) {
 
   useEffect(() => {
     const measure = () => {
-      if (containerRef.current) setContainerWidth(containerRef.current.clientWidth)
-      if (trackRef.current) setTrackWidth(trackRef.current.scrollWidth)
+      const newContainerWidth = containerRef.current?.clientWidth ?? 0
+      const newTrackWidth = trackRef.current?.scrollWidth ?? 0
+      setContainerWidth(newContainerWidth)
+      setTrackWidth(newTrackWidth)
+      // Clamp page so it stays within the new valid range after resize
+      if (newContainerWidth > 0) {
+        const newMaxOffset = Math.max(0, newTrackWidth - newContainerWidth)
+        const maxPage = newMaxOffset > 0 ? Math.floor(newMaxOffset / newContainerWidth) : 0
+        setPage(p => Math.min(p, maxPage))
+      }
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -39,31 +47,33 @@ export default function HeroScrollRow({ children, title }: HeroScrollRowProps) {
   const canGoForward = offset < maxOffset
   const hasOverflow = maxOffset > 0
 
+  const navButtons = hasOverflow ? (
+    <div className="flex gap-1">
+      <button
+        onClick={() => setPage(p => p - 1)}
+        disabled={!canGoBack}
+        className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+        aria-label="Previous"
+      >
+        <ChevronLeftIcon className="h-4 w-4 text-foreground" />
+      </button>
+      <button
+        onClick={() => setPage(p => p + 1)}
+        disabled={!canGoForward}
+        className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
+        aria-label="Next"
+      >
+        <ChevronRightIcon className="h-4 w-4 text-foreground" />
+      </button>
+    </div>
+  ) : null
+
   return (
     <div>
-      {title && (
+      {(title || navButtons) && (
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-          {hasOverflow && (
-            <div className="flex gap-1">
-              <button
-                onClick={() => setPage(p => p - 1)}
-                disabled={!canGoBack}
-                className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
-                aria-label="Previous"
-              >
-                <ChevronLeftIcon className="h-4 w-4 text-foreground" />
-              </button>
-              <button
-                onClick={() => setPage(p => p + 1)}
-                disabled={!canGoForward}
-                className="p-1 rounded hover:bg-muted disabled:opacity-30 transition-colors"
-                aria-label="Next"
-              >
-                <ChevronRightIcon className="h-4 w-4 text-foreground" />
-              </button>
-            </div>
-          )}
+          {title && <h2 className="text-xl font-semibold text-foreground">{title}</h2>}
+          {navButtons && <div className={title ? undefined : 'ml-auto'}>{navButtons}</div>}
         </div>
       )}
 

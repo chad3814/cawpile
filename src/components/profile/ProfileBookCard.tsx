@@ -101,6 +101,10 @@ export default function ProfileBookCard({ book }: ProfileBookCardProps) {
               <div
                 className="bg-white h-1.5 rounded-full transition-all"
                 style={{ width: `${book.progress}%` }}
+                role="progressbar"
+                aria-valuenow={Math.round(book.progress)}
+                aria-valuemin={0}
+                aria-valuemax={100}
               />
             </div>
           </div>
