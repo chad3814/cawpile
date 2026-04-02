@@ -2,6 +2,7 @@
 
 import BookCard from './BookCard'
 import EmptyLibrary from './EmptyLibrary'
+import HeroScrollRow from '@/components/HeroScrollRow'
 import type { DashboardBookData } from '@/types/dashboard'
 
 interface BookGridProps {
@@ -26,11 +27,13 @@ export default function BookGrid({ books }: BookGridProps) {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Currently Reading
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <HeroScrollRow>
             {readingBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <div key={book.id} className="shrink-0 w-40">
+                <BookCard book={book} />
+              </div>
             ))}
-          </div>
+          </HeroScrollRow>
         </div>
       )}
 
@@ -40,11 +43,13 @@ export default function BookGrid({ books }: BookGridProps) {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             To Be Read
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <HeroScrollRow>
             {tbrBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <div key={book.id} className="shrink-0 w-40">
+                <BookCard book={book} />
+              </div>
             ))}
-          </div>
+          </HeroScrollRow>
         </div>
       )}
 
@@ -54,11 +59,13 @@ export default function BookGrid({ books }: BookGridProps) {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Completed
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <HeroScrollRow>
             {completedBooks.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <div key={book.id} className="shrink-0 w-40">
+                <BookCard book={book} />
+              </div>
             ))}
-          </div>
+          </HeroScrollRow>
         </div>
       )}
     </div>

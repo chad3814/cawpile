@@ -6,14 +6,13 @@ import { ProfileSharedReview } from '@/types/profile'
 
 interface SharedReviewsSectionProps {
   reviews: ProfileSharedReview[]
-  layout: 'GRID' | 'TABLE'
 }
 
 /**
  * Shared reviews section for profile page
- * Displays reviews using SharedReviewsViewSwitcher based on layout prop
+ * Displays reviews as a horizontal scroll carousel
  */
-export default function SharedReviewsSection({ reviews, layout }: SharedReviewsSectionProps) {
+export default function SharedReviewsSection({ reviews }: SharedReviewsSectionProps) {
   if (reviews.length === 0) {
     return <ProfileEmptyState variant="reviews" />
   }
@@ -23,7 +22,7 @@ export default function SharedReviewsSection({ reviews, layout }: SharedReviewsS
       <h2 className="text-xl font-semibold text-foreground mb-4">
         Shared Reviews
       </h2>
-      <SharedReviewsViewSwitcher reviews={reviews} layout={layout} />
+      <SharedReviewsViewSwitcher reviews={reviews} />
     </div>
   )
 }

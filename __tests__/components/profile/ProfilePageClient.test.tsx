@@ -1,6 +1,5 @@
 /**
- * Tests for ProfilePageClient TBR section
- * Task Group 7.1: Tests for TBR section
+ * Tests for ProfilePageClient
  */
 
 import React from 'react'
@@ -17,12 +16,13 @@ jest.mock('next/image', () => ({
   },
 }))
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(() => null),
-  setItem: jest.fn(),
-}
-Object.defineProperty(window, 'localStorage', { value: localStorageMock })
+// Mock next/link
+jest.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}))
 
 describe('ProfilePageClient TBR Section', () => {
   const mockUser = {
@@ -101,7 +101,7 @@ describe('ProfilePageClient TBR Section', () => {
     expect(screen.queryByText('Want to Read')).not.toBeInTheDocument()
   })
 
-  test('should display count format "5 of 23 books" when totalCount exceeds 5', () => {
+  test('should render all provided TBR books in the carousel without a count label', () => {
     const manyBooks = Array(5).fill(null).map((_, i) => ({
       ...mockTbrBooks[0],
       id: `userbook-${i}`,
@@ -124,7 +124,11 @@ describe('ProfilePageClient TBR Section', () => {
       />
     )
 
-    expect(screen.getByText('Showing 5 of 23 books')).toBeInTheDocument()
+    // All books passed in should render
+    expect(screen.getByText('TBR Book 1')).toBeInTheDocument()
+    expect(screen.getByText('TBR Book 5')).toBeInTheDocument()
+    // Carousel mode has no count label
+    expect(screen.queryByText(/Showing \d+ of \d+ books/)).not.toBeInTheDocument()
   })
 
   test('should display only cover, title, author for TBR books (no dates, progress, ratings)', () => {
@@ -137,7 +141,6 @@ describe('ProfilePageClient TBR Section', () => {
       />
     )
 
-    // Should show title and author
     expect(screen.getByText('TBR Book One')).toBeInTheDocument()
     expect(screen.getByText('Author One')).toBeInTheDocument()
 
@@ -145,5 +148,26 @@ describe('ProfilePageClient TBR Section', () => {
     expect(screen.queryByText(/Progress/)).not.toBeInTheDocument()
     expect(screen.queryByText('Want to Read', { selector: '.status-badge' })).not.toBeInTheDocument()
     expect(screen.queryByText(/Finished/)).not.toBeInTheDocument()
+  })
+
+  test('should not render layout toggle', () => {
+    const userWithReading = { ...mockUser, showCurrentlyReading: true }
+    const mockReadingBook = {
+      ...mockTbrBooks[0],
+      id: 'reading-1',
+      status: 'READING' as const,
+      edition: { ...mockTbrBooks[0].edition, id: 'edition-r1', book: { ...mockTbrBooks[0].edition.book, title: 'Reading Book' } }
+    }
+
+    render(
+      <ProfilePageClient
+        user={userWithReading}
+        currentlyReading={[mockReadingBook]}
+        sharedReviews={[]}
+        tbr={null}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: /grid|table/i })).not.toBeInTheDocument()
   })
 })

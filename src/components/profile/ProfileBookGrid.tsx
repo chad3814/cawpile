@@ -2,6 +2,7 @@
 
 import ProfileBookCard from './ProfileBookCard'
 import ProfileEmptyState from './ProfileEmptyState'
+import HeroScrollRow from '@/components/HeroScrollRow'
 import { ProfileBookData } from '@/types/profile'
 
 interface ProfileBookGridProps {
@@ -9,8 +10,8 @@ interface ProfileBookGridProps {
 }
 
 /**
- * Read-only book grid for public profile display
- * Displays all books in a single grid without section headers
+ * Read-only book carousel for public profile display
+ * Displays all books in a horizontal scroll row without section headers
  */
 export default function ProfileBookGrid({ books }: ProfileBookGridProps) {
   if (books.length === 0) {
@@ -18,10 +19,12 @@ export default function ProfileBookGrid({ books }: ProfileBookGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <HeroScrollRow>
       {books.map((book) => (
-        <ProfileBookCard key={book.id} book={book} />
+        <div key={book.id} className="shrink-0 w-40">
+          <ProfileBookCard book={book} />
+        </div>
       ))}
-    </div>
+    </HeroScrollRow>
   )
 }
