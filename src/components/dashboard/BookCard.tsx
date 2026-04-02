@@ -398,7 +398,10 @@ export default function BookCard({ book }: BookCardProps) {
 
       {/* Title row — always visible, toggles the info section */}
       <button
-        onClick={() => setIsExpanded((prev) => !prev)}
+        onClick={() => setIsExpanded((prev) => {
+          if (prev) setShowRatingPreview(false)
+          return !prev
+        })}
         className="w-full px-3 py-2 flex items-start justify-between text-left"
         aria-expanded={isExpanded}
         aria-controls={`book-info-${book.id}`}
