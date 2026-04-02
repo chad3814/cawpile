@@ -21,7 +21,8 @@ export default function BookTable({ books }: BookTableProps) {
 
   // Separate books by status
   const readingBooks = books.filter(book => book.status === 'READING')
-  const otherBooks = books.filter(book => book.status !== 'READING')
+  const tbrBooks = books.filter(book => book.status === 'WANT_TO_READ')
+  const completedBooks = books.filter(book => book.status === 'COMPLETED' || book.status === 'DNF')
 
   const handleRowClick = (bookId: string) => {
     router.push(`/book/${bookId}`)
@@ -199,18 +200,32 @@ export default function BookTable({ books }: BookTableProps) {
         </div>
       )}
 
-      {/* Other Books Section */}
-      {otherBooks.length > 0 && (
-        <div>
-          {readingBooks.length > 0 && (
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              Library
-            </h2>
-          )}
+      {/* TBR Section */}
+      {tbrBooks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            To Be Read
+          </h2>
           <div className="overflow-x-auto sm:overflow-x-visible">
             <table className="w-full border border-border rounded-lg overflow-hidden">
               <tbody>
-                {otherBooks.map(renderBookRow)}
+                {tbrBooks.map(renderBookRow)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Completed Section */}
+      {completedBooks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            Completed
+          </h2>
+          <div className="overflow-x-auto sm:overflow-x-visible">
+            <table className="w-full border border-border rounded-lg overflow-hidden">
+              <tbody>
+                {completedBooks.map(renderBookRow)}
               </tbody>
             </table>
           </div>

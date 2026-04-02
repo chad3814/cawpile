@@ -15,7 +15,8 @@ export default function BookGrid({ books }: BookGridProps) {
 
   // Separate books by status
   const readingBooks = books.filter(book => book.status === 'READING')
-  const otherBooks = books.filter(book => book.status !== 'READING')
+  const tbrBooks = books.filter(book => book.status === 'WANT_TO_READ')
+  const completedBooks = books.filter(book => book.status === 'COMPLETED' || book.status === 'DNF')
 
   return (
     <div>
@@ -33,16 +34,28 @@ export default function BookGrid({ books }: BookGridProps) {
         </div>
       )}
 
-      {/* Other Books Section */}
-      {otherBooks.length > 0 && (
-        <div>
-          {readingBooks.length > 0 && (
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              Library
-            </h2>
-          )}
+      {/* TBR Section */}
+      {tbrBooks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            To Be Read
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {otherBooks.map((book) => (
+            {tbrBooks.map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Section */}
+      {completedBooks.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
+            Completed
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {completedBooks.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
           </div>
