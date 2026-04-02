@@ -389,7 +389,7 @@ export default function BookCard({ book }: BookCardProps) {
             <div className="w-full bg-white/30 rounded-full h-1.5">
               <div
                 className="bg-white h-1.5 rounded-full transition-all"
-                style={{ width: `${book.progress}%` }}
+                style={{ width: `${book.progress ?? 0}%` }}
               />
             </div>
           </div>
