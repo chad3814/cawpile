@@ -22,7 +22,7 @@
     - Completed
   - **Recaps**
   - **Charts**
-- [ ] **Monthly recap defaults to previous month** — if the current day of the month is ≤ 10, default the monthly recap view to the previous month
+- [X] **Monthly recap defaults to previous month** — if the current day of the month is ≤ 10, default the monthly recap view to the previous month
 
 ---
 
