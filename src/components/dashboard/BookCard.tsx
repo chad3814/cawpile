@@ -384,7 +384,7 @@ export default function BookCard({ book }: BookCardProps) {
           <div className="absolute bottom-0 left-0 right-0 z-10 px-2 pt-4 pb-2 bg-gradient-to-t from-black/70 to-transparent">
             <div className="flex justify-between text-xs text-white mb-1">
               <span>Progress</span>
-              <span>{Math.round(book.progress)}%</span>
+              <span>{Math.round(book.progress ?? 0)}%</span>
             </div>
             <div className="w-full bg-white/30 rounded-full h-1.5">
               <div
