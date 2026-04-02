@@ -126,12 +126,15 @@ export default function BookCard({ book }: BookCardProps) {
         throw new Error('Failed to mark book as complete')
       }
 
-      // If book doesn't have a rating, prompt for rating
+      // If book doesn't have a rating, prompt for rating.
+      // Delay the refresh until the rating modal closes — calling router.refresh()
+      // while opening the modal causes a re-render that resets isRatingModalOpen.
       if (!book.cawpileRating) {
+        refreshAfterRating.current = true
         setIsRatingModalOpen(true)
+      } else {
+        router.refresh()
       }
-
-      router.refresh()
     } catch (error) {
       console.error('Error marking book as complete:', error)
     }
