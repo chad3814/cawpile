@@ -112,6 +112,14 @@ describe('BookGrid', () => {
     expect(getHeading('Currently Reading')).not.toBeInTheDocument();
   });
 
+  it('renders books inside a horizontal scroll container', () => {
+    const books = [makeBook('1', 'READING', 'Reading Book')];
+    const { container } = render(<BookGrid books={books} />);
+    const scrollRow = container.querySelector('.overflow-x-auto');
+    expect(scrollRow).toBeInTheDocument();
+    expect(scrollRow?.className).toContain('flex');
+  });
+
   it('places DNF and COMPLETED books together in Completed section', () => {
     const books = [
       makeBook('1', 'COMPLETED', 'Completed Book'),
