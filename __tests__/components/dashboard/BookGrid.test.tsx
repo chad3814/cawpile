@@ -37,6 +37,9 @@ const makeBook = (id: string, status: DashboardBookData['status'], title: string
 });
 
 describe('BookGrid', () => {
+  const getHeading = (name: string) =>
+    screen.queryByRole('heading', { name, level: 2 });
+
   it('renders empty state when no books', () => {
     render(<BookGrid books={[]} />);
     expect(screen.getByTestId('empty-library')).toBeInTheDocument();
@@ -45,28 +48,28 @@ describe('BookGrid', () => {
   it('renders Currently Reading section for READING books', () => {
     const books = [makeBook('1', 'READING', 'Reading Book')];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('Currently Reading')).toBeInTheDocument();
+    expect(getHeading('Currently Reading')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-1')).toBeInTheDocument();
   });
 
   it('renders To Be Read section for WANT_TO_READ books', () => {
     const books = [makeBook('1', 'WANT_TO_READ', 'TBR Book')];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('To Be Read')).toBeInTheDocument();
+    expect(getHeading('To Be Read')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-1')).toBeInTheDocument();
   });
 
   it('renders Completed section for COMPLETED books', () => {
     const books = [makeBook('1', 'COMPLETED', 'Completed Book')];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(getHeading('Completed')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-1')).toBeInTheDocument();
   });
 
   it('renders Completed section for DNF books', () => {
     const books = [makeBook('1', 'DNF', 'DNF Book')];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(getHeading('Completed')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-1')).toBeInTheDocument();
   });
 
@@ -77,9 +80,9 @@ describe('BookGrid', () => {
       makeBook('3', 'COMPLETED', 'Completed Book'),
     ];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('Currently Reading')).toBeInTheDocument();
-    expect(screen.getByText('To Be Read')).toBeInTheDocument();
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(getHeading('Currently Reading')).toBeInTheDocument();
+    expect(getHeading('To Be Read')).toBeInTheDocument();
+    expect(getHeading('Completed')).toBeInTheDocument();
   });
 
   it('does not render TBR section when no WANT_TO_READ books', () => {
@@ -88,7 +91,7 @@ describe('BookGrid', () => {
       makeBook('2', 'COMPLETED', 'Completed Book'),
     ];
     render(<BookGrid books={books} />);
-    expect(screen.queryByText('To Be Read')).not.toBeInTheDocument();
+    expect(getHeading('To Be Read')).not.toBeInTheDocument();
   });
 
   it('does not render Completed section when no COMPLETED or DNF books', () => {
@@ -97,7 +100,7 @@ describe('BookGrid', () => {
       makeBook('2', 'WANT_TO_READ', 'TBR Book'),
     ];
     render(<BookGrid books={books} />);
-    expect(screen.queryByText('Completed')).not.toBeInTheDocument();
+    expect(getHeading('Completed')).not.toBeInTheDocument();
   });
 
   it('does not render Currently Reading section when no READING books', () => {
@@ -106,7 +109,7 @@ describe('BookGrid', () => {
       makeBook('2', 'COMPLETED', 'Completed Book'),
     ];
     render(<BookGrid books={books} />);
-    expect(screen.queryByText('Currently Reading')).not.toBeInTheDocument();
+    expect(getHeading('Currently Reading')).not.toBeInTheDocument();
   });
 
   it('places DNF and COMPLETED books together in Completed section', () => {
@@ -115,7 +118,7 @@ describe('BookGrid', () => {
       makeBook('2', 'DNF', 'DNF Book'),
     ];
     render(<BookGrid books={books} />);
-    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(getHeading('Completed')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-1')).toBeInTheDocument();
     expect(screen.getByTestId('book-card-2')).toBeInTheDocument();
   });
