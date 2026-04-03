@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { TrashIcon } from '@heroicons/react/24/outline'
 import DeleteUserModal from './DeleteUserModal'
 
@@ -139,7 +140,14 @@ export default function AdminUserList({ users, currentUserId }: AdminUserListPro
                     <div className="text-sm font-medium text-gray-900">
                       {user.name || 'No name'}
                       {user.username && (
-                        <span className="ml-2 text-gray-500 font-normal">@{user.username}</span>
+                        <Link
+                          href={`/u/${user.username}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-gray-500 font-normal hover:text-orange-600"
+                        >
+                          @{user.username}
+                        </Link>
                       )}
                     </div>
                     <div className="text-sm text-gray-500">{user.email}</div>
