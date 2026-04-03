@@ -13,7 +13,7 @@
 - [X] **Split Library into TBR and Completed** — break the single library section into distinct TBR and Completed subsections
 - [X] **Hero-scroll library sections** — each Your Library subsection (Currently Reading, TBR, Completed) shows a few items and scrolls horizontally like a hero carousel
 - [X] **Profile page hero sections** — remove the icon/table toggle; each profile section scrolls like a hero carousel matching the library sections
-- [ ] **Dashboard tab layout** — replace horizontal tabs with a vertical sidebar, with sub-items for in-page anchors:
+- [X] **Dashboard tab layout** — replace horizontal tabs with a vertical sidebar, with sub-items for in-page anchors:
   - **Books** — site-wide book info
   - **Authors** — site-wide author info
   - **Your Library**
