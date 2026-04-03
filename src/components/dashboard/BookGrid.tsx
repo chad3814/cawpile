@@ -20,8 +20,8 @@ export default function BookGrid({ books }: BookGridProps) {
 
   return (
     <div>
-      {readingBooks.length > 0 && (
-        <div id="currently-reading" className="mb-8 scroll-mt-8">
+      <div id="currently-reading" className="mb-8 scroll-mt-8">
+        {readingBooks.length > 0 ? (
           <HeroScrollRow title="Currently Reading">
             {readingBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
@@ -29,11 +29,13 @@ export default function BookGrid({ books }: BookGridProps) {
               </div>
             ))}
           </HeroScrollRow>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground">No books currently being read.</p>
+        )}
+      </div>
 
-      {tbrBooks.length > 0 && (
-        <div id="tbr" className="mb-8 scroll-mt-8">
+      <div id="tbr" className="mb-8 scroll-mt-8">
+        {tbrBooks.length > 0 ? (
           <HeroScrollRow title="To Be Read">
             {tbrBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
@@ -41,11 +43,13 @@ export default function BookGrid({ books }: BookGridProps) {
               </div>
             ))}
           </HeroScrollRow>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground">No books in your TBR list.</p>
+        )}
+      </div>
 
-      {completedBooks.length > 0 && (
-        <div id="completed" className="mb-8 scroll-mt-8">
+      <div id="completed" className="mb-8 scroll-mt-8">
+        {completedBooks.length > 0 ? (
           <HeroScrollRow title="Completed">
             {completedBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
@@ -53,8 +57,10 @@ export default function BookGrid({ books }: BookGridProps) {
               </div>
             ))}
           </HeroScrollRow>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground">No completed books yet.</p>
+        )}
+      </div>
     </div>
   )
 }

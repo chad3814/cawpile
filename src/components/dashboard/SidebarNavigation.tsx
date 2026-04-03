@@ -31,17 +31,20 @@ const NAV_ITEMS: NavItem[] = [
 
 interface SidebarNavigationProps {
   activeSection: DashboardSection;
+  activeAnchor: string | null;
   onSectionChange: (section: DashboardSection, anchor?: string) => void;
 }
 
-export default function SidebarNavigation({ activeSection, onSectionChange }: SidebarNavigationProps) {
+export default function SidebarNavigation({ activeSection, activeAnchor, onSectionChange }: SidebarNavigationProps) {
   return (
     <nav className="w-52 shrink-0" aria-label="Dashboard sections">
       <ul className="space-y-1">
         {NAV_ITEMS.map((item) => (
           <li key={item.id}>
             <button
+              type="button"
               onClick={() => onSectionChange(item.id)}
+              aria-current={activeSection === item.id ? 'page' : undefined}
               className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeSection === item.id
                   ? 'bg-primary/10 text-primary'
@@ -55,8 +58,14 @@ export default function SidebarNavigation({ activeSection, onSectionChange }: Si
                 {item.subItems.map((sub) => (
                   <li key={sub.anchor}>
                     <button
+                      type="button"
                       onClick={() => onSectionChange(item.id, sub.anchor)}
-                      className="w-full text-left px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                      aria-current={activeAnchor === sub.anchor ? 'true' : undefined}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                        activeAnchor === sub.anchor
+                          ? 'bg-primary/5 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
                     >
                       {sub.label}
                     </button>
