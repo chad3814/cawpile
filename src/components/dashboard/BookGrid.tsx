@@ -14,7 +14,6 @@ export default function BookGrid({ books }: BookGridProps) {
     return <EmptyLibrary />
   }
 
-  // Separate books by status
   const readingBooks = books.filter(book => book.status === 'READING')
   const tbrBooks = books.filter(book => book.status === 'WANT_TO_READ')
   const completedBooks = books.filter(book => book.status === 'COMPLETED' || book.status === 'DNF')
@@ -22,7 +21,7 @@ export default function BookGrid({ books }: BookGridProps) {
   return (
     <div>
       {readingBooks.length > 0 && (
-        <div className="mb-8">
+        <div id="currently-reading" className="mb-8 scroll-mt-8">
           <HeroScrollRow title="Currently Reading">
             {readingBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
@@ -34,7 +33,7 @@ export default function BookGrid({ books }: BookGridProps) {
       )}
 
       {tbrBooks.length > 0 && (
-        <div className="mb-8">
+        <div id="tbr" className="mb-8 scroll-mt-8">
           <HeroScrollRow title="To Be Read">
             {tbrBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
@@ -46,7 +45,7 @@ export default function BookGrid({ books }: BookGridProps) {
       )}
 
       {completedBooks.length > 0 && (
-        <div className="mb-8">
+        <div id="completed" className="mb-8 scroll-mt-8">
           <HeroScrollRow title="Completed">
             {completedBooks.map((book) => (
               <div key={book.id} className="shrink-0 w-40">
