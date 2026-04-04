@@ -61,7 +61,7 @@ function ReviewRow({ review }: { review: PublicBookReview }) {
         </Link>
       </td>
       <td className="px-4 py-3 hidden md:table-cell">
-        {review.showReview && review.review ? (
+        {review.review ? (
           <Link
             href={`/share/reviews/${review.shareToken}`}
             className="text-sm text-muted-foreground line-clamp-2 hover:text-card-foreground"
@@ -74,7 +74,7 @@ function ReviewRow({ review }: { review: PublicBookReview }) {
       </td>
       <td className="px-4 py-3 hidden sm:table-cell">
         <span className="text-sm text-muted-foreground">
-          {review.showDates && review.finishDate ? formatDate(review.finishDate) : '--'}
+          {review.finishDate ? formatDate(review.finishDate) : '--'}
         </span>
       </td>
     </tr>
@@ -139,12 +139,10 @@ export default function BookPageClient({ data }: BookPageClientProps) {
               )}
 
               {description && (
-                <div className="mt-4 max-h-40 overflow-hidden">
-                  <div
-                    className="text-sm text-muted-foreground line-clamp-6"
-                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
-                  />
-                </div>
+                <div
+                  className="mt-4 text-sm text-muted-foreground line-clamp-6"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
+                />
               )}
             </div>
           </div>
