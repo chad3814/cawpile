@@ -110,7 +110,7 @@ export default function EditBookModal({
 
   // Smart defaults for additional details
   const [hasSuggestions, setHasSuggestions] = useState(false)
-  const [defaultsFetched, setDefaultsFetched] = useState(false)
+  const defaultsFetchedRef = useRef(false)
   const suggestedFieldsRef = useRef(new Set<string>())
 
   const clearSuggestions = useCallback(() => {
@@ -134,8 +134,8 @@ export default function EditBookModal({
 
   // Fetch smart defaults when switching to the additional tab with empty fields
   useEffect(() => {
-    if (activeTab !== 'additional' || defaultsFetched) return;
-    setDefaultsFetched(true);
+    if (activeTab !== 'additional' || defaultsFetchedRef.current) return;
+    defaultsFetchedRef.current = true;
 
     const hasExistingData = book.lgbtqRepresentation
       || book.disabilityRepresentation
@@ -176,7 +176,7 @@ export default function EditBookModal({
       })
       .catch(err => { if (err.name !== 'AbortError') { /* silently ignore */ } });
     return () => controller.abort();
-  }, [activeTab, defaultsFetched, book.id, book.lgbtqRepresentation, book.disabilityRepresentation, book.authorPoc, book.isNewAuthor])
+  }, [activeTab, book.id, book.lgbtqRepresentation, book.disabilityRepresentation, book.authorPoc, book.isNewAuthor])
 
   // Clear DNF reason and set default date when status changes to DNF
   useEffect(() => {
