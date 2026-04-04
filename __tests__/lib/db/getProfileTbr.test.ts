@@ -36,6 +36,7 @@ describe('getProfileTbr', () => {
         id: 'edition-1',
         title: null,
         book: {
+          id: 'book-1',
           title: 'Book One',
           authors: ['Author One'],
           bookType: 'FICTION'
@@ -61,6 +62,7 @@ describe('getProfileTbr', () => {
         id: 'edition-2',
         title: 'Book Two Special Edition',
         book: {
+          id: 'book-2',
           title: 'Book Two',
           authors: ['Author Two'],
           bookType: 'NONFICTION'

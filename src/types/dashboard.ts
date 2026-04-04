@@ -49,6 +49,7 @@ export interface DashboardBookData {
     id: string
     title: string | null
     book: {
+      id: string
       title: string
       authors: string[]
       bookType?: 'FICTION' | 'NONFICTION'

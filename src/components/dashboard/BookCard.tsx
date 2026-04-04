@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { BookFormat } from '@prisma/client'
 import UpdateProgressModal from '@/components/modals/UpdateProgressModal'
 import CawpileRatingModal from '@/components/modals/CawpileRatingModal'
@@ -340,7 +341,7 @@ export default function BookCard({ book }: BookCardProps) {
       </div>
 
       {/* Book Cover */}
-      <div className="aspect-[3/4] relative bg-muted overflow-hidden">
+      <Link href={`/b/${book.edition.book.id}`} className="block aspect-[3/4] relative bg-muted overflow-hidden">
         {/* Star Rating Badge */}
         {book.cawpileRating && (
           <div className="absolute top-2 left-2 z-20 bg-black/75 backdrop-blur-sm rounded px-2 py-1 shadow-lg">
@@ -394,27 +395,32 @@ export default function BookCard({ book }: BookCardProps) {
             </div>
           </div>
         )}
-      </div>
+      </Link>
 
-      {/* Title row — always visible, toggles the info section */}
-      <button
-        onClick={() => setIsExpanded((prev) => {
-          if (prev) setShowRatingPreview(false)
-          return !prev
-        })}
-        className="w-full px-3 py-2 flex items-start justify-between text-left"
-        aria-expanded={isExpanded}
-        aria-controls={`book-info-${book.id}`}
-      >
-        <span className="font-semibold text-card-foreground line-clamp-2 text-sm flex-1 mr-1">
+      {/* Title row — always visible */}
+      <div className="w-full px-3 py-2 flex items-start justify-between">
+        <Link
+          href={`/b/${book.edition.book.id}`}
+          className="font-semibold text-card-foreground line-clamp-2 text-sm flex-1 mr-1 hover:underline"
+        >
           {displayTitle}
-        </span>
-        <ChevronDownIcon
-          className={`h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform duration-200 ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
+        </Link>
+        <button
+          onClick={() => setIsExpanded((prev) => {
+            if (prev) setShowRatingPreview(false)
+            return !prev
+          })}
+          aria-expanded={isExpanded}
+          aria-controls={`book-info-${book.id}`}
+          className="p-0.5"
+        >
+          <ChevronDownIcon
+            className={`h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform duration-200 ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
+      </div>
 
       {/* Collapsible info section — always rendered, height animated via grid-rows */}
       <div
