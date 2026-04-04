@@ -1,8 +1,8 @@
 'use client'
 
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, CheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
 import BookClubField from '@/components/forms/BookClubField'
 import ReadathonField from '@/components/forms/ReadathonField'
@@ -107,6 +107,62 @@ export default function EditBookModal({
   const [preferredCoverProvider, setPreferredCoverProvider] = useState<CoverProvider | null>(
     (book.preferredCoverProvider as CoverProvider) || null
   )
+
+  // Smart defaults for additional details
+  const [hasSuggestions, setHasSuggestions] = useState(false)
+  const [defaultsFetched, setDefaultsFetched] = useState(false)
+
+  const clearSuggestions = useCallback(() => {
+    setLgbtqRepresentation('')
+    setLgbtqDetails('')
+    setDisabilityRepresentation('')
+    setDisabilityDetails('')
+    setIsNewAuthor(null)
+    setAuthorPoc('')
+    setAuthorPocDetails('')
+    setHasSuggestions(false)
+  }, [])
+
+  // Fetch smart defaults when switching to the additional tab with empty fields
+  useEffect(() => {
+    if (activeTab !== 'additional' || defaultsFetched) return;
+    setDefaultsFetched(true);
+
+    const hasExistingData = book.lgbtqRepresentation
+      || book.disabilityRepresentation
+      || book.authorPoc
+      || book.isNewAuthor != null;
+    if (hasExistingData) return;
+
+    fetch(`/api/user/books/${book.id}/diversity-defaults`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data?.defaults) return;
+        const d = data.defaults;
+        let applied = false;
+        if (d.lgbtqRepresentation) {
+          setLgbtqRepresentation(d.lgbtqRepresentation as RepresentationValue);
+          if (d.lgbtqDetails) setLgbtqDetails(d.lgbtqDetails);
+          applied = true;
+        }
+        if (d.disabilityRepresentation) {
+          setDisabilityRepresentation(d.disabilityRepresentation as RepresentationValue);
+          if (d.disabilityDetails) setDisabilityDetails(d.disabilityDetails);
+          applied = true;
+        }
+        if (d.authorPoc) {
+          setAuthorPoc(d.authorPoc as RepresentationValue);
+          if (d.authorPocDetails) setAuthorPocDetails(d.authorPocDetails);
+          applied = true;
+        }
+        if (d.isNewAuthor != null) {
+          setIsNewAuthor(d.isNewAuthor);
+          applied = true;
+        }
+        if (applied) setHasSuggestions(true);
+      })
+      .catch(() => { /* silently ignore - defaults are best-effort */ });
+  }, [activeTab, defaultsFetched, book.id, book.lgbtqRepresentation, book.disabilityRepresentation, book.authorPoc, book.isNewAuthor])
 
   // Clear DNF reason and set default date when status changes to DNF
   useEffect(() => {
@@ -419,6 +475,21 @@ export default function EditBookModal({
 
                   {activeTab === 'additional' && (
                     <div className="space-y-6">
+                      {hasSuggestions && (
+                        <div className="flex items-center justify-between px-3 py-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm text-orange-700 dark:text-orange-300">
+                            <SparklesIcon className="h-4 w-4 flex-shrink-0" />
+                            <span>Pre-filled from previous reviews</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={clearSuggestions}
+                            className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 underline"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      )}
                       <RepresentationField
                         label="LGBTQ+ Representation"
                         description="Does this book include LGBTQ+ characters or themes?"
