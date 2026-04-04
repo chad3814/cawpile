@@ -14,9 +14,9 @@ interface DiversityDefaults {
   isNewAuthor?: boolean;
 }
 
-interface DiversitySources {
-  [field: string]: DiversitySource;
-}
+type DiversitySources = {
+  [K in keyof DiversityDefaults]?: DiversitySource;
+};
 
 function majorityVote(values: (string | null)[]): string | null {
   const counts = new Map<string, number>();
@@ -35,6 +35,8 @@ function majorityVote(values: (string | null)[]): string | null {
       bestCount = count;
     }
   }
+  // On a tie the first-encountered value (per DB row order) wins — intentional,
+  // since defaults are best-effort and a strict tie means no clear majority.
   return best;
 }
 
@@ -47,8 +49,7 @@ function majorityDetail(
     .filter(r => r.representation === 'Yes' && r.detail != null && r.detail !== '')
     .map(r => r.detail!);
   if (details.length === 0) return null;
-  // Return the most common detail, or the first one if all unique
-  return majorityVote(details) ?? details[0];
+  return majorityVote(details);
 }
 
 export async function GET(
