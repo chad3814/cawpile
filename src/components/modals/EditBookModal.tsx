@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon, CheckIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import AcquisitionMethodField from '@/components/forms/AcquisitionMethodField'
@@ -111,15 +111,24 @@ export default function EditBookModal({
   // Smart defaults for additional details
   const [hasSuggestions, setHasSuggestions] = useState(false)
   const [defaultsFetched, setDefaultsFetched] = useState(false)
+  const suggestedFieldsRef = useRef(new Set<string>())
 
   const clearSuggestions = useCallback(() => {
-    setLgbtqRepresentation('')
-    setLgbtqDetails('')
-    setDisabilityRepresentation('')
-    setDisabilityDetails('')
-    setIsNewAuthor(null)
-    setAuthorPoc('')
-    setAuthorPocDetails('')
+    const fields = suggestedFieldsRef.current;
+    if (fields.has('lgbtqRepresentation')) {
+      setLgbtqRepresentation('')
+      setLgbtqDetails('')
+    }
+    if (fields.has('disabilityRepresentation')) {
+      setDisabilityRepresentation('')
+      setDisabilityDetails('')
+    }
+    if (fields.has('isNewAuthor')) setIsNewAuthor(null)
+    if (fields.has('authorPoc')) {
+      setAuthorPoc('')
+      setAuthorPocDetails('')
+    }
+    suggestedFieldsRef.current = new Set()
     setHasSuggestions(false)
   }, [])
 
@@ -134,34 +143,39 @@ export default function EditBookModal({
       || book.isNewAuthor != null;
     if (hasExistingData) return;
 
-    fetch(`/api/user/books/${book.id}/diversity-defaults`)
+    const controller = new AbortController();
+    fetch(`/api/user/books/${book.id}/diversity-defaults`, { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (!data?.defaults) return;
         const d = data.defaults;
-        let applied = false;
+        const suggested = new Set<string>();
         if (d.lgbtqRepresentation) {
           setLgbtqRepresentation(d.lgbtqRepresentation as RepresentationValue);
           if (d.lgbtqDetails) setLgbtqDetails(d.lgbtqDetails);
-          applied = true;
+          suggested.add('lgbtqRepresentation');
         }
         if (d.disabilityRepresentation) {
           setDisabilityRepresentation(d.disabilityRepresentation as RepresentationValue);
           if (d.disabilityDetails) setDisabilityDetails(d.disabilityDetails);
-          applied = true;
+          suggested.add('disabilityRepresentation');
         }
         if (d.authorPoc) {
           setAuthorPoc(d.authorPoc as RepresentationValue);
           if (d.authorPocDetails) setAuthorPocDetails(d.authorPocDetails);
-          applied = true;
+          suggested.add('authorPoc');
         }
         if (d.isNewAuthor != null) {
           setIsNewAuthor(d.isNewAuthor);
-          applied = true;
+          suggested.add('isNewAuthor');
         }
-        if (applied) setHasSuggestions(true);
+        if (suggested.size > 0) {
+          suggestedFieldsRef.current = suggested;
+          setHasSuggestions(true);
+        }
       })
-      .catch(() => { /* silently ignore - defaults are best-effort */ });
+      .catch(err => { if (err.name !== 'AbortError') { /* silently ignore */ } });
+    return () => controller.abort();
   }, [activeTab, defaultsFetched, book.id, book.lgbtqRepresentation, book.disabilityRepresentation, book.authorPoc, book.isNewAuthor])
 
   // Clear DNF reason and set default date when status changes to DNF

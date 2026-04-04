@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useEffect, useCallback } from 'react'
+import { Fragment, useState, useEffect, useCallback, useRef } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import RepresentationField from '@/components/forms/RepresentationField'
@@ -39,6 +39,7 @@ export default function AdditionalDetailsModal({
 }: AdditionalDetailsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasSuggestions, setHasSuggestions] = useState(false)
+  const suggestedFieldsRef = useRef(new Set<string>())
 
   // Form data
   const [lgbtqRepresentation, setLgbtqRepresentation] = useState<RepresentationValue | ''>('')
@@ -50,13 +51,21 @@ export default function AdditionalDetailsModal({
   const [authorPocDetails, setAuthorPocDetails] = useState('')
 
   const clearSuggestions = useCallback(() => {
-    setLgbtqRepresentation('')
-    setLgbtqDetails('')
-    setDisabilityRepresentation('')
-    setDisabilityDetails('')
-    setIsNewAuthor(null)
-    setAuthorPoc('')
-    setAuthorPocDetails('')
+    const fields = suggestedFieldsRef.current;
+    if (fields.has('lgbtqRepresentation')) {
+      setLgbtqRepresentation('')
+      setLgbtqDetails('')
+    }
+    if (fields.has('disabilityRepresentation')) {
+      setDisabilityRepresentation('')
+      setDisabilityDetails('')
+    }
+    if (fields.has('isNewAuthor')) setIsNewAuthor(null)
+    if (fields.has('authorPoc')) {
+      setAuthorPoc('')
+      setAuthorPocDetails('')
+    }
+    suggestedFieldsRef.current = new Set()
     setHasSuggestions(false)
   }, [])
 
@@ -66,52 +75,58 @@ export default function AdditionalDetailsModal({
   // from the server) would wipe unsaved selections made before navigating
   // to the review modal and back.
   useEffect(() => {
-    if (isOpen) {
-      setLgbtqRepresentation(initialData?.lgbtqRepresentation ?? '')
-      setLgbtqDetails(initialData?.lgbtqDetails ?? '')
-      setDisabilityRepresentation(initialData?.disabilityRepresentation ?? '')
-      setDisabilityDetails(initialData?.disabilityDetails ?? '')
-      setIsNewAuthor(initialData?.isNewAuthor ?? null)
-      setAuthorPoc(initialData?.authorPoc ?? '')
-      setAuthorPocDetails(initialData?.authorPocDetails ?? '')
-      setHasSuggestions(false)
+    if (!isOpen) return;
 
-      // Fetch smart defaults when all diversity fields are empty
-      const hasExistingData = initialData?.lgbtqRepresentation
-        || initialData?.disabilityRepresentation
-        || initialData?.authorPoc
-        || initialData?.isNewAuthor != null;
+    setLgbtqRepresentation(initialData?.lgbtqRepresentation ?? '')
+    setLgbtqDetails(initialData?.lgbtqDetails ?? '')
+    setDisabilityRepresentation(initialData?.disabilityRepresentation ?? '')
+    setDisabilityDetails(initialData?.disabilityDetails ?? '')
+    setIsNewAuthor(initialData?.isNewAuthor ?? null)
+    setAuthorPoc(initialData?.authorPoc ?? '')
+    setAuthorPocDetails(initialData?.authorPocDetails ?? '')
+    setHasSuggestions(false)
+    suggestedFieldsRef.current = new Set()
 
-      if (!hasExistingData) {
-        fetch(`/api/user/books/${userBookId}/diversity-defaults`)
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (!data?.defaults) return;
-            const d = data.defaults;
-            let applied = false;
-            if (d.lgbtqRepresentation) {
-              setLgbtqRepresentation(d.lgbtqRepresentation as RepresentationValue)
-              if (d.lgbtqDetails) setLgbtqDetails(d.lgbtqDetails)
-              applied = true;
-            }
-            if (d.disabilityRepresentation) {
-              setDisabilityRepresentation(d.disabilityRepresentation as RepresentationValue)
-              if (d.disabilityDetails) setDisabilityDetails(d.disabilityDetails)
-              applied = true;
-            }
-            if (d.authorPoc) {
-              setAuthorPoc(d.authorPoc as RepresentationValue)
-              if (d.authorPocDetails) setAuthorPocDetails(d.authorPocDetails)
-              applied = true;
-            }
-            if (d.isNewAuthor != null) {
-              setIsNewAuthor(d.isNewAuthor)
-              applied = true;
-            }
-            if (applied) setHasSuggestions(true);
-          })
-          .catch(() => { /* silently ignore - defaults are best-effort */ });
-      }
+    // Fetch smart defaults when all diversity fields are empty
+    const hasExistingData = initialData?.lgbtqRepresentation
+      || initialData?.disabilityRepresentation
+      || initialData?.authorPoc
+      || initialData?.isNewAuthor != null;
+
+    if (!hasExistingData) {
+      const controller = new AbortController();
+      fetch(`/api/user/books/${userBookId}/diversity-defaults`, { signal: controller.signal })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (!data?.defaults) return;
+          const d = data.defaults;
+          const suggested = new Set<string>();
+          if (d.lgbtqRepresentation) {
+            setLgbtqRepresentation(d.lgbtqRepresentation as RepresentationValue)
+            if (d.lgbtqDetails) setLgbtqDetails(d.lgbtqDetails)
+            suggested.add('lgbtqRepresentation')
+          }
+          if (d.disabilityRepresentation) {
+            setDisabilityRepresentation(d.disabilityRepresentation as RepresentationValue)
+            if (d.disabilityDetails) setDisabilityDetails(d.disabilityDetails)
+            suggested.add('disabilityRepresentation')
+          }
+          if (d.authorPoc) {
+            setAuthorPoc(d.authorPoc as RepresentationValue)
+            if (d.authorPocDetails) setAuthorPocDetails(d.authorPocDetails)
+            suggested.add('authorPoc')
+          }
+          if (d.isNewAuthor != null) {
+            setIsNewAuthor(d.isNewAuthor)
+            suggested.add('isNewAuthor')
+          }
+          if (suggested.size > 0) {
+            suggestedFieldsRef.current = suggested;
+            setHasSuggestions(true);
+          }
+        })
+        .catch(err => { if (err.name !== 'AbortError') { /* silently ignore */ } });
+      return () => controller.abort();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
