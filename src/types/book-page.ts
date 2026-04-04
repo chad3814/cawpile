@@ -26,6 +26,7 @@ export interface BookPageData {
   };
   aggregatedRating: AggregatedCawpileRating | null;
   publicReviews: PublicBookReview[];
+  reviewsCapped: boolean;
   totalRatingCount: number;
 }
 
