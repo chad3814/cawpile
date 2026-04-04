@@ -5,6 +5,7 @@ import SidebarNavigation from './SidebarNavigation'
 import type { DashboardSection } from './SidebarNavigation'
 import BookGrid from './BookGrid'
 import { ChartsTab } from '@/components/charts/ChartsTab'
+import { RecapTab } from '@/components/recap/RecapTab'
 import { ChartDataProvider } from '@/contexts/ChartDataContext'
 import type { DashboardBookData } from '@/types/dashboard'
 
@@ -60,10 +61,7 @@ export default function DashboardClient({ books }: DashboardClientProps) {
             <BookGrid books={books} />
           )}
           {activeSection === 'recaps' && (
-            <div className="py-16 text-center text-muted-foreground">
-              <p className="text-lg font-medium text-foreground">Recaps</p>
-              <p className="mt-2 text-sm">Monthly recaps — coming soon.</p>
-            </div>
+            <RecapTab />
           )}
           {activeSection === 'charts' && (
             <ChartsTab />
