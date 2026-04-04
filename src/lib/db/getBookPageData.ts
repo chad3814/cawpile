@@ -3,9 +3,20 @@ import { AggregatedCawpileRating, BookPageData, PublicBookReview } from '@/types
 
 const FACET_KEYS = ['characters', 'atmosphere', 'writing', 'plot', 'intrigue', 'logic', 'enjoyment'] as const;
 
-function computeAggregatedRating(
-  ratings: { characters: number | null; atmosphere: number | null; writing: number | null; plot: number | null; intrigue: number | null; logic: number | null; enjoyment: number | null; average: number }[]
-): AggregatedCawpileRating | null {
+const RATING_SELECT = {
+  characters: true,
+  atmosphere: true,
+  writing: true,
+  plot: true,
+  intrigue: true,
+  logic: true,
+  enjoyment: true,
+  average: true,
+} as const;
+
+type RatingRow = { [K in typeof FACET_KEYS[number]]: number | null } & { average: number };
+
+function computeAggregatedRating(ratings: RatingRow[]): AggregatedCawpileRating | null {
   if (ratings.length === 0) return null;
 
   const facetMeans = Object.fromEntries(
@@ -50,16 +61,34 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
 
   const edition = book.editions[0];
 
-  const ratedUserBooks = await prisma.userBook.findMany({
-    where: {
-      edition: { bookId },
-      status: 'COMPLETED',
-      cawpileRating: { isNot: null },
+  const editionBookFilter = { edition: { bookId } };
+  const completedRatedFilter = { ...editionBookFilter, status: 'COMPLETED' as const, cawpileRating: { isNot: null } };
+
+  // Query 1: All ratings for aggregation (lightweight — only rating facets)
+  const allRatedBooks = await prisma.userBook.findMany({
+    where: completedRatedFilter,
+    select: {
+      cawpileRating: { select: RATING_SELECT },
     },
+  });
+
+  const allRatings = allRatedBooks
+    .map((ub) => ub.cawpileRating)
+    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+  const aggregatedRating = computeAggregatedRating(allRatings);
+
+  // Query 2: Public reviews only (capped at 100)
+  const sharedUserBooks = await prisma.userBook.findMany({
+    where: {
+      ...completedRatedFilter,
+      sharedReview: { isNot: null },
+    },
+    take: 100,
     select: {
       review: true,
       finishDate: true,
-      cawpileRating: true,
+      cawpileRating: { select: RATING_SELECT },
       sharedReview: {
         select: {
           shareToken: true,
@@ -79,29 +108,13 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
     },
   });
 
-  const allRatings = ratedUserBooks
-    .map((ub) => ub.cawpileRating)
-    .filter((r): r is NonNullable<typeof r> => r !== null);
-
-  const aggregatedRating = computeAggregatedRating(allRatings);
-
-  const publicReviews: PublicBookReview[] = ratedUserBooks
-    .filter((ub) => ub.sharedReview !== null)
+  const publicReviews: PublicBookReview[] = sharedUserBooks
     .map((ub) => ({
       shareToken: ub.sharedReview!.shareToken,
       user: ub.user,
-      rating: {
-        average: ub.cawpileRating!.average,
-        characters: ub.cawpileRating!.characters,
-        atmosphere: ub.cawpileRating!.atmosphere,
-        writing: ub.cawpileRating!.writing,
-        plot: ub.cawpileRating!.plot,
-        intrigue: ub.cawpileRating!.intrigue,
-        logic: ub.cawpileRating!.logic,
-        enjoyment: ub.cawpileRating!.enjoyment,
-      },
+      rating: ub.cawpileRating!,
       review: ub.sharedReview!.showReview ? ub.review : null,
-      finishDate: ub.sharedReview!.showDates ? ub.finishDate : null,
+      finishDate: ub.sharedReview!.showDates && ub.finishDate ? ub.finishDate.toISOString() : null,
     }))
     .sort((a, b) => {
       if (b.rating.average !== a.rating.average) return b.rating.average - a.rating.average;
