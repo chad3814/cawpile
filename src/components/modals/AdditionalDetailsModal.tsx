@@ -1,8 +1,8 @@
 'use client'
 
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import RepresentationField from '@/components/forms/RepresentationField'
 import AuthorPocField from '@/components/forms/AuthorPocField'
 import NewAuthorField from '@/components/forms/NewAuthorField'
@@ -21,6 +21,7 @@ interface AdditionalDetailsData {
 interface AdditionalDetailsModalProps {
   isOpen: boolean
   onClose: () => void
+  userBookId: string
   bookTitle: string
   initialData?: AdditionalDetailsData
   onSave: (data: AdditionalDetailsData) => Promise<void>
@@ -30,12 +31,14 @@ interface AdditionalDetailsModalProps {
 export default function AdditionalDetailsModal({
   isOpen,
   onClose,
+  userBookId,
   bookTitle,
   initialData,
   onSave,
   onReview
 }: AdditionalDetailsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasSuggestions, setHasSuggestions] = useState(false)
 
   // Form data
   const [lgbtqRepresentation, setLgbtqRepresentation] = useState<RepresentationValue | ''>('')
@@ -46,11 +49,22 @@ export default function AdditionalDetailsModal({
   const [authorPoc, setAuthorPoc] = useState<RepresentationValue | ''>('')
   const [authorPocDetails, setAuthorPocDetails] = useState('')
 
+  const clearSuggestions = useCallback(() => {
+    setLgbtqRepresentation('')
+    setLgbtqDetails('')
+    setDisabilityRepresentation('')
+    setDisabilityDetails('')
+    setIsNewAuthor(null)
+    setAuthorPoc('')
+    setAuthorPocDetails('')
+    setHasSuggestions(false)
+  }, [])
+
   // Initialize form state from initialData only when the modal opens.
-  // Intentionally excludes initialData from deps — re-initializing on every
-  // router.refresh() (which updates initialData from the server) would wipe
-  // unsaved selections made before navigating to the review modal and back.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Intentionally excludes initialData and userBookId from deps —
+  // re-initializing on every router.refresh() (which updates initialData
+  // from the server) would wipe unsaved selections made before navigating
+  // to the review modal and back.
   useEffect(() => {
     if (isOpen) {
       setLgbtqRepresentation(initialData?.lgbtqRepresentation ?? '')
@@ -60,7 +74,46 @@ export default function AdditionalDetailsModal({
       setIsNewAuthor(initialData?.isNewAuthor ?? null)
       setAuthorPoc(initialData?.authorPoc ?? '')
       setAuthorPocDetails(initialData?.authorPocDetails ?? '')
+      setHasSuggestions(false)
+
+      // Fetch smart defaults when all diversity fields are empty
+      const hasExistingData = initialData?.lgbtqRepresentation
+        || initialData?.disabilityRepresentation
+        || initialData?.authorPoc
+        || initialData?.isNewAuthor != null;
+
+      if (!hasExistingData) {
+        fetch(`/api/user/books/${userBookId}/diversity-defaults`)
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (!data?.defaults) return;
+            const d = data.defaults;
+            let applied = false;
+            if (d.lgbtqRepresentation) {
+              setLgbtqRepresentation(d.lgbtqRepresentation as RepresentationValue)
+              if (d.lgbtqDetails) setLgbtqDetails(d.lgbtqDetails)
+              applied = true;
+            }
+            if (d.disabilityRepresentation) {
+              setDisabilityRepresentation(d.disabilityRepresentation as RepresentationValue)
+              if (d.disabilityDetails) setDisabilityDetails(d.disabilityDetails)
+              applied = true;
+            }
+            if (d.authorPoc) {
+              setAuthorPoc(d.authorPoc as RepresentationValue)
+              if (d.authorPocDetails) setAuthorPocDetails(d.authorPocDetails)
+              applied = true;
+            }
+            if (d.isNewAuthor != null) {
+              setIsNewAuthor(d.isNewAuthor)
+              applied = true;
+            }
+            if (applied) setHasSuggestions(true);
+          })
+          .catch(() => { /* silently ignore - defaults are best-effort */ });
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
   const handleSave = async () => {
@@ -139,6 +192,23 @@ export default function AdditionalDetailsModal({
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                   Optional tracking for &ldquo;{bookTitle}&rdquo;
                 </p>
+
+                {/* Smart defaults banner */}
+                {hasSuggestions && (
+                  <div className="flex items-center justify-between mb-4 px-3 py-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-orange-700 dark:text-orange-300">
+                      <SparklesIcon className="h-4 w-4 flex-shrink-0" />
+                      <span>Pre-filled from previous reviews</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearSuggestions}
+                      className="text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 underline"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
 
                 {/* Form body - scrollable */}
                 <div className="max-h-[60vh] overflow-y-auto space-y-6 pr-2">

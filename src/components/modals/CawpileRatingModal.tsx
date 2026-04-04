@@ -286,6 +286,7 @@ export default function CawpileRatingModal({
     <AdditionalDetailsModal
       isOpen={showAdditionalDetails}
       onClose={() => setShowAdditionalDetails(false)}
+      userBookId={bookId}
       bookTitle={bookTitle}
       initialData={initialAdditionalDetails ?? undefined}
       onSave={handleSaveAdditionalDetails}
