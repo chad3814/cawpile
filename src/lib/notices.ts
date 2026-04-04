@@ -1,6 +1,7 @@
 import 'server-only';
 import type { Notice } from '@/lib/notices-types';
 import UsernameNotice from '@/components/notices/UsernameNotice';
+import SettingsNotice from '@/components/notices/SettingsNotice';
 
 export type { Notice, NoticeComponentProps } from '@/lib/notices-types';
 
@@ -12,5 +13,11 @@ export const NOTICES: Notice[] = [
     title: 'Set Your Username',
     component: UsernameNotice,
     target: async (user) => !user.username,
+  },
+  {
+    id: 'settings-profile-2026-04',
+    title: 'Customize Your Profile',
+    component: SettingsNotice,
+    target: async () => true,
   },
 ];
