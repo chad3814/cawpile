@@ -1,7 +1,9 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { getBookPageData } from '@/lib/db/getBookPageData';
-import { sanitizeHtml } from '@/lib/utils/sanitize';
+import { stripHtmlToText } from '@/lib/utils/sanitize';
+import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl';
 import BookPageClient from '@/components/book/BookPageClient';
 
 interface PageProps {
@@ -10,9 +12,11 @@ interface PageProps {
   }>;
 }
 
+const getCachedBookPageData = cache(getBookPageData);
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { bookId } = await params;
-  const data = await getBookPageData(bookId);
+  const data = await getCachedBookPageData(bookId);
 
   if (!data) {
     return {
@@ -27,8 +31,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     || data.edition.hardcoverBook?.description
     || data.edition.ibdbBook?.description;
   const description = rawDescription
-    ? sanitizeHtml(rawDescription).replace(/<[^>]*>/g, '').substring(0, 160)
+    ? stripHtmlToText(rawDescription).substring(0, 160)
     : `${title} by ${authors} on Cawpile`;
+
+  const coverImageUrl = getCoverImageUrl(data.edition);
 
   return {
     title: `${title} by ${authors} | Cawpile`,
@@ -38,9 +44,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${title} by ${authors}`,
       description,
       type: 'book',
+      ...(coverImageUrl ? { images: [{ url: coverImageUrl }] } : {}),
     },
     twitter: {
-      card: 'summary',
+      card: coverImageUrl ? 'summary_large_image' : 'summary',
       title: `${title} by ${authors} | Cawpile`,
       description,
     },
@@ -49,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BookPage({ params }: PageProps) {
   const { bookId } = await params;
-  const data = await getBookPageData(bookId);
+  const data = await getCachedBookPageData(bookId);
 
   if (!data) {
     notFound();

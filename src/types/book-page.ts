@@ -61,6 +61,4 @@ export interface PublicBookReview {
   };
   review: string | null;
   finishDate: Date | null;
-  showDates: boolean;
-  showReview: boolean;
 }

@@ -56,7 +56,9 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
       status: 'COMPLETED',
       cawpileRating: { isNot: null },
     },
-    include: {
+    select: {
+      review: true,
+      finishDate: true,
       cawpileRating: true,
       sharedReview: {
         select: {
@@ -100,10 +102,11 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
       },
       review: ub.sharedReview!.showReview ? ub.review : null,
       finishDate: ub.sharedReview!.showDates ? ub.finishDate : null,
-      showDates: ub.sharedReview!.showDates,
-      showReview: ub.sharedReview!.showReview,
     }))
-    .sort((a, b) => b.rating.average - a.rating.average);
+    .sort((a, b) => {
+      if (b.rating.average !== a.rating.average) return b.rating.average - a.rating.average;
+      return a.shareToken > b.shareToken ? 1 : -1;
+    });
 
   return {
     book: {

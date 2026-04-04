@@ -13,7 +13,7 @@ const ALLOWED_TAGS = ['br', 'p', 'i', 'b', 'em']
  * Regex pattern to match all HTML tags.
  * Captures the tag name for filtering.
  */
-const HTML_TAG_REGEX = /<\/?([a-zA-Z][a-zA-Z0-9]*)\s*\/?>/gi
+const HTML_TAG_REGEX = /<(\/?)([\w]+)[^>]*\/?>/gi
 
 /**
  * Sanitizes HTML by keeping only allowed tags and stripping all others.
@@ -33,11 +33,11 @@ export function sanitizeHtml(html: string | null | undefined): string {
     return ''
   }
 
-  // Replace all HTML tags, keeping only allowed ones
-  return html.replace(HTML_TAG_REGEX, (match, tagName) => {
-    const normalizedTag = tagName.toLowerCase()
-    if (ALLOWED_TAGS.includes(normalizedTag)) {
-      return match
+  // Replace all HTML tags, keeping only allowed ones (with attributes stripped)
+  return html.replace(HTML_TAG_REGEX, (match, slash, tagName) => {
+    const normalized = tagName.toLowerCase()
+    if (ALLOWED_TAGS.includes(normalized)) {
+      return `<${slash}${normalized}>`
     }
     // Strip disallowed tags but keep content (by returning empty string)
     return ''
