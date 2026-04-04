@@ -33,7 +33,7 @@ const makeBook = (id: string, status: DashboardBookData['status'], title: string
   edition: {
     id: `edition-${id}`,
     title: null,
-    book: { title, authors: ['Author'] },
+    book: { id: `book-${id}`, title, authors: ['Author'] },
     googleBook: null,
     hardcoverBook: null,
     ibdbBook: null,

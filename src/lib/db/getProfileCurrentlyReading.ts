@@ -50,6 +50,7 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
       id: book.edition.id,
       title: book.edition.title,
       book: {
+        id: book.edition.book.id,
         title: book.edition.book.title,
         authors: book.edition.book.authors,
         bookType: book.edition.book.bookType

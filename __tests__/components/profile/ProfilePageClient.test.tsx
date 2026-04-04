@@ -51,6 +51,7 @@ describe('ProfilePageClient TBR Section', () => {
         id: 'edition-1',
         title: null,
         book: {
+          id: 'book-1',
           title: 'TBR Book One',
           authors: ['Author One'],
           bookType: 'FICTION' as const

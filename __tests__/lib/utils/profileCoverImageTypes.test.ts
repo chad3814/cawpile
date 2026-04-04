@@ -12,6 +12,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         id: 'edition-1',
         title: 'Test Book',
         book: {
+          id: 'book-1',
           title: 'Test Book',
           authors: ['Author One'],
           bookType: 'FICTION',
@@ -39,6 +40,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         id: 'edition-2',
         title: 'Another Book',
         book: {
+          id: 'book-2',
           title: 'Another Book',
           authors: ['Author Two'],
         },
@@ -60,6 +62,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         id: 'edition-3',
         title: 'No Cover Book',
         book: {
+          id: 'book-3',
           title: 'No Cover Book',
           authors: ['Author Three'],
         },
@@ -79,6 +82,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         id: 'edition-4',
         title: 'Preferred Test',
         book: {
+          id: 'book-4',
           title: 'Preferred Test',
           authors: ['Author'],
         },
