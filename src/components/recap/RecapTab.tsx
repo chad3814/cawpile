@@ -70,6 +70,10 @@ export function RecapTab() {
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
+    setExportData(null);
+    setRenderStatus('idle');
+    setRenderProgress(0);
+    setError(null);
     fetchPreview();
   }, [fetchPreview]);
 
