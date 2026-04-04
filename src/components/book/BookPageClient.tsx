@@ -82,7 +82,7 @@ function ReviewRow({ review }: { review: PublicBookReview }) {
 }
 
 export default function BookPageClient({ data }: BookPageClientProps) {
-  const { book, edition, aggregatedRating, publicReviews, totalRatingCount } = data;
+  const { book, edition, aggregatedRating, publicReviews, reviewsCapped, totalRatingCount } = data;
 
   const displayTitle = edition.title || book.title;
   const imageUrl = getCoverImageUrl(edition);
@@ -164,7 +164,7 @@ export default function BookPageClient({ data }: BookPageClientProps) {
         {/* Public Reviews Table */}
         <div className="px-6 sm:px-8 pb-6">
           <h2 className="text-xl font-semibold text-card-foreground mb-4">
-            Public Reviews{publicReviews.length > 0 ? ` (${publicReviews.length})` : ''}
+            {reviewsCapped ? `Top ${publicReviews.length} Public Reviews` : `Public Reviews${publicReviews.length > 0 ? ` (${publicReviews.length})` : ''}`}
           </h2>
 
           {publicReviews.length > 0 ? (

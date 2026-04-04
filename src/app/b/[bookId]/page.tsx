@@ -12,6 +12,8 @@ interface PageProps {
   }>;
 }
 
+export const revalidate = 60;
+
 const getCachedBookPageData = cache(getBookPageData);
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

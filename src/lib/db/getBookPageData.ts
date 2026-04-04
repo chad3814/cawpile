@@ -14,26 +14,7 @@ const RATING_SELECT = {
   average: true,
 } as const;
 
-type RatingRow = { [K in typeof FACET_KEYS[number]]: number | null } & { average: number };
-
-function computeAggregatedRating(ratings: RatingRow[]): AggregatedCawpileRating | null {
-  if (ratings.length === 0) return null;
-
-  const facetMeans = Object.fromEntries(
-    FACET_KEYS.map((key) => {
-      const values = ratings.map((r) => r[key]).filter((v): v is number => v !== null);
-      return [key, values.length > 0 ? Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(1)) : null];
-    })
-  ) as Record<typeof FACET_KEYS[number], number | null>;
-
-  const averages = ratings.map((r) => r.average);
-  const overallAverage = Number((averages.reduce((a, b) => a + b, 0) / averages.length).toFixed(1));
-
-  return {
-    ...facetMeans,
-    average: overallAverage,
-  };
-}
+const REVIEW_LIMIT = 100;
 
 export async function getBookPageData(bookId: string): Promise<BookPageData | null> {
   const book = await prisma.book.findUnique({
@@ -61,30 +42,59 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
 
   const edition = book.editions[0];
 
-  const editionBookFilter = { edition: { bookId } };
-  const completedRatedFilter = { ...editionBookFilter, status: 'COMPLETED' as const, cawpileRating: { isNot: null } };
-
-  // Query 1: All ratings for aggregation (lightweight — only rating facets)
-  const allRatedBooks = await prisma.userBook.findMany({
-    where: completedRatedFilter,
-    select: {
-      cawpileRating: { select: RATING_SELECT },
+  const completedRatedFilter = {
+    userBook: {
+      edition: { bookId },
+      status: 'COMPLETED' as const,
     },
-  });
+  };
 
-  const allRatings = allRatedBooks
-    .map((ub) => ub.cawpileRating)
-    .filter((r): r is NonNullable<typeof r> => r !== null);
+  // Query 1: Aggregate ratings in the DB — returns a single row
+  const [aggregateResult, ratingCount] = await Promise.all([
+    prisma.cawpileRating.aggregate({
+      where: completedRatedFilter,
+      _avg: {
+        characters: true,
+        atmosphere: true,
+        writing: true,
+        plot: true,
+        intrigue: true,
+        logic: true,
+        enjoyment: true,
+        average: true,
+      },
+    }),
+    prisma.cawpileRating.count({
+      where: completedRatedFilter,
+    }),
+  ]);
 
-  const aggregatedRating = computeAggregatedRating(allRatings);
+  let aggregatedRating: AggregatedCawpileRating | null = null;
+  if (ratingCount > 0 && aggregateResult._avg.average !== null) {
+    aggregatedRating = {
+      ...Object.fromEntries(
+        FACET_KEYS.map((key) => [
+          key,
+          aggregateResult._avg[key] !== null ? Number(aggregateResult._avg[key]!.toFixed(1)) : null,
+        ])
+      ) as Record<typeof FACET_KEYS[number], number | null>,
+      average: Number(aggregateResult._avg.average.toFixed(1)),
+    };
+  }
 
-  // Query 2: Public reviews only (capped at 100)
+  // Query 2: Public reviews, ordered by rating desc then shareToken asc, capped
   const sharedUserBooks = await prisma.userBook.findMany({
     where: {
-      ...completedRatedFilter,
+      edition: { bookId },
+      status: 'COMPLETED',
+      cawpileRating: { isNot: null },
       sharedReview: { isNot: null },
     },
-    take: 100,
+    orderBy: [
+      { cawpileRating: { average: 'desc' } },
+      { sharedReview: { shareToken: 'asc' } },
+    ],
+    take: REVIEW_LIMIT,
     select: {
       review: true,
       finishDate: true,
@@ -108,18 +118,13 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
     },
   });
 
-  const publicReviews: PublicBookReview[] = sharedUserBooks
-    .map((ub) => ({
-      shareToken: ub.sharedReview!.shareToken,
-      user: ub.user,
-      rating: ub.cawpileRating!,
-      review: ub.sharedReview!.showReview ? ub.review : null,
-      finishDate: ub.sharedReview!.showDates && ub.finishDate ? ub.finishDate.toISOString() : null,
-    }))
-    .sort((a, b) => {
-      if (b.rating.average !== a.rating.average) return b.rating.average - a.rating.average;
-      return a.shareToken > b.shareToken ? 1 : -1;
-    });
+  const publicReviews: PublicBookReview[] = sharedUserBooks.map((ub) => ({
+    shareToken: ub.sharedReview!.shareToken,
+    user: ub.user,
+    rating: ub.cawpileRating!,
+    review: ub.sharedReview!.showReview ? ub.review : null,
+    finishDate: ub.sharedReview!.showDates && ub.finishDate ? ub.finishDate.toISOString() : null,
+  }));
 
   return {
     book: {
@@ -138,6 +143,7 @@ export async function getBookPageData(bookId: string): Promise<BookPageData | nu
     },
     aggregatedRating,
     publicReviews,
-    totalRatingCount: allRatings.length,
+    reviewsCapped: publicReviews.length >= REVIEW_LIMIT,
+    totalRatingCount: ratingCount,
   };
 }
