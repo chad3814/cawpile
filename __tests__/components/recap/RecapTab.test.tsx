@@ -291,6 +291,78 @@ describe('RecapTab JSON export', () => {
   })
 })
 
+describe('RecapTab concurrent operation guard', () => {
+  it('disables both buttons while video is rendering', async () => {
+    await act(async () => {
+      render(<RecapTab />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    const exportButton = screen.getByRole('button', { name: /Export JSON Data/i })
+
+    await act(async () => {
+      fireEvent.click(generateButton)
+    })
+
+    await waitFor(() => {
+      expect(MockEventSource.getLastInstance()).toBeDefined()
+    })
+
+    expect(generateButton).toBeDisabled()
+    expect(exportButton).toBeDisabled()
+  })
+
+  it('disables both buttons while JSON export is in progress', async () => {
+    // Make the full data fetch hang so we can observe the loading state
+    let resolveDataFetch!: (value: Response) => void
+    ;(global.fetch as jest.Mock).mockImplementation((url: string) => {
+      if (url.includes('/api/recap/monthly') && url.includes('preview=true')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockPreviewResponse),
+        })
+      }
+      if (url.includes('/api/recap/monthly')) {
+        return new Promise<Response>((resolve) => {
+          resolveDataFetch = resolve
+        })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) })
+    })
+
+    await act(async () => {
+      render(<RecapTab />)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/books finished/i)).toBeInTheDocument()
+    })
+
+    const generateButton = screen.getByRole('button', { name: /Generate TikTok Video/i })
+    const exportButton = screen.getByRole('button', { name: /Export JSON Data/i })
+
+    await act(async () => {
+      fireEvent.click(exportButton)
+    })
+
+    // Both should be disabled while loading
+    expect(generateButton).toBeDisabled()
+    expect(exportButton).toBeDisabled()
+
+    // Resolve so test cleanup is clean
+    await act(async () => {
+      resolveDataFetch({
+        ok: true,
+        json: () => Promise.resolve(mockExportData),
+      } as Response)
+    })
+  })
+})
+
 describe('RecapTab video generation SSE', () => {
   it('shows progress bar during video rendering', async () => {
     await act(async () => {

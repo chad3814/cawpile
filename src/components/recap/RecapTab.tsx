@@ -157,6 +157,10 @@ export function RecapTab() {
       const { jobId } = await initResponse.json() as { jobId: string };
       const sseUrl = `${RENDER_SERVER_URL}/render-stream?jobId=${jobId}`;
 
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
       const eventSource = new EventSource(sseUrl);
       eventSourceRef.current = eventSource;
 
@@ -211,6 +215,7 @@ export function RecapTab() {
   };
 
   const hasBooks = preview && preview.bookCount > 0;
+  const isBusy = renderStatus === 'rendering' || renderStatus === 'loading';
 
   return (
     <div className="space-y-6">
@@ -351,7 +356,7 @@ export function RecapTab() {
           <button
             type="button"
             onClick={handleGenerateVideo}
-            disabled={!hasBooks || renderStatus === 'rendering'}
+            disabled={!hasBooks || isBusy}
             className="w-full inline-flex items-center justify-center rounded-md border border-transparent bg-orange-600 px-4 py-3 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FilmIcon className="h-5 w-5 mr-2" />
@@ -361,7 +366,7 @@ export function RecapTab() {
           <button
             type="button"
             onClick={handleExportJson}
-            disabled={!hasBooks || renderStatus === 'loading'}
+            disabled={!hasBooks || isBusy}
             className="w-full inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
