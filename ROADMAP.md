@@ -30,7 +30,7 @@
 
 ### New Features
 
-- [ ] **Individual book pages**
+- [X] **Individual book pages**
   - Public reviews table with overall review means
 - [ ] **Individual author pages**
   - Table of books, with tracked books surfaced at the top
@@ -38,7 +38,7 @@
   - Users can re-order books and pin them
   - Pinned/ordered books appear in this order on the dashboard and profile pages
 - [ ] **Genre chart and tracking**
-- [ ] **Smart defaults for diversity fields** — pre-fill LGBTQ+, Disability, and Author POC fields based on the user's previous reviews of the same book/author
+- [X] **Smart defaults for diversity fields** — pre-fill LGBTQ+, Disability, and Author POC fields based on the user's previous reviews of the same book/author
 - [ ] **Second recap template** — supports up to 9 books displayed simultaneously
 - [ ] **Recap background customization** — choose a solid color, gradient, or looping video background for recap exports
 - [ ] **Extended recap periods** — quarterly, half-year, and full-year recaps
