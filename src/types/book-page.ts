@@ -60,5 +60,5 @@ export interface PublicBookReview {
     enjoyment: number | null;
   };
   review: string | null;
-  finishDate: Date | null;
+  finishDate: string | null;
 }

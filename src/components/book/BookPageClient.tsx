@@ -13,7 +13,7 @@ interface BookPageClientProps {
   data: BookPageData;
 }
 
-function formatDate(date: Date | null): string | null {
+function formatDate(date: string | null): string | null {
   if (!date) return null;
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
