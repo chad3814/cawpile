@@ -108,6 +108,7 @@ model Edition {
   format        BookFormat?
   googleBooksId        String?        @unique
   defaultCoverProvider String?
+  customCoverUrl       String?
   book          Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
   userBooks     UserBook[]
   googleBook    GoogleBook?

@@ -111,6 +111,7 @@ export default async function BookEditPage({
                 <EditionCoverManager
                   editionId={edition.id}
                   defaultCoverProvider={edition.defaultCoverProvider}
+                  customCoverUrl={edition.customCoverUrl}
                   googleBookImageUrl={edition.googleBook?.imageUrl ?? null}
                   hardcoverBookImageUrl={edition.hardcoverBook?.imageUrl ?? null}
                   ibdbBookImageUrl={edition.ibdbBook?.imageUrl ?? null}

@@ -100,4 +100,63 @@ describe('getCoverImageUrl', () => {
 
     expect(getCoverImageUrl(edition)).toBeUndefined()
   })
+
+  describe('custom cover support', () => {
+    test('should return custom cover URL when it is the only cover', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+      }
+      expect(getCoverImageUrl(edition)).toBe('https://s3.example.com/covers/custom.jpg')
+    })
+
+    test('should prefer custom cover over provider covers in fallback chain', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+        hardcoverBook: { imageUrl: 'https://hardcover.app/cover.jpg' },
+        googleBook: { imageUrl: 'https://books.google.com/cover.jpg' },
+      }
+      expect(getCoverImageUrl(edition)).toBe('https://s3.example.com/covers/custom.jpg')
+    })
+
+    test('should return custom cover when defaultCoverProvider is "custom"', () => {
+      const edition: EditionWithProviders = {
+        defaultCoverProvider: 'custom',
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+        hardcoverBook: { imageUrl: 'https://hardcover.app/cover.jpg' },
+      }
+      expect(getCoverImageUrl(edition)).toBe('https://s3.example.com/covers/custom.jpg')
+    })
+
+    test('should fall back to providers when customCoverUrl is null', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: null,
+        hardcoverBook: { imageUrl: 'https://hardcover.app/cover.jpg' },
+      }
+      expect(getCoverImageUrl(edition)).toBe('https://hardcover.app/cover.jpg')
+    })
+
+    test('should respect user preferred provider over custom cover fallback', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+        googleBook: { imageUrl: 'https://books.google.com/cover.jpg' },
+      }
+      expect(getCoverImageUrl(edition, 'google')).toBe('https://books.google.com/cover.jpg')
+    })
+
+    test('should fall back to custom cover when preferred provider has no image', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+        googleBook: { imageUrl: null },
+      }
+      expect(getCoverImageUrl(edition, 'google')).toBe('https://s3.example.com/covers/custom.jpg')
+    })
+
+    test('should return custom cover when preferred provider is "custom"', () => {
+      const edition: EditionWithProviders = {
+        customCoverUrl: 'https://s3.example.com/covers/custom.jpg',
+        hardcoverBook: { imageUrl: 'https://hardcover.app/cover.jpg' },
+      }
+      expect(getCoverImageUrl(edition, 'custom')).toBe('https://s3.example.com/covers/custom.jpg')
+    })
+  })
 })

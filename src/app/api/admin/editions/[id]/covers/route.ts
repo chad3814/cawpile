@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
 import { logAdminAction } from '@/lib/audit/logger'
+import { deleteAvatar, extractKeyFromUrl } from '@/lib/s3-upload'
 
-const VALID_PROVIDERS = ['google', 'hardcover', 'ibdb'] as const
+const VALID_PROVIDERS = ['google', 'hardcover', 'ibdb', 'custom'] as const
 type Provider = (typeof VALID_PROVIDERS)[number]
 
 function isValidProvider(value: string): value is Provider {
@@ -57,6 +58,9 @@ export async function PATCH(
       if (provider !== null) {
         let hasImage = false
         switch (provider) {
+          case 'custom':
+            hasImage = !!edition.customCoverUrl
+            break
           case 'google':
             hasImage = !!edition.googleBook?.imageUrl
             break
@@ -105,6 +109,25 @@ export async function PATCH(
 
       // Set the provider's imageUrl to null
       switch (provider) {
+        case 'custom':
+          if (!edition.customCoverUrl) {
+            return NextResponse.json(
+              { error: 'No custom cover for this edition' },
+              { status: 404 }
+            )
+          }
+          // Delete the S3 object
+          const s3Key = extractKeyFromUrl(edition.customCoverUrl)
+          if (s3Key) {
+            deleteAvatar(s3Key).catch((err) => {
+              console.error('Failed to delete custom cover from S3:', err)
+            })
+          }
+          await prisma.edition.update({
+            where: { id },
+            data: { customCoverUrl: null },
+          })
+          break
         case 'google':
           if (!edition.googleBook) {
             return NextResponse.json(

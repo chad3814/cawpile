@@ -9,6 +9,7 @@ export interface ProviderImageData {
 
 export interface EditionWithProviders {
   defaultCoverProvider?: string | null
+  customCoverUrl?: string | null
   hardcoverBook?: ProviderImageData | null
   googleBook?: ProviderImageData | null
   ibdbBook?: ProviderImageData | null
@@ -19,6 +20,8 @@ function getImageForProvider(
   provider: string
 ): string | undefined {
   switch (provider) {
+    case 'custom':
+      return edition.customCoverUrl ?? undefined
     case 'hardcover':
       return edition.hardcoverBook?.imageUrl ?? undefined
     case 'google':
@@ -59,8 +62,9 @@ export function getCoverImageUrl(
     }
   }
 
-  // 3. Default fallback priority: Hardcover > Google > IBDB
+  // 3. Default fallback priority: Custom > Hardcover > Google > IBDB
   return (
+    edition.customCoverUrl ||
     edition.hardcoverBook?.imageUrl ||
     edition.googleBook?.imageUrl ||
     edition.ibdbBook?.imageUrl ||
