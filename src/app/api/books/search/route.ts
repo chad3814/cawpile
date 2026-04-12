@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
 
     // Register all providers in order of weight (highest to lowest)
     orchestrator.registerProvider(new LocalDatabaseProvider())    // weight: 10
-    orchestrator.registerProvider(new HardcoverProvider())         // weight: 6
+    orchestrator.registerProvider(new HardcoverProvider())         // weight: 7
+    orchestrator.registerProvider(new IbdbProvider())              // weight: 6
     orchestrator.registerProvider(new GoogleBooksProvider())       // weight: 5
-    orchestrator.registerProvider(new IbdbProvider())              // weight: 4
 
     // Search across all providers
     const books = await orchestrator.search(query, maxResults)

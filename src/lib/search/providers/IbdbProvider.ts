@@ -8,7 +8,7 @@ export class IbdbProvider extends BaseSearchProvider {
   constructor() {
     super({
       name: "ibdb",
-      weight: 4,
+      weight: 6,
       timeout: 5000
     })
     this.client = new IbdbClient()

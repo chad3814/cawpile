@@ -8,7 +8,7 @@ export class HardcoverProvider extends BaseSearchProvider {
   constructor() {
     super({
       name: "hardcover",
-      weight: 6,
+      weight: 7,
       timeout: 5000
     })
     this.client = new HardcoverClient()
