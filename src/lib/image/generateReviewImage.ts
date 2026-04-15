@@ -109,38 +109,23 @@ export function generateImageFilename(bookTitle: string): string {
 
 /**
  * Converts an image URL to a base64 data URL.
- * Uses a canvas to draw the image and extract the data URL.
- * Returns null if the image fails to load (e.g., CORS issues).
+ * Uses fetch + FileReader to avoid canvas CORS issues in Safari.
+ * The imageUrl should be same-origin (e.g., our /api/proxy/image endpoint)
+ * so that fetch has no CORS restrictions.
+ * Returns null if the image fails to load.
  */
 export async function imageUrlToDataUrl(imageUrl: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    const img = new window.Image()
-    img.crossOrigin = 'anonymous'
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = img.naturalWidth
-        canvas.height = img.naturalHeight
-        const ctx = canvas.getContext('2d')
-        if (!ctx) {
-          resolve(null)
-          return
-        }
-        ctx.drawImage(img, 0, 0)
-        const dataUrl = canvas.toDataURL('image/png')
-        resolve(dataUrl)
-      } catch {
-        // Canvas tainted by CORS - return null
-        resolve(null)
-      }
-    }
-
-    img.onerror = () => {
-      resolve(null)
-    }
-
-    // Add cache buster to avoid stale CORS issues
-    img.src = imageUrl
-  })
+  try {
+    const response = await fetch(imageUrl)
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
 }
