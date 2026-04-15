@@ -117,7 +117,17 @@ export default function BookPageClient({ data }: BookPageClientProps) {
                 {displayTitle}
               </h1>
               <p className="text-lg text-muted-foreground mb-4">
-                {book.authors.join(', ')}
+                {book.authors.map((author, i) => (
+                  <span key={author}>
+                    {i > 0 && ', '}
+                    <Link
+                      href={`/a/${encodeURIComponent(author)}`}
+                      className="hover:text-card-foreground hover:underline"
+                    >
+                      {author}
+                    </Link>
+                  </span>
+                ))}
               </p>
 
               {aggregatedRating && (
