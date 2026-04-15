@@ -218,7 +218,7 @@ export default function BookCard({ book }: BookCardProps) {
             <EllipsisVerticalIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </Menu.Button>
             <Menu.Items
-              anchor="bottom end"
+              anchor={{ to: "bottom end", gap: "0.5rem" }}
               transition
               className="z-50 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
             >
