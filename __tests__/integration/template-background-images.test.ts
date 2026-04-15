@@ -77,8 +77,7 @@ import prisma from '@/lib/prisma'
 import { extractKeyFromUrl, deleteAvatar } from '@/lib/s3-upload'
 import { validateTemplateConfig } from '@/lib/video/validateTemplateConfig'
 import { assembleConfig, buildInitialState, resolveConfig } from '@/components/templates/TemplateEditorClient'
-import { DEFAULT_TEMPLATE } from '@/types/video-template'
-import type { VideoTemplate, ResolvedVideoTemplate } from '@/types/video-template'
+import type { VideoTemplate } from '@/types/video-template'
 import { NextRequest } from 'next/server'
 
 // Mocks for the timing module

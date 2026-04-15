@@ -11,13 +11,12 @@ type SortOption = 'newest' | 'name' | 'popular'
 
 interface TemplateBrowseClientProps {
   selectedTemplateId: string | null
-  userId: string
   isAdmin?: boolean
 }
 
 const ITEMS_PER_PAGE = 12
 
-export default function TemplateBrowseClient({ selectedTemplateId: initialSelectedId, userId: _userId, isAdmin }: TemplateBrowseClientProps) {
+export default function TemplateBrowseClient({ selectedTemplateId: initialSelectedId, isAdmin }: TemplateBrowseClientProps) {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('newest')
   const [page, setPage] = useState(1)

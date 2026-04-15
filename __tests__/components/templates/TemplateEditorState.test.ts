@@ -7,7 +7,6 @@ import {
   buildInitialState,
   editorReducer,
   assembleConfig,
-  type EditorState,
   type EditorAction,
 } from '@/components/templates/TemplateEditorClient'
 

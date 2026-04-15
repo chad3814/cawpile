@@ -76,7 +76,7 @@ afterEach(() => {
 describe('TemplateBrowseClient', () => {
   test('renders grid of cards and handles empty state', async () => {
     await act(async () => {
-      render(<TemplateBrowseClient selectedTemplateId={null} userId="user-1" />)
+      render(<TemplateBrowseClient selectedTemplateId={null} />)
     })
 
     // Should render both template cards
@@ -104,7 +104,7 @@ describe('TemplateBrowseClient', () => {
     })
 
     // Re-render to get empty state
-    const { unmount } = render(<TemplateBrowseClient selectedTemplateId={null} userId="user-1" />)
+    const { unmount } = render(<TemplateBrowseClient selectedTemplateId={null} />)
 
     await waitFor(() => {
       const emptyStates = screen.getAllByTestId('empty-state')
@@ -116,7 +116,7 @@ describe('TemplateBrowseClient', () => {
 
   test('search input triggers debounced API refetch', async () => {
     await act(async () => {
-      render(<TemplateBrowseClient selectedTemplateId={null} userId="user-1" />)
+      render(<TemplateBrowseClient selectedTemplateId={null} />)
     })
 
     // Wait for initial fetches to complete
