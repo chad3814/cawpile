@@ -220,116 +220,116 @@ export default function BookCard({ book }: BookCardProps) {
           <Menu.Items
             anchor={{ to: "bottom end", gap: "0.5rem" }}
             transition
-            className="z-50 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
+            className="z-50 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition data-[enter]:ease-out data-[leave]:ease-in data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
           >
             <div className="px-1 py-1">
-                {book.status === 'READING' && (
-                  <>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          onClick={() => setIsMarkCompleteModalOpen(true)}
-                          className={`${
-                            active ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'
-                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                        >
-                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Mark as Complete
-                        </button>
-                      )}
-                    </Menu.Item>
-                    <Menu.Item>
-                      {({ active }) => (
-                        <button
-                          onClick={() => setIsMarkDNFModalOpen(true)}
-                          className={`${
-                            active ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'
-                          } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                        >
-                          <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Mark as DNF
-                        </button>
-                      )}
-                    </Menu.Item>
-                  </>
-                )}
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => setIsDetailsModalOpen(true)}
-                      className={`${
-                        active ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                    >
-                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      View Details
-                    </button>
-                  )}
-                </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={() => setIsEditModalOpen(true)}
-                      className={`${
-                        active ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                    >
-                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                      Edit Details
-                    </button>
-                  )}
-                </Menu.Item>
-                {canShare && (
+              {book.status === 'READING' && (
+                <>
                   <Menu.Item>
                     {({ active }) => (
                       <button
-                        onClick={() => setShowShareModal(true)}
+                        onClick={() => setIsMarkCompleteModalOpen(true)}
                         className={`${
-                          active ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-gray-100'
+                          active ? 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'
                         } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                       >
-                        <ShareIcon className="mr-2 h-4 w-4" />
-                        Share Review
+                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Mark as Complete
                       </button>
                     )}
                   </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => setIsMarkDNFModalOpen(true)}
+                        className={`${
+                          active ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'
+                        } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                      >
+                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Mark as DNF
+                      </button>
+                    )}
+                  </Menu.Item>
+                </>
+              )}
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => setIsDetailsModalOpen(true)}
+                    className={`${
+                      active ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-900 dark:text-indigo-100' : 'text-gray-900 dark:text-gray-100'
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  >
+                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    View Details
+                  </button>
                 )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className={`${
+                      active ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  >
+                    <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Details
+                  </button>
+                )}
+              </Menu.Item>
+              {canShare && (
                 <Menu.Item>
                   {({ active }) => (
                     <button
-                      onClick={() => setIsChangingFormat(true)}
+                      onClick={() => setShowShareModal(true)}
                       className={`${
-                        active ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-gray-100'
+                        active ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'text-gray-900 dark:text-gray-100'
                       } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                     >
-                      <ArrowPathIcon className="mr-2 h-4 w-4" />
-                      Change Format
+                      <ShareIcon className="mr-2 h-4 w-4" />
+                      Share Review
                     </button>
                   )}
                 </Menu.Item>
-                <Menu.Item>
-                  {({ active }) => (
-                    <button
-                      onClick={handleRemoveBook}
-                      className={`${
-                        active ? 'bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-100' : 'text-gray-900 dark:text-gray-100'
-                      } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                    >
-                      <TrashIcon className="mr-2 h-4 w-4" />
-                      Remove from Library
-                    </button>
-                  )}
-                </Menu.Item>
-              </div>
-            </Menu.Items>
+              )}
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={() => setIsChangingFormat(true)}
+                    className={`${
+                      active ? 'bg-orange-100 dark:bg-orange-900/20 text-orange-900 dark:text-orange-100' : 'text-gray-900 dark:text-gray-100'
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  >
+                    <ArrowPathIcon className="mr-2 h-4 w-4" />
+                    Change Format
+                  </button>
+                )}
+              </Menu.Item>
+              <Menu.Item>
+                {({ active }) => (
+                  <button
+                    onClick={handleRemoveBook}
+                    className={`${
+                      active ? 'bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-100' : 'text-gray-900 dark:text-gray-100'
+                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Remove from Library
+                  </button>
+                )}
+              </Menu.Item>
+            </div>
+          </Menu.Items>
         </Menu>
       </div>
 
