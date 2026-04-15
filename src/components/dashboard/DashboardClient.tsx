@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { Bars3Icon } from '@heroicons/react/24/outline'
-import SidebarNavigation from './SidebarNavigation'
+import SidebarNavigation, { NAV_ITEMS } from './SidebarNavigation'
 import type { DashboardSection } from './SidebarNavigation'
 import BookGrid from './BookGrid'
 import { ChartsTab } from '@/components/charts/ChartsTab'
@@ -27,6 +27,17 @@ export default function DashboardClient({ books }: DashboardClientProps) {
     }
   }, [pendingAnchor])
 
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => {
+      if (e.matches) setSidebarOpen(false);
+    };
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [])
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), [])
+
   const handleSectionChange = useCallback((section: DashboardSection, anchor?: string) => {
     setActiveSection(section)
     setSidebarOpen(false)
@@ -46,7 +57,7 @@ export default function DashboardClient({ books }: DashboardClientProps) {
           activeAnchor={activeAnchor}
           onSectionChange={handleSectionChange}
           isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
+          onClose={closeSidebar}
         />
 
         <div className="flex-1 min-w-0">
@@ -55,13 +66,15 @@ export default function DashboardClient({ books }: DashboardClientProps) {
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
+              aria-expanded={sidebarOpen}
+              aria-controls="mobile-sidebar"
               className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               <span className="sr-only">Open navigation</span>
               <Bars3Icon className="h-5 w-5" aria-hidden="true" />
             </button>
-            <span className="text-sm font-medium text-foreground capitalize">
-              {activeSection === 'library' ? 'Your Library' : activeSection}
+            <span className="text-sm font-medium text-foreground">
+              {NAV_ITEMS.find(item => item.id === activeSection)?.label ?? activeSection}
             </span>
           </div>
 
