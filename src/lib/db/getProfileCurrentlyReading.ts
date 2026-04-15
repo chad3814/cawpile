@@ -31,9 +31,11 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
       },
       cawpileRating: true
     },
-    orderBy: {
-      updatedAt: 'desc'
-    }
+    orderBy: [
+      { isPinned: 'desc' },
+      { sortOrder: { sort: 'asc', nulls: 'last' } },
+      { updatedAt: 'desc' },
+    ]
   })
 
   return userBooks.map((book) => ({

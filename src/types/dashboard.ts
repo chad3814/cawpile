@@ -45,6 +45,8 @@ export interface DashboardBookData {
   authorPocDetails?: string | null
   notes?: string | null
   preferredCoverProvider?: string | null
+  sortOrder?: number | null
+  isPinned?: boolean
   edition: {
     id: string
     title: string | null

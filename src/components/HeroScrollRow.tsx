@@ -2,18 +2,20 @@
 
 import { useRef, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 interface HeroScrollRowProps {
   children: ReactNode
   title?: string
+  titleHref?: string
 }
 
 /**
  * Paged hero carousel. The container clips overflow; left/right arrow buttons
  * in the title row advance the track by one container-width at a time via CSS transform.
  */
-export default function HeroScrollRow({ children, title }: HeroScrollRowProps) {
+export default function HeroScrollRow({ children, title, titleHref }: HeroScrollRowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState(0)
@@ -72,7 +74,13 @@ export default function HeroScrollRow({ children, title }: HeroScrollRowProps) {
     <div>
       {(title || navButtons) && (
         <div className="flex items-center justify-between mb-4">
-          {title && <h2 className="text-xl font-semibold text-foreground">{title}</h2>}
+          {title && (titleHref ? (
+            <Link href={titleHref} className="text-xl font-semibold text-foreground hover:text-primary transition-colors">
+              {title}
+            </Link>
+          ) : (
+            <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+          ))}
           {navButtons && <div className={title ? undefined : 'ml-auto'}>{navButtons}</div>}
         </div>
       )}
