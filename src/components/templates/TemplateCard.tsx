@@ -1,5 +1,6 @@
 "use client"
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CheckCircleIcon } from '@heroicons/react/24/solid'
@@ -74,10 +75,12 @@ export default function TemplateCard({ template, isSelected, isAdmin, isPublishe
       <div className="relative">
         {/* Preview thumbnail */}
         {template.previewThumbnailUrl ? (
-          <img
+          <Image
             src={template.previewThumbnailUrl}
             alt={`${template.name} preview`}
             className="w-full h-40 object-cover rounded-t-lg"
+            width={400}
+            height={160}
           />
         ) : (
           <div className="w-full h-40 rounded-t-lg bg-muted flex items-center justify-center" data-testid="template-placeholder">

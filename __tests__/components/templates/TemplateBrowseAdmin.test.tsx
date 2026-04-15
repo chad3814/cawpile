@@ -84,7 +84,7 @@ describe('TemplateBrowseClient - Admin Controls', () => {
   test('renders "Create New Template" button when isAdmin is true', async () => {
     await act(async () => {
       render(
-        <TemplateBrowseClient selectedTemplateId={null} userId="user-1" isAdmin={true} />
+        <TemplateBrowseClient selectedTemplateId={null} isAdmin={true} />
       )
     })
 
@@ -101,7 +101,7 @@ describe('TemplateBrowseClient - Admin Controls', () => {
     // Test with isAdmin=false
     await act(async () => {
       render(
-        <TemplateBrowseClient selectedTemplateId={null} userId="user-1" isAdmin={false} />
+        <TemplateBrowseClient selectedTemplateId={null} isAdmin={false} />
       )
     })
 
@@ -115,7 +115,7 @@ describe('TemplateBrowseClient - Admin Controls', () => {
   test('admin users see Edit and Delete action buttons on each template card', async () => {
     await act(async () => {
       render(
-        <TemplateBrowseClient selectedTemplateId={null} userId="user-1" isAdmin={true} />
+        <TemplateBrowseClient selectedTemplateId={null} isAdmin={true} />
       )
     })
 
@@ -137,7 +137,7 @@ describe('TemplateBrowseClient - Admin Controls', () => {
 
     await act(async () => {
       render(
-        <TemplateBrowseClient selectedTemplateId={null} userId="user-1" isAdmin={true} />
+        <TemplateBrowseClient selectedTemplateId={null} isAdmin={true} />
       )
     })
 
