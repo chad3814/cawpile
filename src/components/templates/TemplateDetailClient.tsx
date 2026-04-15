@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeftIcon, CheckCircleIcon, DocumentDuplicateIcon, SwatchIcon } from '@heroicons/react/24/outline'
 import { CheckCircleIcon as CheckCircleSolidIcon } from '@heroicons/react/24/solid'
@@ -127,10 +128,12 @@ export default function TemplateDetailClient({ template, selectedTemplateId }: T
         <div className="lg:col-span-1 space-y-6">
           {/* Preview thumbnail */}
           {template.previewThumbnailUrl ? (
-            <img
+            <Image
               src={template.previewThumbnailUrl}
               alt={`${template.name} preview`}
               className="w-full rounded-lg border border-border"
+              width={400}
+              height={711}
             />
           ) : (
             <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center border border-border">
@@ -141,10 +144,12 @@ export default function TemplateDetailClient({ template, selectedTemplateId }: T
           {/* Creator info */}
           <div className="flex items-center gap-3">
             {template.creator?.image ? (
-              <img
+              <Image
                 src={template.creator.image}
                 alt={template.creator.name || 'Creator'}
                 className="w-10 h-10 rounded-full"
+                width={40}
+                height={40}
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
