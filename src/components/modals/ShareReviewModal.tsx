@@ -245,20 +245,16 @@ export default function ShareReviewModal({
         }
       }
 
-      // Dynamically import html2canvas to avoid SSR issues
-      const html2canvas = (await import('html2canvas')).default
+      // Dynamically import html-to-image to avoid SSR issues.
+      // html-to-image uses SVG foreignObject for native browser rendering,
+      // which is significantly faster than html2canvas on mobile Safari.
+      const { toPng } = await import('html-to-image')
 
-      // All images in the template are already data URLs (pre-fetched via proxy),
-      // so no CORS handling is needed from html2canvas.
-      const canvas = await html2canvas(templateRef.current, {
-        scale: 1,
+      const dataUrl = await toPng(templateRef.current, {
         width: IMAGE_WIDTH,
         height: IMAGE_HEIGHT,
         backgroundColor: '#0f172a',
-        logging: false,
       })
-
-      const dataUrl = canvas.toDataURL('image/png')
       setGeneratedImageUrl(dataUrl)
       setShowImagePreview(true)
     } catch (err) {
@@ -599,7 +595,7 @@ export default function ShareReviewModal({
                   </>
                 )}
 
-                {/* Hidden Image Template for html2canvas */}
+                {/* Hidden Image Template for html-to-image */}
                 {canGenerateImage && userBook.cawpileRating && (
                   <div
                     ref={templateRef}

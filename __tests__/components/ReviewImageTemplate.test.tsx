@@ -185,7 +185,7 @@ describe('ReviewImageTemplate', () => {
     expect(screen.getByText('Personal Impact')).toBeInTheDocument()
   })
 
-  test('should use crossOrigin attribute on img for html2canvas compatibility', () => {
+  test('should not set crossOrigin on img (data URLs are used for image generation)', () => {
     render(
       <ReviewImageTemplate
         book={mockBook}
@@ -196,6 +196,6 @@ describe('ReviewImageTemplate', () => {
     )
 
     const img = screen.getByAltText('The Great Gatsby')
-    expect(img).toHaveAttribute('crossOrigin', 'anonymous')
+    expect(img).not.toHaveAttribute('crossOrigin')
   })
 })
