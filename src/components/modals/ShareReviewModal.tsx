@@ -253,7 +253,9 @@ export default function ShareReviewModal({
       // The template wrapper is positioned off-screen (left: -9999px) to hide it.
       // html-to-image clones nodes with their computed styles, so we must override
       // the positioning on the clone to bring content into the visible viewport.
-      const dataUrl = await toPng(templateRef.current, {
+      const node = templateRef.current
+      if (!node) return
+      const dataUrl = await toPng(node, {
         width: IMAGE_WIDTH,
         height: IMAGE_HEIGHT,
         backgroundColor: '#0f172a',
