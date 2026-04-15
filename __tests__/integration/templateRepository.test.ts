@@ -174,8 +174,7 @@ describe('Template Repository - Integration & Gap Tests', () => {
     createdTemplateIds.push(dupData.template.id)
 
     // Step 2: Verify it appears in user's personal templates
-    const mineRequest = new NextRequest('http://localhost:3000/api/user/templates/mine')
-    const mineResponse = await GET_MINE(mineRequest)
+    const mineResponse = await GET_MINE()
     const mineData = await mineResponse.json()
 
     expect(mineResponse.status).toBe(200)
@@ -223,8 +222,7 @@ describe('Template Repository - Integration & Gap Tests', () => {
     expect(dupResponse.status).toBe(401)
 
     // Mine
-    const mineRequest = new NextRequest('http://localhost:3000/api/user/templates/mine')
-    const mineResponse = await GET_MINE(mineRequest)
+    const mineResponse = await GET_MINE()
     expect(mineResponse.status).toBe(401)
   })
 
@@ -350,8 +348,7 @@ describe('Template Repository - Integration & Gap Tests', () => {
   })
 
   test('My Templates mine endpoint returns empty when user has no personal templates', async () => {
-    const request = new NextRequest('http://localhost:3000/api/user/templates/mine')
-    const response = await GET_MINE(request)
+    const response = await GET_MINE()
     const data = await response.json()
 
     expect(response.status).toBe(200)
@@ -370,8 +367,7 @@ describe('Template Repository - Integration & Gap Tests', () => {
     })
     createdTemplateIds.push(systemTemplate.id)
 
-    const request = new NextRequest('http://localhost:3000/api/user/templates/mine')
-    const response = await GET_MINE(request)
+    const response = await GET_MINE()
     const data = await response.json()
 
     expect(response.status).toBe(200)

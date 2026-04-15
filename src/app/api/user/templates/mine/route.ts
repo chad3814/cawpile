@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
  * Returns only templates where userId = current user and isPublished = false
  * These are personal copies created via the duplicate action
  */
-export async function GET(_request: Request) {
+export async function GET() {
   try {
     const user = await getCurrentUser()
     if (!user?.id) {
