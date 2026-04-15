@@ -166,7 +166,6 @@ export default function ReviewImageTemplate({
                     width: 240,
                     height: 360,
                   }}
-                  crossOrigin="anonymous"
                 />
               ) : (
                 <div
