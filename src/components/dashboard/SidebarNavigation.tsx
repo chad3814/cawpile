@@ -17,7 +17,7 @@ interface NavItem {
   subItems?: SubItem[];
 }
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   { id: 'books', label: 'Books' },
   { id: 'authors', label: 'Authors' },
   {
@@ -69,7 +69,7 @@ function NavItems({
                   <button
                     type="button"
                     onClick={() => onSectionChange(item.id, sub.anchor)}
-                    aria-current={activeAnchor === sub.anchor ? 'true' : undefined}
+                    aria-current={activeAnchor === sub.anchor ? 'location' : undefined}
                     className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
                       activeAnchor === sub.anchor
                         ? 'bg-primary/5 text-primary font-medium'
@@ -127,7 +127,8 @@ export default function SidebarNavigation({ activeSection, activeAnchor, onSecti
               leaveFrom="translate-x-0"
               leaveTo="-translate-x-full"
             >
-              <Dialog.Panel className="relative flex w-64 max-w-[75vw] flex-col bg-background pt-16 pb-4 shadow-xl">
+              <Dialog.Panel id="mobile-sidebar" className="relative flex w-64 max-w-[75vw] flex-col bg-background pt-16 pb-4 shadow-xl">
+                <Dialog.Title className="sr-only">Navigation</Dialog.Title>
                 {/* Close button */}
                 <div className="absolute top-4 right-3">
                   <button
