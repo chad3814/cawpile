@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from 'react'
+import { Bars3Icon } from '@heroicons/react/24/outline'
 import SidebarNavigation from './SidebarNavigation'
 import type { DashboardSection } from './SidebarNavigation'
 import BookGrid from './BookGrid'
@@ -17,6 +18,7 @@ export default function DashboardClient({ books }: DashboardClientProps) {
   const [activeSection, setActiveSection] = useState<DashboardSection>('library')
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null)
   const [pendingAnchor, setPendingAnchor] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (pendingAnchor) {
@@ -27,6 +29,7 @@ export default function DashboardClient({ books }: DashboardClientProps) {
 
   const handleSectionChange = useCallback((section: DashboardSection, anchor?: string) => {
     setActiveSection(section)
+    setSidebarOpen(false)
     if (anchor) {
       setActiveAnchor(anchor)
       setPendingAnchor(anchor)
@@ -42,9 +45,26 @@ export default function DashboardClient({ books }: DashboardClientProps) {
           activeSection={activeSection}
           activeAnchor={activeAnchor}
           onSectionChange={handleSectionChange}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <div className="flex-1 min-w-0">
+          {/* Mobile menu toggle */}
+          <div className="flex items-center gap-3 mb-4 md:hidden">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <span className="sr-only">Open navigation</span>
+              <Bars3Icon className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span className="text-sm font-medium text-foreground capitalize">
+              {activeSection === 'library' ? 'Your Library' : activeSection}
+            </span>
+          </div>
+
           {activeSection === 'books' && (
             <div className="py-16 text-center text-muted-foreground">
               <p className="text-lg font-medium text-foreground">Books</p>
