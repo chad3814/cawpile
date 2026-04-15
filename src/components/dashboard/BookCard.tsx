@@ -20,8 +20,7 @@ import { RepresentationValue } from '@/types/book'
 import type { DashboardBookData } from '@/types/dashboard'
 import { useRouter } from 'next/navigation'
 import { EllipsisVerticalIcon, TrashIcon, ArrowPathIcon, ShareIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-import { Menu, Transition } from '@headlessui/react'
-import { Fragment } from 'react'
+import { Menu } from '@headlessui/react'
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl'
 
 interface BookCardProps {
@@ -218,16 +217,11 @@ export default function BookCard({ book }: BookCardProps) {
           <Menu.Button className="p-1.5 rounded-md bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 shadow-sm">
             <EllipsisVerticalIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </Menu.Button>
-          <Transition
-            as={Fragment}
-            enter="transition ease-out duration-100"
-            enterFrom="transform opacity-0 scale-95"
-            enterTo="transform opacity-100 scale-100"
-            leave="transition ease-in duration-75"
-            leaveFrom="transform opacity-100 scale-100"
-            leaveTo="transform opacity-0 scale-95"
-          >
-            <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+            <Menu.Items
+              anchor="bottom end"
+              transition
+              className="z-50 w-48 origin-top-right divide-y divide-gray-100 dark:divide-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none transition ease-out data-[closed]:scale-95 data-[closed]:opacity-0 data-[enter]:duration-100 data-[leave]:duration-75"
+            >
               <div className="px-1 py-1">
                 {book.status === 'READING' && (
                   <>
@@ -336,7 +330,6 @@ export default function BookCard({ book }: BookCardProps) {
                 </Menu.Item>
               </div>
             </Menu.Items>
-          </Transition>
         </Menu>
       </div>
 
