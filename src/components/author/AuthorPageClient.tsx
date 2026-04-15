@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import StarRating from '@/components/rating/StarRating';
@@ -23,7 +24,7 @@ const STATUS_CLASSES: Record<string, string> = {
   DNF: 'bg-red-500/10 text-red-400',
 };
 
-function BookRow({ book }: { book: AuthorBookEntry }) {
+function BookRow({ book, statusBadge }: { book: AuthorBookEntry; statusBadge?: ReactNode }) {
   return (
     <tr className="border-t border-border hover:bg-muted/30 transition-colors">
       <td className="px-4 py-3">
@@ -68,64 +69,21 @@ function BookRow({ book }: { book: AuthorBookEntry }) {
           {book.totalReaders > 0 ? book.totalReaders : '--'}
         </span>
       </td>
+      {statusBadge !== undefined && (
+        <td className="px-4 py-3">{statusBadge}</td>
+      )}
     </tr>
   );
 }
 
-function TrackedBookRow({ book }: { book: TrackedBookEntry }) {
-  const statusLabel = STATUS_LABELS[book.userBookStatus] ?? book.userBookStatus;
-  const statusClass = STATUS_CLASSES[book.userBookStatus] ?? 'bg-muted text-muted-foreground';
+function StatusBadge({ status }: { status: string }) {
+  const label = STATUS_LABELS[status] ?? status;
+  const className = STATUS_CLASSES[status] ?? 'bg-muted text-muted-foreground';
 
   return (
-    <tr className="border-t border-border hover:bg-muted/30 transition-colors">
-      <td className="px-4 py-3">
-        <Link href={`/b/${book.bookId}`} className="flex items-center gap-3">
-          {book.coverImageUrl ? (
-            <Image
-              src={book.coverImageUrl}
-              alt={book.title}
-              width={40}
-              height={60}
-              className="rounded object-cover"
-            />
-          ) : (
-            <div className="w-10 h-[60px] rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
-              No cover
-            </div>
-          )}
-          <span className="text-sm font-medium text-card-foreground hover:underline">
-            {book.title}
-          </span>
-        </Link>
-      </td>
-      <td className="px-4 py-3 hidden sm:table-cell">
-        <span className="text-xs text-muted-foreground">
-          {book.bookType === 'NONFICTION' ? 'Non-fiction' : 'Fiction'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        {book.averageRating !== null ? (
-          <StarRating rating={book.averageRating} showAverage size="sm" />
-        ) : (
-          <span className="text-sm text-muted-foreground/50">--</span>
-        )}
-      </td>
-      <td className="px-4 py-3 hidden md:table-cell">
-        <span className="text-sm text-muted-foreground">
-          {book.totalRatings > 0 ? book.totalRatings : '--'}
-        </span>
-      </td>
-      <td className="px-4 py-3 hidden md:table-cell">
-        <span className="text-sm text-muted-foreground">
-          {book.totalReaders > 0 ? book.totalReaders : '--'}
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>
-          {statusLabel}
-        </span>
-      </td>
-    </tr>
+    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${className}`}>
+      {label}
+    </span>
   );
 }
 
@@ -179,8 +137,12 @@ export default function AuthorPageClient({ data }: AuthorPageClientProps) {
               <table className="w-full">
                 <BooksTableHeader showStatus={true} />
                 <tbody>
-                  {trackedBooks.map((book) => (
-                    <TrackedBookRow key={book.bookId} book={book} />
+                  {trackedBooks.map((book: TrackedBookEntry) => (
+                    <BookRow
+                      key={book.bookId}
+                      book={book}
+                      statusBadge={<StatusBadge status={book.userBookStatus} />}
+                    />
                   ))}
                 </tbody>
               </table>

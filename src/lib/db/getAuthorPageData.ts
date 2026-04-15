@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import type { BookStatus } from '@prisma/client';
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl';
 import type { AuthorPageData, AuthorBookEntry, TrackedBookEntry } from '@/types/author-page';
 
@@ -12,7 +13,8 @@ export async function getAuthorPageData(
   authorName: string,
   userId: string | null
 ): Promise<AuthorPageData | null> {
-  // Find all books where the author appears in the authors array
+  // Find all books where the author appears in the authors array.
+  // Fetch all editions (not just the first) so we can sum readers across them.
   const books = await prisma.book.findMany({
     where: {
       authors: { has: authorName },
@@ -20,7 +22,6 @@ export async function getAuthorPageData(
     include: {
       editions: {
         orderBy: { createdAt: 'asc' },
-        take: 1,
         include: {
           ...COVER_PROVIDERS_SELECT,
           _count: {
@@ -34,50 +35,35 @@ export async function getAuthorPageData(
 
   if (books.length === 0) return null;
 
-  // Gather all book IDs for aggregated rating queries
   const bookIds = books.map((b) => b.id);
 
-  // Batch query: aggregated ratings per book
-  const ratingsByBook = await prisma.cawpileRating.groupBy({
-    by: ['userBookId'],
+  // Single query: fetch all completed ratings with their bookId via relation
+  const ratings = await prisma.cawpileRating.findMany({
     where: {
       userBook: {
         edition: { bookId: { in: bookIds } },
         status: 'COMPLETED',
       },
     },
-    _avg: { average: true },
-    _count: true,
+    select: {
+      average: true,
+      userBook: { select: { edition: { select: { bookId: true } } } },
+    },
   });
-
-  // We need the bookId for each userBookId to map ratings back to books.
-  // Get the userBook → edition → bookId mapping for the rated userBooks.
-  const ratedUserBookIds = ratingsByBook.map((r) => r.userBookId);
-  const userBookEditions = ratedUserBookIds.length > 0
-    ? await prisma.userBook.findMany({
-        where: { id: { in: ratedUserBookIds } },
-        select: { id: true, edition: { select: { bookId: true } } },
-      })
-    : [];
-
-  const userBookToBookId = new Map(
-    userBookEditions.map((ub) => [ub.id, ub.edition.bookId])
-  );
 
   // Aggregate ratings per book
   const bookRatings = new Map<string, { sum: number; count: number }>();
-  for (const r of ratingsByBook) {
-    if (r._avg.average === null) continue;
-    const bookId = userBookToBookId.get(r.userBookId);
-    if (!bookId) continue;
+  for (const r of ratings) {
+    if (r.average === null) continue;
+    const bookId = r.userBook.edition.bookId;
     const existing = bookRatings.get(bookId) ?? { sum: 0, count: 0 };
-    existing.sum += r._avg.average * r._count;
-    existing.count += r._count;
+    existing.sum += r.average;
+    existing.count += 1;
     bookRatings.set(bookId, existing);
   }
 
   // If the user is logged in, fetch their tracked books by this author
-  const userTrackedMap = new Map<string, { status: string; rating: number | null }>();
+  const userTrackedMap = new Map<string, { status: BookStatus; rating: number | null }>();
   if (userId) {
     const userBooks = await prisma.userBook.findMany({
       where: {
@@ -104,15 +90,17 @@ export async function getAuthorPageData(
   let totalReaders = 0;
 
   for (const book of books) {
-    const edition = book.editions[0];
-    const readerCount = edition?._count.userBooks ?? 0;
+    // Sum readers across all editions
+    const readerCount = book.editions.reduce((sum, ed) => sum + ed._count.userBooks, 0);
     totalReaders += readerCount;
+
+    // Use the first edition for the cover image
+    const firstEdition = book.editions[0];
+    const coverImageUrl = firstEdition ? getCoverImageUrl(firstEdition) ?? null : null;
 
     const rating = bookRatings.get(book.id);
     const avgRating = rating ? Number((rating.sum / rating.count).toFixed(1)) : null;
     const totalRatings = rating?.count ?? 0;
-
-    const coverImageUrl = edition ? getCoverImageUrl(edition) ?? null : null;
 
     const entry: AuthorBookEntry = {
       bookId: book.id,

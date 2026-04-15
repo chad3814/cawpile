@@ -2,7 +2,7 @@ jest.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: {
     book: { findMany: jest.fn() },
-    cawpileRating: { groupBy: jest.fn() },
+    cawpileRating: { findMany: jest.fn() },
     userBook: { findMany: jest.fn() },
   },
 }));
@@ -36,7 +36,7 @@ function makeBook(overrides: Record<string, unknown> = {}) {
 describe('getAuthorPageData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (mockPrisma.cawpileRating.groupBy as jest.Mock).mockResolvedValue([]);
+    (mockPrisma.cawpileRating.findMany as jest.Mock).mockResolvedValue([]);
     (mockPrisma.userBook.findMany as jest.Mock).mockResolvedValue([]);
   });
 
@@ -84,6 +84,39 @@ describe('getAuthorPageData', () => {
     expect(result!.otherBooks[0].coverImageUrl).toBe('https://example.com/cover.jpg');
   });
 
+  it('sums readers across all editions of a book', async () => {
+    const bookMultiEdition = makeBook({
+      editions: [
+        {
+          id: 'ed-1',
+          defaultCoverProvider: null,
+          customCoverUrl: null,
+          googleBook: { imageUrl: 'https://example.com/cover.jpg' },
+          hardcoverBook: null,
+          ibdbBook: null,
+          _count: { userBooks: 5 },
+        },
+        {
+          id: 'ed-2',
+          defaultCoverProvider: null,
+          customCoverUrl: null,
+          googleBook: null,
+          hardcoverBook: null,
+          ibdbBook: null,
+          _count: { userBooks: 3 },
+        },
+      ],
+    });
+    (mockPrisma.book.findMany as jest.Mock).mockResolvedValue([bookMultiEdition]);
+
+    const result = await getAuthorPageData('Brandon Sanderson', null);
+
+    expect(result!.otherBooks[0].totalReaders).toBe(8);
+    expect(result!.totalReaders).toBe(8);
+    // Cover should come from the first edition
+    expect(result!.otherBooks[0].coverImageUrl).toBe('https://example.com/cover.jpg');
+  });
+
   it('separates tracked books from other books when user is logged in', async () => {
     const book1 = makeBook();
     const book2 = makeBook({
@@ -127,33 +160,24 @@ describe('getAuthorPageData', () => {
 
     await getAuthorPageData('Brandon Sanderson', null);
 
-    // userBook.findMany should only be called for ratings mapping, not for user's tracked books
     const userBookCalls = (mockPrisma.userBook.findMany as jest.Mock).mock.calls;
-    // With no ratings, it should not be called for user tracking (userId is null)
-    expect(userBookCalls.every(
-      (call: Record<string, unknown>[]) => !call[0] || !(call[0] as Record<string, unknown>).where || !((call[0] as Record<string, { userId?: string }>).where as Record<string, unknown>).userId
-    )).toBe(true);
+    expect(userBookCalls).toHaveLength(0);
   });
 
   it('includes aggregated ratings when available', async () => {
     const book = makeBook();
     (mockPrisma.book.findMany as jest.Mock).mockResolvedValue([book]);
 
-    (mockPrisma.cawpileRating.groupBy as jest.Mock).mockResolvedValue([
-      { userBookId: 'ub-1', _avg: { average: 8.0 }, _count: 3 },
-      { userBookId: 'ub-2', _avg: { average: 7.0 }, _count: 2 },
-    ]);
-
-    // Map userBook IDs back to book IDs
-    (mockPrisma.userBook.findMany as jest.Mock).mockResolvedValue([
-      { id: 'ub-1', edition: { bookId: 'book-1' } },
-      { id: 'ub-2', edition: { bookId: 'book-1' } },
+    // 1:1 relationship: each CawpileRating maps to exactly one UserBook
+    (mockPrisma.cawpileRating.findMany as jest.Mock).mockResolvedValue([
+      { average: 8.0, userBook: { edition: { bookId: 'book-1' } } },
+      { average: 7.0, userBook: { edition: { bookId: 'book-1' } } },
     ]);
 
     const result = await getAuthorPageData('Brandon Sanderson', null);
 
-    expect(result!.otherBooks[0].averageRating).toBe(7.6); // (8*3 + 7*2) / 5 = 7.6
-    expect(result!.otherBooks[0].totalRatings).toBe(5);
+    expect(result!.otherBooks[0].averageRating).toBe(7.5); // (8.0 + 7.0) / 2
+    expect(result!.otherBooks[0].totalRatings).toBe(2);
   });
 
   it('handles books with no editions gracefully', async () => {

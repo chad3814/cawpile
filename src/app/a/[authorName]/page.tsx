@@ -11,15 +11,12 @@ interface PageProps {
   }>;
 }
 
-export const revalidate = 60;
-
 const getCachedAuthorPageData = cache(getAuthorPageData);
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { authorName: rawName } = await params;
   const authorName = decodeURIComponent(rawName);
-  const session = await auth();
-  const data = await getCachedAuthorPageData(authorName, session?.user?.id ?? null);
+  const data = await getCachedAuthorPageData(authorName, null);
 
   if (!data) {
     return {
