@@ -213,6 +213,10 @@ model UserBook {
   // Cover image preference
   preferredCoverProvider  String?          // 'hardcover' | 'google' | 'ibdb' | null
 
+  // Library section ordering
+  sortOrder              Int?             // Custom position within status group (null = unordered)
+  isPinned               Boolean          @default(false)
+
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   edition        Edition          @relation(fields: [editionId], references: [id], onDelete: Cascade)
   cawpileRating  CawpileRating?
@@ -224,6 +228,7 @@ model UserBook {
   @@unique([userId, editionId])
   @@index([userId, status])
   @@index([userId, createdAt])
+  @@index([userId, status, isPinned, sortOrder])
 }
 
 model CawpileRating {

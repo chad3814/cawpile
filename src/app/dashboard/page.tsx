@@ -9,8 +9,10 @@ function buildOrderBy(sortBy: LibrarySortBy, sortOrder: LibrarySortOrder) {
   const order = sortOrder.toLowerCase() as 'asc' | 'desc'
   const nullsPosition = sortOrder === 'DESC' ? 'first' : 'last'
 
-  // Primary sort is always by status
+  // Primary sort is always by status, then pinned books float up
   const statusOrder = { status: 'asc' as const }
+  const pinnedOrder = { isPinned: 'desc' as const }
+  const customOrder = { sortOrder: { sort: 'asc' as const, nulls: 'last' as const } }
 
   // Secondary sort based on user preference
   let secondaryOrder: Record<string, unknown>
@@ -32,7 +34,7 @@ function buildOrderBy(sortBy: LibrarySortBy, sortOrder: LibrarySortOrder) {
       break
   }
 
-  return [statusOrder, secondaryOrder]
+  return [statusOrder, pinnedOrder, customOrder, secondaryOrder]
 }
 
 export default async function DashboardPage() {

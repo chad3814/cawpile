@@ -48,9 +48,11 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
       },
       cawpileRating: true
     },
-    orderBy: {
-      createdAt: 'desc'
-    }
+    orderBy: [
+      { isPinned: 'desc' },
+      { sortOrder: { sort: 'asc', nulls: 'last' } },
+      { createdAt: 'desc' },
+    ]
   })
 
   const books: ProfileBookData[] = userBooks.map((book) => ({
