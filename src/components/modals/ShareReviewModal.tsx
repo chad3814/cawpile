@@ -104,7 +104,7 @@ export default function ShareReviewModal({
 
   // Pre-fetch cover image as data URL when modal opens so it's ready for image generation
   useEffect(() => {
-    if (!isOpen || !imageUrl || coverDataUrl) return
+    if (!isOpen || !imageUrl || coverDataUrl || !canGenerateImage) return
     let cancelled = false
     const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
     imageUrlToDataUrl(proxyUrl).then((dataUrl) => {
@@ -247,6 +247,9 @@ export default function ShareReviewModal({
 
       const { toPng } = await import('html-to-image')
 
+      // Modal may have closed during the async operations above
+      if (!templateRef.current) return
+
       // The template wrapper is positioned off-screen (left: -9999px) to hide it.
       // html-to-image clones nodes with their computed styles, so we must override
       // the positioning on the clone to bring content into the visible viewport.
@@ -280,7 +283,6 @@ export default function ShareReviewModal({
     setShowImagePreview(false)
     setGeneratedImageUrl(null)
     setImageError(null)
-    setCoverDataUrl(null)
   }
 
   const hasBookClub = !!userBook.bookClubName
