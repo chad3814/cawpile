@@ -229,14 +229,18 @@ export async function GET(request: NextRequest) {
         },
         cawpileRating: true
       },
-      orderBy: [
-        {
-          status: 'asc' // READING first, then WANT_TO_READ, then COMPLETED
-        },
-        {
-          updatedAt: 'desc'
-        }
-      ],
+      orderBy: status
+        ? [
+            { isPinned: 'desc' },
+            { sortOrder: { sort: 'asc', nulls: 'last' } },
+            { updatedAt: 'desc' },
+          ]
+        : [
+            { status: 'asc' },
+            { isPinned: 'desc' },
+            { sortOrder: { sort: 'asc', nulls: 'last' } },
+            { updatedAt: 'desc' },
+          ],
       take: limit ? parseInt(limit, 10) : undefined,
       skip: offset ? parseInt(offset, 10) : undefined
     })
