@@ -245,16 +245,29 @@ export default function ShareReviewModal({
         }
       }
 
-      // Dynamically import html-to-image to avoid SSR issues.
-      // html-to-image uses SVG foreignObject for native browser rendering,
-      // which is significantly faster than html2canvas on mobile Safari.
-      const { toPng } = await import('html-to-image')
+      // Safari doesn't support SVG foreignObject rendering (used by html-to-image),
+      // so we detect Safari and fall back to html2canvas.
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
 
-      const dataUrl = await toPng(templateRef.current, {
-        width: IMAGE_WIDTH,
-        height: IMAGE_HEIGHT,
-        backgroundColor: '#0f172a',
-      })
+      let dataUrl: string
+      if (isSafari) {
+        const html2canvas = (await import('html2canvas')).default
+        const canvas = await html2canvas(templateRef.current, {
+          scale: 1,
+          width: IMAGE_WIDTH,
+          height: IMAGE_HEIGHT,
+          backgroundColor: '#0f172a',
+          logging: false,
+        })
+        dataUrl = canvas.toDataURL('image/png')
+      } else {
+        const { toPng } = await import('html-to-image')
+        dataUrl = await toPng(templateRef.current, {
+          width: IMAGE_WIDTH,
+          height: IMAGE_HEIGHT,
+          backgroundColor: '#0f172a',
+        })
+      }
       setGeneratedImageUrl(dataUrl)
       setShowImagePreview(true)
     } catch (err) {

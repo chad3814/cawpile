@@ -32,9 +32,17 @@ jest.mock('next/image', () => ({
   },
 }))
 
-// Mock html-to-image
+// Mock html-to-image (used on non-Safari browsers)
 jest.mock('html-to-image', () => ({
   toPng: jest.fn(() => Promise.resolve('data:image/png;base64,mock-image-data')),
+}))
+
+// Mock html2canvas (Safari fallback)
+jest.mock('html2canvas', () => ({
+  __esModule: true,
+  default: jest.fn(() => Promise.resolve({
+    toDataURL: () => 'data:image/png;base64,mock-image-data'
+  }))
 }))
 
 // Mock download and truncate functions used by ShareReviewModal
