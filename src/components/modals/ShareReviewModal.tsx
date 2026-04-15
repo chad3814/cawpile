@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useRef } from 'react'
+import { Fragment, useState, useRef, useEffect } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon, PhotoIcon, ArrowDownTrayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
@@ -101,6 +101,19 @@ export default function ShareReviewModal({
 
   // Check if image generation is available (requires CAWPILE rating)
   const canGenerateImage = !!userBook.cawpileRating
+
+  // Pre-fetch cover image as data URL when modal opens so it's ready for image generation
+  useEffect(() => {
+    if (!isOpen || !imageUrl || coverDataUrl) return
+    let cancelled = false
+    const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
+    imageUrlToDataUrl(proxyUrl).then((dataUrl) => {
+      if (!cancelled && dataUrl) {
+        setCoverDataUrl(dataUrl)
+      }
+    })
+    return () => { cancelled = true }
+  }, [isOpen, imageUrl, coverDataUrl])
 
   const handleCopyUrl = async () => {
     if (!shareUrl) return
@@ -221,10 +234,9 @@ export default function ShareReviewModal({
     setImageError(null)
 
     try {
-      // Use proxied image URL to avoid CORS issues with external image sources
+      // If the pre-fetch hasn't finished yet, wait for it now
       if (imageUrl && !coverDataUrl) {
         const proxyUrl = `/api/proxy/image?url=${encodeURIComponent(imageUrl)}`
-        // Pre-load the proxied image and convert to data URL
         const dataUrl = await imageUrlToDataUrl(proxyUrl)
         if (dataUrl) {
           setCoverDataUrl(dataUrl)
@@ -236,12 +248,12 @@ export default function ShareReviewModal({
       // Dynamically import html2canvas to avoid SSR issues
       const html2canvas = (await import('html2canvas')).default
 
+      // All images in the template are already data URLs (pre-fetched via proxy),
+      // so no CORS handling is needed from html2canvas.
       const canvas = await html2canvas(templateRef.current, {
         scale: 1,
         width: IMAGE_WIDTH,
         height: IMAGE_HEIGHT,
-        useCORS: true,
-        allowTaint: true,
         backgroundColor: '#0f172a',
         logging: false,
       })
