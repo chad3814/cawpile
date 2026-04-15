@@ -24,7 +24,7 @@
     "@neondatabase/serverless": "^1.0.1",
     "@prisma/client": "^6.15.0",
     "dotenv": "^17.2.2",
-    "html2canvas": "^1.4.1",
+    "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",
     "nanoid": "^5.1.6",
     "next": "^16.2.3",
