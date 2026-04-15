@@ -113,7 +113,7 @@ export default function ShareReviewModal({
       }
     })
     return () => { cancelled = true }
-  }, [isOpen, imageUrl, coverDataUrl])
+  }, [isOpen, imageUrl, coverDataUrl, canGenerateImage])
 
   const handleCopyUrl = async () => {
     if (!shareUrl) return
