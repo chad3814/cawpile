@@ -1,4 +1,4 @@
-import { BookType } from '@prisma/client';
+import { BookType, BookStatus } from '@prisma/client';
 
 export interface AuthorBookEntry {
   bookId: string;
@@ -11,7 +11,7 @@ export interface AuthorBookEntry {
 }
 
 export interface TrackedBookEntry extends AuthorBookEntry {
-  userBookStatus: string;
+  userBookStatus: BookStatus;
   userRating: number | null;
 }
 
