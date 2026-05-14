@@ -61,7 +61,6 @@ export async function POST(
         googleBook: true,
         hardcoverBook: true,
         ibdbBook: true,
-        amazonBook: true
       }
     })
 
@@ -161,7 +160,6 @@ export async function POST(
         googleBook: true,
         hardcoverBook: true,
         ibdbBook: true,
-        amazonBook: true
       }
     })
 
