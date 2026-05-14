@@ -10,6 +10,7 @@ import { CachedAmazonClient, RainforestClient, AmazonProduct } from '../utils/am
 import { getBookById as getGoogleBookById, searchBooks as searchGoogleBooks } from '@/lib/googleBooks'
 import { validateAndNormalizeIsbn } from '../utils/isbnValidator'
 import { mergeResults } from '../utils/resultMerger'
+import { signResult } from '../utils/signResult'
 
 /**
  * Response shape for tagged search operations
@@ -93,7 +94,9 @@ function hardcoverDocToSearchResult(doc: HardcoverDocument): BookSearchResult {
 }
 
 /**
- * Wrap a BookSearchResult as a SignedBookSearchResult with sources
+ * Wrap a BookSearchResult as a SignedBookSearchResult with sources, then sign it.
+ * The signature is required by `POST /api/user/books` for adding the result to
+ * a user's library — without it, `verifySignature` rejects the request.
  */
 function wrapAsSignedResult(
   book: BookSearchResult,
@@ -101,7 +104,7 @@ function wrapAsSignedResult(
   weight: number,
   extra?: { asin?: string; publisher?: string }
 ): SignedBookSearchResult {
-  return {
+  const wrapped = {
     ...book,
     sources: [{
       provider: source,
@@ -112,6 +115,10 @@ function wrapAsSignedResult(
         ...(extra ?? {})
       }
     }]
+  }
+  return {
+    ...wrapped,
+    signature: signResult(wrapped)
   }
 }
 
