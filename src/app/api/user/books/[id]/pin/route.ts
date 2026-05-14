@@ -18,28 +18,23 @@ export async function PATCH(
   try {
     const { id } = await params
 
-    const userBook = await prisma.userBook.findFirst({
-      where: {
-        id,
-        userId: user.id,
-      },
-      select: { id: true, isPinned: true },
-    })
+    // Single atomic UPDATE — flips isPinned and verifies ownership in one round-trip,
+    // eliminating the TOCTOU race that findFirst + update would have.
+    const result = await prisma.$queryRaw<{ id: string; isPinned: boolean }[]>`
+      UPDATE "UserBook"
+      SET "isPinned" = NOT "isPinned"
+      WHERE "id" = ${id} AND "userId" = ${user.id}
+      RETURNING "id", "isPinned"
+    `
 
-    if (!userBook) {
+    if (result.length === 0) {
       return NextResponse.json(
         { error: 'Book not found' },
         { status: 404 }
       )
     }
 
-    const updated = await prisma.userBook.update({
-      where: { id },
-      data: { isPinned: !userBook.isPinned },
-      select: { id: true, isPinned: true },
-    })
-
-    return NextResponse.json({ userBook: updated })
+    return NextResponse.json({ userBook: result[0] })
   } catch (error) {
     console.error('Error toggling pin:', error)
     return NextResponse.json(

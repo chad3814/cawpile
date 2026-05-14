@@ -106,11 +106,11 @@ export default function LibrarySectionClient({ books: initialBooks, title }: Lib
       return
     }
 
-    // Persist new order so the server matches the client view (handles sortOrder=null jump).
-    const orderOk = await persistOrder(updated.map(b => b.id))
-    if (!orderOk) {
-      setBooks(previous)
-    }
+    // Pin is persisted. Best-effort persist the new order. If this fails the pin
+    // still survives on the server (isPinned desc is the dominant sort key), so
+    // keep the optimistic UI rather than reverting — reverting would phantom-flip
+    // the pin icon while the server stays pinned.
+    await persistOrder(updated.map(b => b.id))
   }, [books])
 
   return (
