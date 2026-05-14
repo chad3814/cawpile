@@ -131,6 +131,123 @@ function mapAmazonSource(source: SourceEntry, editionId: string): Prisma.AmazonB
 }
 
 /**
+ * Per-provider upsert helpers — each encapsulates the find/update/create pattern
+ * for a single provider so both upsert functions dispatch to one place.
+ */
+async function upsertGoogleBookForEdition(
+  source: SourceEntry,
+  editionId: string
+): Promise<'created' | 'updated'> {
+  const existing = await prisma.googleBook.findUnique({ where: { editionId } })
+  if (existing) {
+    const data = mapGoogleSource(source, editionId)
+    await prisma.googleBook.update({
+      where: { editionId },
+      data: {
+        title: data.title,
+        subtitle: data.subtitle,
+        authors: data.authors,
+        description: data.description,
+        publishedDate: data.publishedDate,
+        pageCount: data.pageCount,
+        imageUrl: data.imageUrl,
+        categories: data.categories,
+      }
+    })
+    return 'updated'
+  }
+  await prisma.googleBook.create({ data: mapGoogleSource(source, editionId) })
+  return 'created'
+}
+
+async function upsertHardcoverBookForEdition(
+  source: SourceEntry,
+  editionId: string
+): Promise<'created' | 'updated'> {
+  const existing = await prisma.hardcoverBook.findUnique({ where: { editionId } })
+  if (existing) {
+    const data = mapHardcoverSource(source, editionId)
+    await prisma.hardcoverBook.update({
+      where: { editionId },
+      data: {
+        title: data.title,
+        subtitle: data.subtitle,
+        authors: data.authors,
+        description: data.description,
+        releaseDate: data.releaseDate,
+        pages: data.pages,
+        imageUrl: data.imageUrl,
+        categories: data.categories,
+        isbn: data.isbn,
+        isbn13: data.isbn13,
+        hardcoverSlug: data.hardcoverSlug,
+        openLibraryId: data.openLibraryId,
+        goodReadsId: data.goodReadsId,
+      }
+    })
+    return 'updated'
+  }
+  await prisma.hardcoverBook.create({ data: mapHardcoverSource(source, editionId) })
+  return 'created'
+}
+
+async function upsertIbdbBookForEdition(
+  source: SourceEntry,
+  editionId: string
+): Promise<'created' | 'updated'> {
+  const existing = await prisma.ibdbBook.findUnique({ where: { editionId } })
+  if (existing) {
+    const data = mapIbdbSource(source, editionId)
+    await prisma.ibdbBook.update({
+      where: { editionId },
+      data: {
+        title: data.title,
+        authors: data.authors,
+        description: data.description,
+        publishedDate: data.publishedDate,
+        pageCount: data.pageCount,
+        imageUrl: data.imageUrl,
+        categories: data.categories,
+        isbn10: data.isbn10,
+        isbn13: data.isbn13,
+      }
+    })
+    return 'updated'
+  }
+  await prisma.ibdbBook.create({ data: mapIbdbSource(source, editionId) })
+  return 'created'
+}
+
+async function upsertAmazonBookForEdition(
+  source: SourceEntry,
+  editionId: string
+): Promise<'created' | 'updated'> {
+  const existing = await prisma.amazonBook.findUnique({ where: { editionId } })
+  if (existing) {
+    const data = mapAmazonSource(source, editionId)
+    await prisma.amazonBook.update({
+      where: { editionId },
+      data: {
+        asin: data.asin,
+        title: data.title,
+        authors: data.authors,
+        description: data.description,
+        publishedDate: data.publishedDate,
+        pageCount: data.pageCount,
+        imageUrl: data.imageUrl,
+        categories: data.categories,
+        isbn10: data.isbn10,
+        isbn13: data.isbn13,
+        publisher: data.publisher,
+      }
+    })
+    return 'updated'
+  }
+  await prisma.amazonBook.create({ data: mapAmazonSource(source, editionId) })
+  return 'created'
+}
+
+/**
  * Create or update provider records for an edition based on verified sources
  */
 async function upsertProviderRecords(
@@ -152,120 +269,21 @@ async function upsertProviderRecords(
   }
 
   for (const source of sources) {
-    if (source.provider === 'hardcover') {
-      try {
-        const data = mapHardcoverSource(source, editionId)
-
-        // Check if record exists
-        const existing = await prisma.hardcoverBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          // Update existing record
-          await prisma.hardcoverBook.update({
-            where: { editionId },
-            data: {
-              title: data.title,
-              subtitle: data.subtitle,
-              authors: data.authors,
-              description: data.description,
-              releaseDate: data.releaseDate,
-              pages: data.pages,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn: data.isbn,
-              isbn13: data.isbn13,
-              hardcoverSlug: data.hardcoverSlug,
-              openLibraryId: data.openLibraryId,
-              goodReadsId: data.goodReadsId,
-            }
-          })
-          result.hardcover = 'updated'
-        } else {
-          // Create new record
-          await prisma.hardcoverBook.create({ data })
-          result.hardcover = 'created'
+    try {
+      if (source.provider === 'amazon') {
+        const data = source.data as SearchProviderResult
+        if (!data.asin) {
+          console.error('Skipping AmazonBook upsert: source has no asin')
+          continue
         }
-      } catch (error) {
-        console.error('Failed to upsert HardcoverBook:', error)
+        result.amazon = await upsertAmazonBookForEdition(source, editionId)
+      } else if (source.provider === 'hardcover') {
+        result.hardcover = await upsertHardcoverBookForEdition(source, editionId)
+      } else if (source.provider === 'ibdb') {
+        result.ibdb = await upsertIbdbBookForEdition(source, editionId)
       }
-    }
-
-    if (source.provider === 'ibdb') {
-      try {
-        const data = mapIbdbSource(source, editionId)
-
-        // Check if record exists
-        const existing = await prisma.ibdbBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          // Update existing record
-          await prisma.ibdbBook.update({
-            where: { editionId },
-            data: {
-              title: data.title,
-              authors: data.authors,
-              description: data.description,
-              publishedDate: data.publishedDate,
-              pageCount: data.pageCount,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn10: data.isbn10,
-              isbn13: data.isbn13,
-            }
-          })
-          result.ibdb = 'updated'
-        } else {
-          // Create new record
-          await prisma.ibdbBook.create({ data })
-          result.ibdb = 'created'
-        }
-      } catch (error) {
-        console.error('Failed to upsert IbdbBook:', error)
-      }
-    }
-
-    if (source.provider === 'amazon') {
-      const amazonData = source.data as SearchProviderResult
-      if (!amazonData.asin) {
-        console.error('Skipping AmazonBook upsert: source has no asin')
-        continue
-      }
-      try {
-        const data = mapAmazonSource(source, editionId)
-
-        const existing = await prisma.amazonBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          await prisma.amazonBook.update({
-            where: { editionId },
-            data: {
-              asin: data.asin,
-              title: data.title,
-              authors: data.authors,
-              description: data.description,
-              publishedDate: data.publishedDate,
-              pageCount: data.pageCount,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn10: data.isbn10,
-              isbn13: data.isbn13,
-              publisher: data.publisher,
-            }
-          })
-          result.amazon = 'updated'
-        } else {
-          await prisma.amazonBook.create({ data })
-          result.amazon = 'created'
-        }
-      } catch (error) {
-        console.error('Failed to upsert AmazonBook:', error)
-      }
+    } catch (error) {
+      console.error(`Failed to upsert ${source.provider} record:`, error)
     }
   }
 
@@ -477,128 +495,19 @@ export async function upsertAllProviderRecords(
 
   for (const source of sources) {
     try {
-      if (source.provider === 'google') {
-        const existing = await prisma.googleBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          const data = mapGoogleSource(source, editionId)
-          await prisma.googleBook.update({
-            where: { editionId },
-            data: {
-              title: data.title,
-              subtitle: data.subtitle,
-              authors: data.authors,
-              description: data.description,
-              publishedDate: data.publishedDate,
-              pageCount: data.pageCount,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-            }
-          })
-          result.google = 'updated'
-        } else {
-          await prisma.googleBook.create({
-            data: mapGoogleSource(source, editionId)
-          })
-          result.google = 'created'
-        }
-      } else if (source.provider === 'hardcover') {
-        const existing = await prisma.hardcoverBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          const data = mapHardcoverSource(source, editionId)
-          await prisma.hardcoverBook.update({
-            where: { editionId },
-            data: {
-              title: data.title,
-              subtitle: data.subtitle,
-              authors: data.authors,
-              description: data.description,
-              releaseDate: data.releaseDate,
-              pages: data.pages,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn: data.isbn,
-              isbn13: data.isbn13,
-              hardcoverSlug: data.hardcoverSlug,
-              openLibraryId: data.openLibraryId,
-              goodReadsId: data.goodReadsId,
-            }
-          })
-          result.hardcover = 'updated'
-        } else {
-          await prisma.hardcoverBook.create({
-            data: mapHardcoverSource(source, editionId)
-          })
-          result.hardcover = 'created'
-        }
-      } else if (source.provider === 'ibdb') {
-        const existing = await prisma.ibdbBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          const data = mapIbdbSource(source, editionId)
-          await prisma.ibdbBook.update({
-            where: { editionId },
-            data: {
-              title: data.title,
-              authors: data.authors,
-              description: data.description,
-              publishedDate: data.publishedDate,
-              pageCount: data.pageCount,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn10: data.isbn10,
-              isbn13: data.isbn13,
-            }
-          })
-          result.ibdb = 'updated'
-        } else {
-          await prisma.ibdbBook.create({
-            data: mapIbdbSource(source, editionId)
-          })
-          result.ibdb = 'created'
-        }
-      } else if (source.provider === 'amazon') {
-        const amazonSourceData = source.data as SearchProviderResult
-        if (!amazonSourceData.asin) {
+      if (source.provider === 'amazon') {
+        const data = source.data as SearchProviderResult
+        if (!data.asin) {
           console.error('Skipping AmazonBook upsert: source has no asin')
           continue
         }
-        const existing = await prisma.amazonBook.findUnique({
-          where: { editionId }
-        })
-
-        if (existing) {
-          const data = mapAmazonSource(source, editionId)
-          await prisma.amazonBook.update({
-            where: { editionId },
-            data: {
-              asin: data.asin,
-              title: data.title,
-              authors: data.authors,
-              description: data.description,
-              publishedDate: data.publishedDate,
-              pageCount: data.pageCount,
-              imageUrl: data.imageUrl,
-              categories: data.categories,
-              isbn10: data.isbn10,
-              isbn13: data.isbn13,
-              publisher: data.publisher,
-            }
-          })
-          result.amazon = 'updated'
-        } else {
-          await prisma.amazonBook.create({
-            data: mapAmazonSource(source, editionId)
-          })
-          result.amazon = 'created'
-        }
+        result.amazon = await upsertAmazonBookForEdition(source, editionId)
+      } else if (source.provider === 'hardcover') {
+        result.hardcover = await upsertHardcoverBookForEdition(source, editionId)
+      } else if (source.provider === 'ibdb') {
+        result.ibdb = await upsertIbdbBookForEdition(source, editionId)
+      } else if (source.provider === 'google') {
+        result.google = await upsertGoogleBookForEdition(source, editionId)
       }
       // Skip 'local' provider - it's already in our database
     } catch (error) {
