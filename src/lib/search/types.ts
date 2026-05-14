@@ -10,6 +10,8 @@ export interface SearchProvider {
 export interface SearchProviderResult extends BookSearchResult {
   source: string
   sourceWeight: number
+  asin?: string
+  publisher?: string
 }
 
 /**
