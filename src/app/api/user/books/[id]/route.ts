@@ -5,7 +5,7 @@ import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
 
 // Valid cover provider values
-const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb']
+const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb', 'amazon']
 
 export async function PATCH(
   request: NextRequest,

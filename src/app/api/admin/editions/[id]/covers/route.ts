@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth/admin'
 import { logAdminAction } from '@/lib/audit/logger'
 import { deleteAvatar, extractKeyFromUrl } from '@/lib/s3-upload'
 
-const VALID_PROVIDERS = ['google', 'hardcover', 'ibdb', 'custom'] as const
+const VALID_PROVIDERS = ['google', 'hardcover', 'ibdb', 'amazon', 'custom'] as const
 type Provider = (typeof VALID_PROVIDERS)[number]
 
 function isValidProvider(value: string): value is Provider {
@@ -70,6 +70,9 @@ export async function PATCH(
             break
           case 'ibdb':
             hasImage = !!edition.ibdbBook?.imageUrl
+            break
+          case 'amazon':
+            hasImage = !!edition.amazonBook?.imageUrl
             break
         }
 
@@ -161,6 +164,18 @@ export async function PATCH(
             )
           }
           await prisma.ibdbBook.update({
+            where: { editionId: id },
+            data: { imageUrl: null },
+          })
+          break
+        case 'amazon':
+          if (!edition.amazonBook) {
+            return NextResponse.json(
+              { error: 'No Amazon data for this edition' },
+              { status: 404 }
+            )
+          }
+          await prisma.amazonBook.update({
             where: { editionId: id },
             data: { imageUrl: null },
           })

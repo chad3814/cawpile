@@ -1,6 +1,6 @@
 /**
  * Utility function to get cover image URL with multi-provider fallback
- * Priority order: User preference → Edition default → Hardcover > Google > IBDB
+ * Priority order: User preference → Edition default → Hardcover > Google > IBDB > Amazon
  */
 
 export interface ProviderImageData {
@@ -13,6 +13,7 @@ export interface EditionWithProviders {
   hardcoverBook?: ProviderImageData | null
   googleBook?: ProviderImageData | null
   ibdbBook?: ProviderImageData | null
+  amazonBook?: ProviderImageData | null
 }
 
 function getImageForProvider(
@@ -28,6 +29,8 @@ function getImageForProvider(
       return edition.googleBook?.imageUrl ?? undefined
     case 'ibdb':
       return edition.ibdbBook?.imageUrl ?? undefined
+    case 'amazon':
+      return edition.amazonBook?.imageUrl ?? undefined
     default:
       return undefined
   }
@@ -36,10 +39,10 @@ function getImageForProvider(
 /**
  * Get the cover image URL from an edition, using fallback logic
  * across multiple providers:
- * User preferredCoverProvider → Edition defaultCoverProvider → Hardcover > Google > IBDB
+ * User preferredCoverProvider → Edition defaultCoverProvider → Hardcover > Google > IBDB > Amazon
  *
  * @param edition - Edition object with provider relations
- * @param preferredProvider - Optional user-level preferred provider ('hardcover' | 'google' | 'ibdb')
+ * @param preferredProvider - Optional user-level preferred provider ('hardcover' | 'google' | 'ibdb' | 'amazon')
  * @returns The first non-null imageUrl found, or undefined if none available
  */
 export function getCoverImageUrl(
@@ -62,12 +65,13 @@ export function getCoverImageUrl(
     }
   }
 
-  // 3. Default fallback priority: Custom > Hardcover > Google > IBDB
+  // 3. Default fallback priority: Custom > Hardcover > Google > IBDB > Amazon
   return (
     edition.customCoverUrl ||
     edition.hardcoverBook?.imageUrl ||
     edition.googleBook?.imageUrl ||
     edition.ibdbBook?.imageUrl ||
+    edition.amazonBook?.imageUrl ||
     undefined
   )
 }

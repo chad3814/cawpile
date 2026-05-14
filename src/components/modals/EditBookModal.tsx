@@ -26,6 +26,9 @@ interface EditionWithProviders {
   ibdbBook?: {
     imageUrl: string | null
   } | null
+  amazonBook?: {
+    imageUrl: string | null
+  } | null
 }
 
 interface EditBookModalProps {
@@ -56,7 +59,7 @@ interface EditBookModalProps {
   edition?: EditionWithProviders
 }
 
-type CoverProvider = 'hardcover' | 'google' | 'ibdb'
+type CoverProvider = 'hardcover' | 'google' | 'ibdb' | 'amazon'
 
 export default function EditBookModal({
   isOpen,
@@ -199,6 +202,9 @@ export default function EditBookModal({
   }
   if (edition?.ibdbBook?.imageUrl) {
     availableCovers.push({ provider: 'ibdb', imageUrl: edition.ibdbBook.imageUrl })
+  }
+  if (edition?.amazonBook?.imageUrl) {
+    availableCovers.push({ provider: 'amazon', imageUrl: edition.amazonBook.imageUrl })
   }
 
   // Determine which cover is currently selected (either preferred or default)
