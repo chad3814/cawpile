@@ -142,9 +142,11 @@ export class CachedAmazonClient implements AmazonProductClient {
         data: { asin, payload: fresh as unknown as object },
       })
     } catch (error) {
-      // If a concurrent caller persisted the same ASIN first, the unique
-      // constraint will throw — safe to ignore, the row already exists.
-      console.error('Failed to persist AmazonAsinCache:', error)
+      // P2002 is the expected race when two concurrent callers persist the same ASIN —
+      // the row already exists, no action needed. Log only unexpected failures.
+      if ((error as { code?: string }).code !== 'P2002') {
+        console.error('Failed to persist AmazonAsinCache:', error)
+      }
     }
 
     return fresh
