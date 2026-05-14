@@ -52,7 +52,13 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
             <MapPinOutlineIcon className="h-4 w-4" />
           )}
         </button>
-        <div
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing rounded p-1 bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
+         
+        >
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing rounded p-1 bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
