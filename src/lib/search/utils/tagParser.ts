@@ -6,7 +6,7 @@
 /**
  * Supported tag types for tagged search
  */
-export type TagType = 'ibdb' | 'hard' | 'gbid' | 'isbn'
+export type TagType = 'ibdb' | 'hard' | 'gbid' | 'isbn' | 'asin'
 
 /**
  * Result of parsing a tagged search query
@@ -35,7 +35,7 @@ export function parseTaggedSearch(query: string): TaggedSearchResult | null {
 
   // Match tags at the start of the query string only
   // Pattern: ^(tag):(.+)$ where tag is case-insensitive
-  const tagPattern = /^(ibdb|hard|gbid|isbn):(.+)$/i
+  const tagPattern = /^(ibdb|hard|gbid|isbn|asin):(.+)$/i
 
   const match = query.match(tagPattern)
 

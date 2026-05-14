@@ -40,4 +40,19 @@ describe('parseTaggedSearch', () => {
     expect(parseTaggedSearch('GbId:id123')).toEqual({ tag: 'gbid', value: 'id123' })
     expect(parseTaggedSearch('Isbn:9780123456789')).toEqual({ tag: 'isbn', value: '9780123456789' })
   })
+
+  test('should parse asin: tag with B0-prefixed Kindle ASIN', () => {
+    const result = parseTaggedSearch('asin:B084DWX1PV')
+    expect(result).toEqual({ tag: 'asin', value: 'B084DWX1PV' })
+  })
+
+  test('should parse asin: tag with ISBN-10-shaped ASIN', () => {
+    const result = parseTaggedSearch('asin:0451524934')
+    expect(result).toEqual({ tag: 'asin', value: '0451524934' })
+  })
+
+  test('should parse uppercase ASIN: tag case-insensitively', () => {
+    const result = parseTaggedSearch('ASIN:B084DWX1PV')
+    expect(result).toEqual({ tag: 'asin', value: 'B084DWX1PV' })
+  })
 })
