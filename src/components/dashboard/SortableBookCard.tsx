@@ -31,8 +31,8 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
 
   return (
     <div ref={setNodeRef} style={style} className="relative group">
-      {/* Drag handle + pin overlay */}
-      <div className="absolute top-1 right-1 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Drag handle + pin overlay — always visible on touch, hover/focus-revealed on desktop */}
+      <div className="absolute top-1 right-1 z-10 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={(e) => {
@@ -57,11 +57,6 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing rounded p-1 bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
-         
-        >
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing rounded p-1 bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
           title="Drag to reorder"
         >
           <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">
@@ -72,12 +67,12 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
             <circle cx="5" cy="13" r="1.5" />
             <circle cx="11" cy="13" r="1.5" />
           </svg>
-        </div>
+        </button>
       </div>
 
-      {/* Pin indicator when not hovering */}
+      {/* Pin indicator when controls are hidden on desktop */}
       {isPinned && (
-        <div className="absolute top-1 right-1 z-10 group-hover:hidden">
+        <div className="absolute top-1 right-1 z-10 hidden md:block md:group-hover:hidden md:group-focus-within:hidden">
           <div className="rounded-full p-1 bg-primary text-primary-foreground">
             <MapPinSolidIcon className="h-4 w-4" />
           </div>

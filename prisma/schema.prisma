@@ -226,7 +226,6 @@ model UserBook {
   updatedAt      DateTime         @updatedAt
 
   @@unique([userId, editionId])
-  @@index([userId, status])
   @@index([userId, createdAt])
   @@index([userId, status, isPinned, sortOrder])
 }
