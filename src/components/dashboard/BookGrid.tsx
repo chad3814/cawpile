@@ -64,12 +64,14 @@ export default function BookGrid({ books }: BookGridProps) {
             </HeroScrollRow>
           ) : (
             <div>
-              <Link
-                href={section.href}
-                className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
-              >
-                {section.title}
-              </Link>
+              <h2 className="text-lg font-semibold text-foreground">
+                <Link
+                  href={section.href}
+                  className="text-foreground hover:text-primary transition-colors"
+                >
+                  {section.title}
+                </Link>
+              </h2>
               <p className="text-sm text-muted-foreground mt-1">{section.emptyText}</p>
             </div>
           )}

@@ -44,6 +44,8 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
               ? 'bg-primary text-primary-foreground'
               : 'bg-background/80 text-muted-foreground hover:text-foreground'
           }`}
+          aria-label={isPinned ? 'Unpin book' : 'Pin book to top'}
+          aria-pressed={isPinned}
           title={isPinned ? 'Unpin' : 'Pin to top'}
         >
           {isPinned ? (
@@ -57,6 +59,7 @@ export default function SortableBookCard({ book, isPinned, onTogglePin }: Sortab
           {...attributes}
           {...listeners}
           className="cursor-grab active:cursor-grabbing rounded p-1 bg-background/80 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Drag to reorder"
           title="Drag to reorder"
         >
           <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor">

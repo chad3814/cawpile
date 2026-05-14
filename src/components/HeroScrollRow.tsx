@@ -74,13 +74,17 @@ export default function HeroScrollRow({ children, title, titleHref }: HeroScroll
     <div>
       {(title || navButtons) && (
         <div className="flex items-center justify-between mb-4">
-          {title && (titleHref ? (
-            <Link href={titleHref} className="text-xl font-semibold text-foreground hover:text-primary transition-colors">
-              {title}
-            </Link>
-          ) : (
-            <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-          ))}
+          {title && (
+            <h2 className="text-xl font-semibold text-foreground">
+              {titleHref ? (
+                <Link href={titleHref} className="text-foreground hover:text-primary transition-colors">
+                  {title}
+                </Link>
+              ) : (
+                title
+              )}
+            </h2>
+          )}
           {navButtons && <div className={title ? undefined : 'ml-auto'}>{navButtons}</div>}
         </div>
       )}
