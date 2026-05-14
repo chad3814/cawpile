@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma'
 import { BookSearchResult } from '@/types/book'
-import { Prisma, Edition, GoogleBook, HardcoverBook, IbdbBook } from '@prisma/client'
+import { Prisma, Edition, GoogleBook, HardcoverBook, IbdbBook, AmazonBook } from '@prisma/client'
 import { detectBookType } from '@/lib/bookTypeDetection'
 import type { SignedBookSearchResult, SourceEntry, SearchProviderResult } from '@/lib/search/types'
 import { verifySignature } from '@/lib/search/utils/signResult'
@@ -17,6 +17,7 @@ export interface UpsertAllProvidersResult {
   google: ProviderUpsertStatus
   hardcover: ProviderUpsertStatus
   ibdb: ProviderUpsertStatus
+  amazon: ProviderUpsertStatus
 }
 
 export async function findOrCreateBook(
@@ -104,15 +105,46 @@ function mapIbdbSource(source: SourceEntry, editionId: string): Prisma.IbdbBookC
 }
 
 /**
+ * Map an Amazon source entry to Prisma AmazonBook create input
+ */
+function mapAmazonSource(source: SourceEntry, editionId: string): Prisma.AmazonBookCreateInput {
+  const data = source.data as SearchProviderResult
+
+  return {
+    asin: data.asin || '',
+    edition: { connect: { id: editionId } },
+    title: data.title || 'Unknown Title',
+    authors: data.authors || [],
+    description: data.description || null,
+    publishedDate: data.publishedDate || null,
+    pageCount: data.pageCount || null,
+    imageUrl: data.imageUrl || null,
+    categories: data.categories || [],
+    isbn10: data.isbn10 || null,
+    isbn13: data.isbn13 || null,
+    publisher: data.publisher || null,
+  }
+}
+
+/**
  * Create or update provider records for an edition based on verified sources
  */
 async function upsertProviderRecords(
   editionId: string,
   sources: SourceEntry[]
-): Promise<{ hardcover: 'created' | 'updated' | 'unchanged' | null; ibdb: 'created' | 'updated' | 'unchanged' | null }> {
-  const result: { hardcover: 'created' | 'updated' | 'unchanged' | null; ibdb: 'created' | 'updated' | 'unchanged' | null } = {
+): Promise<{
+  hardcover: 'created' | 'updated' | 'unchanged' | null
+  ibdb: 'created' | 'updated' | 'unchanged' | null
+  amazon: 'created' | 'updated' | 'unchanged' | null
+}> {
+  const result: {
+    hardcover: 'created' | 'updated' | 'unchanged' | null
+    ibdb: 'created' | 'updated' | 'unchanged' | null
+    amazon: 'created' | 'updated' | 'unchanged' | null
+  } = {
     hardcover: null,
-    ibdb: null
+    ibdb: null,
+    amazon: null,
   }
 
   for (const source of sources) {
@@ -189,6 +221,41 @@ async function upsertProviderRecords(
         }
       } catch (error) {
         console.error('Failed to upsert IbdbBook:', error)
+      }
+    }
+
+    if (source.provider === 'amazon') {
+      try {
+        const data = mapAmazonSource(source, editionId)
+
+        const existing = await prisma.amazonBook.findUnique({
+          where: { editionId }
+        })
+
+        if (existing) {
+          await prisma.amazonBook.update({
+            where: { editionId },
+            data: {
+              asin: data.asin,
+              title: data.title,
+              authors: data.authors,
+              description: data.description,
+              publishedDate: data.publishedDate,
+              pageCount: data.pageCount,
+              imageUrl: data.imageUrl,
+              categories: data.categories,
+              isbn10: data.isbn10,
+              isbn13: data.isbn13,
+              publisher: data.publisher,
+            }
+          })
+          result.amazon = 'updated'
+        } else {
+          await prisma.amazonBook.create({ data })
+          result.amazon = 'created'
+        }
+      } catch (error) {
+        console.error('Failed to upsert AmazonBook:', error)
       }
     }
   }
@@ -273,23 +340,27 @@ export async function findOrCreateEdition(
 async function handleSignedResult(
   editionId: string,
   signedResult: SignedBookSearchResult
-): Promise<{ hardcover: 'created' | 'updated' | 'unchanged' | null; ibdb: 'created' | 'updated' | 'unchanged' | null }> {
+): Promise<{
+  hardcover: 'created' | 'updated' | 'unchanged' | null
+  ibdb: 'created' | 'updated' | 'unchanged' | null
+  amazon: 'created' | 'updated' | 'unchanged' | null
+}> {
   // Check if sources array exists
   if (!signedResult.sources || signedResult.sources.length === 0) {
     console.warn('No sources array in signed result, skipping multi-provider save')
-    return { hardcover: null, ibdb: null }
+    return { hardcover: null, ibdb: null, amazon: null }
   }
 
   // Check if signature is present
   if (!signedResult.signature) {
     console.warn('Unverified sources array (no signature), skipping multi-provider save')
-    return { hardcover: null, ibdb: null }
+    return { hardcover: null, ibdb: null, amazon: null }
   }
 
   // Verify signature
   if (!verifySignature(signedResult)) {
     console.warn('Signature verification failed, skipping multi-provider save')
-    return { hardcover: null, ibdb: null }
+    return { hardcover: null, ibdb: null, amazon: null }
   }
 
   // Signature verified, upsert provider records
@@ -303,6 +374,7 @@ export type EditionWithProviders = Edition & {
   googleBook: GoogleBook | null
   hardcoverBook: HardcoverBook | null
   ibdbBook: IbdbBook | null
+  amazonBook: AmazonBook | null
 }
 
 /**
@@ -335,7 +407,8 @@ export function getEnrichedBookData(edition: EditionWithProviders): EnrichedBook
     editionValue: T | null | undefined,
     hardcoverValue: T | null | undefined,
     googleValue: T | null | undefined,
-    ibdbValue: T | null | undefined
+    ibdbValue: T | null | undefined,
+    amazonValue: T | null | undefined
   ): T | null {
     if (editionValue !== null && editionValue !== undefined) {
       // Check if it's an array and if it's non-empty
@@ -370,10 +443,18 @@ export function getEnrichedBookData(edition: EditionWithProviders): EnrichedBook
         return ibdbValue
       }
     }
+    if (amazonValue !== null && amazonValue !== undefined) {
+      if (Array.isArray(amazonValue) && amazonValue.length === 0) {
+        // Fall through to null
+      } else {
+        dataSource[fieldName] = 'amazon'
+        return amazonValue
+      }
+    }
     return null
   }
 
-  const { googleBook, hardcoverBook, ibdbBook } = edition
+  const { googleBook, hardcoverBook, ibdbBook, amazonBook } = edition
 
   // For title, the edition title might be a combined title:subtitle, so handle specially
   let title = edition.title
@@ -386,6 +467,9 @@ export function getEnrichedBookData(edition: EditionWithProviders): EnrichedBook
   } else if (!title && ibdbBook?.title) {
     title = ibdbBook.title
     dataSource['title'] = 'ibdb'
+  } else if (!title && amazonBook?.title) {
+    title = amazonBook.title
+    dataSource['title'] = 'amazon'
   } else if (title) {
     dataSource['title'] = 'edition'
   }
@@ -397,52 +481,59 @@ export function getEnrichedBookData(edition: EditionWithProviders): EnrichedBook
       null, // Edition doesn't have separate subtitle
       hardcoverBook?.subtitle,
       googleBook?.subtitle,
-      null // IBDB doesn't have subtitle
+      null, // IBDB doesn't have subtitle
+      null  // Amazon doesn't have subtitle
     ),
     authors: getField(
       'authors',
       edition.authors.length > 0 ? edition.authors : null,
       hardcoverBook?.authors,
       googleBook?.authors,
-      ibdbBook?.authors
+      ibdbBook?.authors,
+      amazonBook?.authors
     ) || [],
     description: getField(
       'description',
       null, // Edition doesn't have description
       hardcoverBook?.description,
       googleBook?.description,
-      ibdbBook?.description
+      ibdbBook?.description,
+      amazonBook?.description
     ),
     publishedDate: getField(
       'publishedDate',
       null, // Edition doesn't have publishedDate
       hardcoverBook?.releaseDate,
       googleBook?.publishedDate,
-      ibdbBook?.publishedDate
+      ibdbBook?.publishedDate,
+      amazonBook?.publishedDate
     ),
     pageCount: getField(
       'pageCount',
       null, // Edition doesn't have pageCount
       hardcoverBook?.pages,
       googleBook?.pageCount,
-      ibdbBook?.pageCount
+      ibdbBook?.pageCount,
+      amazonBook?.pageCount
     ),
     imageUrl: getField(
       'imageUrl',
       null, // Edition doesn't have imageUrl
       hardcoverBook?.imageUrl,
       googleBook?.imageUrl,
-      ibdbBook?.imageUrl
+      ibdbBook?.imageUrl,
+      amazonBook?.imageUrl
     ),
     categories: getField(
       'categories',
       null, // Edition doesn't have categories
       hardcoverBook?.categories,
       googleBook?.categories,
-      ibdbBook?.categories
+      ibdbBook?.categories,
+      amazonBook?.categories
     ) || [],
-    isbn10: edition.isbn10 || hardcoverBook?.isbn || ibdbBook?.isbn10 || null,
-    isbn13: edition.isbn13 || hardcoverBook?.isbn13 || ibdbBook?.isbn13 || null,
+    isbn10: edition.isbn10 || hardcoverBook?.isbn || ibdbBook?.isbn10 || amazonBook?.isbn10 || null,
+    isbn13: edition.isbn13 || hardcoverBook?.isbn13 || ibdbBook?.isbn13 || amazonBook?.isbn13 || null,
     dataSource
   }
 }
@@ -542,7 +633,8 @@ export async function upsertAllProviderRecords(
   const result: UpsertAllProvidersResult = {
     google: null,
     hardcover: null,
-    ibdb: null
+    ibdb: null,
+    amazon: null,
   }
 
   for (const source of sources) {
@@ -633,6 +725,36 @@ export async function upsertAllProviderRecords(
             data: mapIbdbSource(source, editionId)
           })
           result.ibdb = 'created'
+        }
+      } else if (source.provider === 'amazon') {
+        const existing = await prisma.amazonBook.findUnique({
+          where: { editionId }
+        })
+
+        if (existing) {
+          const data = mapAmazonSource(source, editionId)
+          await prisma.amazonBook.update({
+            where: { editionId },
+            data: {
+              asin: data.asin,
+              title: data.title,
+              authors: data.authors,
+              description: data.description,
+              publishedDate: data.publishedDate,
+              pageCount: data.pageCount,
+              imageUrl: data.imageUrl,
+              categories: data.categories,
+              isbn10: data.isbn10,
+              isbn13: data.isbn13,
+              publisher: data.publisher,
+            }
+          })
+          result.amazon = 'updated'
+        } else {
+          await prisma.amazonBook.create({
+            data: mapAmazonSource(source, editionId)
+          })
+          result.amazon = 'created'
         }
       }
       // Skip 'local' provider - it's already in our database
