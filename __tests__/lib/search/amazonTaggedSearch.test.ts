@@ -4,6 +4,7 @@
 import { handleTaggedSearch } from '@/lib/search/handlers/taggedSearchHandler'
 import * as amazonClient from '@/lib/search/utils/amazonClient'
 import type { AmazonProduct } from '@/lib/search/utils/amazonClient'
+import { verifySignature } from '@/lib/search/utils/signResult'
 
 jest.mock('@/lib/search/utils/amazonClient', () => {
   const actual = jest.requireActual('@/lib/search/utils/amazonClient')
@@ -57,6 +58,24 @@ describe('handleTaggedSearch (asin)', () => {
     expect(book.sources[0].data.sourceWeight).toBe(3)
     expect(book.sources[0].data.asin).toBe('B084DWX1PV')
     expect(book.sources[0].data.publisher).toBe('Test Publisher')
+  })
+
+  test('returns a signed result that verifySignature accepts', async () => {
+    const product: AmazonProduct = {
+      asin: 'B084DWX1PV',
+      title: 'Signed Book',
+      authors: ['Author A'],
+      categories: ['Fiction'],
+    }
+    getProductByAsin.mockResolvedValueOnce(product)
+
+    const response = await handleTaggedSearch('asin', 'B084DWX1PV')
+
+    expect(response.books).toHaveLength(1)
+    expect(response.books[0].signature).toBeDefined()
+    expect(typeof response.books[0].signature).toBe('string')
+    expect(response.books[0].signature?.length).toBeGreaterThan(0)
+    expect(verifySignature(response.books[0])).toBe(true)
   })
 
   test('returns a wrapped result for an ISBN-10-shaped ASIN', async () => {
