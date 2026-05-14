@@ -114,6 +114,7 @@ model Edition {
   googleBook    GoogleBook?
   hardcoverBook HardcoverBook?
   ibdbBook      IbdbBook?
+  amazonBook    AmazonBook?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
@@ -179,6 +180,33 @@ model IbdbBook {
   isbn13        String?
   edition       Edition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
+}
+
+// Amazon book metadata (sourced via asin: tagged search)
+model AmazonBook {
+  id            String   @id @default(cuid())
+  asin          String   @unique
+  editionId     String   @unique
+  title         String
+  authors       String[]
+  description   String?
+  publishedDate String?
+  pageCount     Int?
+  imageUrl      String?
+  categories    String[]
+  isbn10        String?
+  isbn13        String?
+  publisher     String?
+  edition       Edition  @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+}
+
+// Permanent cache of normalized Amazon product responses, keyed by ASIN.
+// No TTL — admin tooling will provide manual purge in a follow-up task.
+model AmazonAsinCache {
+  asin      String   @id
+  payload   Json
+  fetchedAt DateTime @default(now())
 }
 
 model UserBook {
