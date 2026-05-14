@@ -225,25 +225,43 @@ async function upsertAmazonBookForEdition(
   const existing = await prisma.amazonBook.findUnique({ where: { editionId } })
   if (existing) {
     const data = mapAmazonSource(source, editionId)
-    await prisma.amazonBook.update({
-      where: { editionId },
-      data: {
-        asin: data.asin,
-        title: data.title,
-        authors: data.authors,
-        description: data.description,
-        publishedDate: data.publishedDate,
-        pageCount: data.pageCount,
-        imageUrl: data.imageUrl,
-        categories: data.categories,
-        isbn10: data.isbn10,
-        isbn13: data.isbn13,
-        publisher: data.publisher,
+    try {
+      await prisma.amazonBook.update({
+        where: { editionId },
+        data: {
+          asin: data.asin,
+          title: data.title,
+          authors: data.authors,
+          description: data.description,
+          publishedDate: data.publishedDate,
+          pageCount: data.pageCount,
+          imageUrl: data.imageUrl,
+          categories: data.categories,
+          isbn10: data.isbn10,
+          isbn13: data.isbn13,
+          publisher: data.publisher,
+        }
+      })
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new Error(
+          `AmazonBook update failed: ASIN ${data.asin} is already attached to a different Edition`
+        )
       }
-    })
+      throw error
+    }
     return 'updated'
   }
-  await prisma.amazonBook.create({ data: mapAmazonSource(source, editionId) })
+  try {
+    await prisma.amazonBook.create({ data: mapAmazonSource(source, editionId) })
+  } catch (error) {
+    if ((error as { code?: string }).code === 'P2002') {
+      throw new Error(
+        `AmazonBook create failed: ASIN ${(source.data as SearchProviderResult).asin} is already attached to a different Edition`
+      )
+    }
+    throw error
+  }
   return 'created'
 }
 
@@ -450,12 +468,34 @@ export async function findOrCreateEditionFromSignedResult(
         OR: whereConditions
       }
     })
+  }
 
-    if (existingEdition) {
-      // Update provider records for existing edition
-      await upsertAllProviderRecords(existingEdition.id, signedResult.sources)
-      return existingEdition
+  // Amazon-only fallback: when the source has an ASIN but no ISBN/Google ID
+  // (e.g., Kindle-only books), the standard Edition lookup misses. AmazonBook.asin
+  // is @unique, so dedupe through that index to avoid creating orphan Editions.
+  if (!existingEdition) {
+    const amazonSource = signedResult.sources.find(s => s.provider === 'amazon')
+    const asin = (amazonSource?.data as SearchProviderResult | undefined)?.asin
+    if (asin) {
+      const amazonLink = await prisma.amazonBook.findUnique({
+        where: { asin },
+        select: { editionId: true },
+      })
+      if (amazonLink) {
+        const linkedEdition = await prisma.edition.findUnique({
+          where: { id: amazonLink.editionId },
+        })
+        if (linkedEdition && linkedEdition.bookId === bookId) {
+          existingEdition = linkedEdition
+        }
+      }
     }
+  }
+
+  if (existingEdition) {
+    // Update provider records for existing edition
+    await upsertAllProviderRecords(existingEdition.id, signedResult.sources)
+    return existingEdition
   }
 
   // Create new edition
