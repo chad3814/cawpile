@@ -110,8 +110,8 @@ function mapRainforestProduct(p: RainforestProduct): AmazonProduct | null {
     pageCount: p.book_description?.pages,
     imageUrl: p.main_image?.link,
     categories: (p.categories ?? []).map(c => c.name).filter((n): n is string => Boolean(n)),
-    isbn10: p.isbn,
-    isbn13: p.isbn_13,
+    isbn10: p.isbn?.length === 10 ? p.isbn : undefined,
+    isbn13: p.isbn_13?.length === 13 ? p.isbn_13 : (p.isbn?.length === 13 ? p.isbn : undefined),
     publisher: p.publisher,
   }
 }
