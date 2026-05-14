@@ -15,6 +15,7 @@ async function getBook(id: string) {
           googleBook: true,
           hardcoverBook: true,
           ibdbBook: true,
+          amazonBook: true,
           _count: {
             select: {
               userBooks: true

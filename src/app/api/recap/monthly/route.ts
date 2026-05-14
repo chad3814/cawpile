@@ -118,6 +118,7 @@ export async function GET(request: Request) {
             googleBook: true,
             hardcoverBook: true,
             ibdbBook: true,
+            amazonBook: true,
           },
         },
         cawpileRating: true,

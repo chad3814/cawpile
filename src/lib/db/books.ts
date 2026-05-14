@@ -110,8 +110,12 @@ function mapIbdbSource(source: SourceEntry, editionId: string): Prisma.IbdbBookC
 function mapAmazonSource(source: SourceEntry, editionId: string): Prisma.AmazonBookCreateInput {
   const data = source.data as SearchProviderResult
 
+  if (!data.asin) {
+    throw new Error('mapAmazonSource: missing asin')
+  }
+
   return {
-    asin: data.asin || '',
+    asin: data.asin,
     edition: { connect: { id: editionId } },
     title: data.title || 'Unknown Title',
     authors: data.authors || [],
@@ -225,6 +229,11 @@ async function upsertProviderRecords(
     }
 
     if (source.provider === 'amazon') {
+      const amazonData = source.data as SearchProviderResult
+      if (!amazonData.asin) {
+        console.error('Skipping AmazonBook upsert: source has no asin')
+        continue
+      }
       try {
         const data = mapAmazonSource(source, editionId)
 
@@ -727,6 +736,11 @@ export async function upsertAllProviderRecords(
           result.ibdb = 'created'
         }
       } else if (source.provider === 'amazon') {
+        const amazonSourceData = source.data as SearchProviderResult
+        if (!amazonSourceData.asin) {
+          console.error('Skipping AmazonBook upsert: source has no asin')
+          continue
+        }
         const existing = await prisma.amazonBook.findUnique({
           where: { editionId }
         })

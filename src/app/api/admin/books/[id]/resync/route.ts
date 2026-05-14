@@ -60,7 +60,8 @@ export async function POST(
         book: true,
         googleBook: true,
         hardcoverBook: true,
-        ibdbBook: true
+        ibdbBook: true,
+        amazonBook: true
       }
     })
 
@@ -159,7 +160,8 @@ export async function POST(
       include: {
         googleBook: true,
         hardcoverBook: true,
-        ibdbBook: true
+        ibdbBook: true,
+        amazonBook: true
       }
     })
 

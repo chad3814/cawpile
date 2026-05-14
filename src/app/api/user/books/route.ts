@@ -176,7 +176,8 @@ export async function POST(request: NextRequest) {
             book: true,
             googleBook: true,
             hardcoverBook: true,
-            ibdbBook: true
+            ibdbBook: true,
+            amazonBook: true
           }
         }
       }
@@ -224,7 +225,8 @@ export async function GET(request: NextRequest) {
             book: true,
             googleBook: true,
             hardcoverBook: true,
-            ibdbBook: true
+            ibdbBook: true,
+            amazonBook: true
           }
         },
         cawpileRating: true

@@ -28,6 +28,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         ibdbBook: {
           imageUrl: 'https://ibdb.dev/image.jpg',
         },
+        amazonBook: null,
       }
 
       // Type should be compatible with getCoverImageUrl
@@ -51,6 +52,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         },
         hardcoverBook: null,
         ibdbBook: null,
+        amazonBook: null,
       }
 
       const imageUrl = getCoverImageUrl(edition as EditionWithProviders)
@@ -69,6 +71,7 @@ describe('Profile Cover Image Type Compatibility', () => {
         googleBook: null,
         hardcoverBook: null,
         ibdbBook: null,
+        amazonBook: null,
       }
 
       const imageUrl = getCoverImageUrl(edition as EditionWithProviders)
@@ -95,6 +98,7 @@ describe('Profile Cover Image Type Compatibility', () => {
           imageUrl: 'https://hardcover.app/image.jpg',
         },
         ibdbBook: null,
+        amazonBook: null,
       }
 
       const profileBook: ProfileBookData = {
@@ -151,6 +155,7 @@ describe('Profile Cover Image Type Compatibility', () => {
             ibdbBook: {
               imageUrl: 'https://ibdb.dev/shared.jpg',
             },
+            amazonBook: null,
           },
           cawpileRating: {
             id: 'rating-1',

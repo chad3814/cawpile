@@ -57,6 +57,7 @@ export default async function PublicReviewPage({ params }: PageProps) {
           edition: {
             include: {
               googleBook: true,
+              amazonBook: true,
               book: true
             }
           },

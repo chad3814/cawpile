@@ -31,6 +31,11 @@ export async function GET(
                   select: {
                     imageUrl: true
                   }
+                },
+                amazonBook: {
+                  select: {
+                    imageUrl: true
+                  }
                 }
               }
             },
@@ -74,6 +79,10 @@ export async function GET(
       // IBDB Book data (if available)
       ibdbBook: sharedReview.userBook.edition.ibdbBook ? {
         imageUrl: sharedReview.userBook.edition.ibdbBook.imageUrl
+      } : null,
+      // Amazon Book data (if available)
+      amazonBook: sharedReview.userBook.edition.amazonBook ? {
+        imageUrl: sharedReview.userBook.edition.amazonBook.imageUrl
       } : null,
       // User's preferred cover provider
       preferredCoverProvider: sharedReview.userBook.preferredCoverProvider,

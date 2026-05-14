@@ -49,6 +49,9 @@ export interface ProfileBookData {
     ibdbBook: {
       imageUrl: string | null
     } | null
+    amazonBook: {
+      imageUrl: string | null
+    } | null
   }
   cawpileRating?: {
     id: string
@@ -105,6 +108,9 @@ export interface ProfileSharedReview {
         imageUrl: string | null
       } | null
       ibdbBook: {
+        imageUrl: string | null
+      } | null
+      amazonBook: {
         imageUrl: string | null
       } | null
     }
