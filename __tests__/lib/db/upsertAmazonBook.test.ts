@@ -3,8 +3,10 @@
  */
 import { PrismaClient } from '@prisma/client'
 import { nanoid } from 'nanoid'
-import { upsertAllProviderRecords } from '@/lib/db/books'
-import type { SourceEntry } from '@/lib/search/types'
+import { upsertAllProviderRecords, findOrCreateEditionFromSignedResult } from '@/lib/db/books'
+import type { SourceEntry, SignedBookSearchResult } from '@/lib/search/types'
+import { signResult } from '@/lib/search/utils/signResult'
+import type { BookSearchResult } from '@/types/book'
 
 const prisma = new PrismaClient()
 
@@ -92,5 +94,101 @@ describe('upsertAllProviderRecords (amazon)', () => {
   test('result.amazon is null when no amazon source is supplied', async () => {
     const result = await upsertAllProviderRecords(testEditionId, [])
     expect(result.amazon).toBeNull()
+  })
+})
+
+describe('findOrCreateEditionFromSignedResult — Amazon-only dedup', () => {
+  const dedupPrisma = new PrismaClient()
+  let dedupBookId: string
+  let dedupEditionId: string
+  let dedupAsin: string
+
+  beforeAll(async () => {
+    // Ensure SEARCH_SIGNING_SECRET is set for this test suite
+    if (!process.env.SEARCH_SIGNING_SECRET) {
+      process.env.SEARCH_SIGNING_SECRET = 'test-signing-secret-minimum-32-characters-long!'
+    }
+  })
+
+  afterEach(async () => {
+    // Clean up rows created during each test
+    if (dedupBookId) {
+      await dedupPrisma.amazonBook.deleteMany({ where: { editionId: dedupEditionId } })
+      await dedupPrisma.edition.deleteMany({ where: { bookId: dedupBookId } })
+      await dedupPrisma.book.deleteMany({ where: { id: dedupBookId } })
+      dedupBookId = ''
+      dedupEditionId = ''
+      dedupAsin = ''
+    }
+  })
+
+  afterAll(async () => {
+    await dedupPrisma.$disconnect()
+  })
+
+  test('reuses existing Edition when source has only an ASIN (no ISBN) and an AmazonBook with that ASIN already exists', async () => {
+    // 1. Create a Book.
+    const book = await dedupPrisma.book.create({
+      data: { title: `Kindle-Only Book ${nanoid(6)}`, authors: ['Kindle Author'] },
+    })
+    dedupBookId = book.id
+
+    // 2. Create an Edition with no ISBN.
+    const edition1 = await dedupPrisma.edition.create({
+      data: { bookId: book.id },
+    })
+    dedupEditionId = edition1.id
+
+    // 3. Create an AmazonBook attached to edition1 with a unique ASIN.
+    dedupAsin = `B0${nanoid(8).toUpperCase()}`
+    await dedupPrisma.amazonBook.create({
+      data: {
+        asin: dedupAsin,
+        editionId: edition1.id,
+        title: 'Kindle-Only Book',
+        authors: ['Kindle Author'],
+        categories: [],
+      },
+    })
+
+    // 4. Construct a signed result with one amazon source and NO isbn/googleId.
+    const sources: SourceEntry[] = [
+      {
+        provider: 'amazon',
+        data: {
+          id: `amazon-${dedupAsin}`,
+          googleId: '',
+          title: 'Kindle-Only Book',
+          authors: ['Kindle Author'],
+          categories: [],
+          source: 'amazon',
+          sourceWeight: 3,
+          asin: dedupAsin,
+        },
+      },
+    ]
+
+    const baseResult: BookSearchResult & { sources: SourceEntry[] } = {
+      id: `amazon-${dedupAsin}`,
+      googleId: '',
+      title: 'Kindle-Only Book',
+      authors: ['Kindle Author'],
+      categories: [],
+      sources,
+    }
+
+    const signature = signResult(baseResult)
+    const signedResult: SignedBookSearchResult = {
+      ...baseResult,
+      signature,
+    }
+
+    // 5. Call findOrCreateEditionFromSignedResult — simulating a second user adding the same Kindle book.
+    const result = await findOrCreateEditionFromSignedResult(book.id, signedResult)
+
+    // 6. Assertions.
+    expect(result.id).toBe(edition1.id)
+    const editions = await dedupPrisma.edition.findMany({ where: { bookId: book.id } })
+    expect(editions).toHaveLength(1) // No second Edition was created.
   })
 })
