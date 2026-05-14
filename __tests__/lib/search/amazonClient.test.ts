@@ -1,7 +1,11 @@
 /**
+ * @jest-environment node
+ *
  * Tests for RainforestClient. CachedAmazonClient tests added in Task 5.
  */
-import { RainforestClient } from '@/lib/search/utils/amazonClient'
+import { RainforestClient, CachedAmazonClient, AmazonProductClient, AmazonProduct } from '@/lib/search/utils/amazonClient'
+import prisma from '@/lib/prisma'
+import { nanoid } from 'nanoid'
 
 const mockFetch = jest.fn()
 global.fetch = mockFetch
@@ -160,5 +164,82 @@ describe('RainforestClient.getProductByAsin', () => {
     const result = await client.getProductByAsin('B084DWX1PV')
 
     expect(result).toBeNull()
+  })
+})
+
+describe('CachedAmazonClient', () => {
+  let testAsin: string
+
+  beforeEach(() => {
+    testAsin = `B0${nanoid(8).toUpperCase()}`
+  })
+
+  afterEach(async () => {
+    await prisma.amazonAsinCache.deleteMany({ where: { asin: testAsin } })
+  })
+
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
+
+  test('returns inner result on cache miss and persists the row', async () => {
+    const product: AmazonProduct = {
+      asin: testAsin,
+      title: 'Cache Miss Book',
+      authors: ['Author A'],
+      categories: ['Fiction'],
+    }
+
+    const inner: AmazonProductClient = {
+      getProductByAsin: jest.fn().mockResolvedValue(product),
+    }
+
+    const client = new CachedAmazonClient(inner)
+    const result = await client.getProductByAsin(testAsin)
+
+    expect(result).toEqual(product)
+    expect(inner.getProductByAsin).toHaveBeenCalledTimes(1)
+
+    const persisted = await prisma.amazonAsinCache.findUnique({ where: { asin: testAsin } })
+    expect(persisted).not.toBeNull()
+    expect(persisted?.payload).toEqual(product)
+  })
+
+  test('returns cached payload on cache hit without calling inner', async () => {
+    const cached: AmazonProduct = {
+      asin: testAsin,
+      title: 'Cache Hit Book',
+      authors: ['Author B'],
+      categories: [],
+    }
+
+    await prisma.amazonAsinCache.create({
+      data: { asin: testAsin, payload: cached as unknown as object },
+    })
+
+    const inner: AmazonProductClient = {
+      getProductByAsin: jest.fn(),
+    }
+
+    const client = new CachedAmazonClient(inner)
+    const result = await client.getProductByAsin(testAsin)
+
+    expect(result).toEqual(cached)
+    expect(inner.getProductByAsin).not.toHaveBeenCalled()
+  })
+
+  test('does not persist a cache row when inner returns null', async () => {
+    const inner: AmazonProductClient = {
+      getProductByAsin: jest.fn().mockResolvedValue(null),
+    }
+
+    const client = new CachedAmazonClient(inner)
+    const result = await client.getProductByAsin(testAsin)
+
+    expect(result).toBeNull()
+    expect(inner.getProductByAsin).toHaveBeenCalledTimes(1)
+
+    const persisted = await prisma.amazonAsinCache.findUnique({ where: { asin: testAsin } })
+    expect(persisted).toBeNull()
   })
 })
