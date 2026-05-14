@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   DndContext,
@@ -26,8 +26,35 @@ interface LibrarySectionClientProps {
   title: string
 }
 
+function comparePinnedThenOrder(a: DashboardBookData, b: DashboardBookData): number {
+  if (a.isPinned && !b.isPinned) return -1
+  if (!a.isPinned && b.isPinned) return 1
+  const aOrder = a.sortOrder ?? Number.POSITIVE_INFINITY
+  const bOrder = b.sortOrder ?? Number.POSITIVE_INFINITY
+  return aOrder - bOrder
+}
+
+async function persistOrder(bookIds: string[], signal?: AbortSignal): Promise<boolean> {
+  try {
+    const res = await fetch('/api/user/books/reorder', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookIds }),
+      signal,
+    })
+    return res.ok
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      // A newer reorder request superseded this one; treat as success.
+      return true
+    }
+    return false
+  }
+}
+
 export default function LibrarySectionClient({ books: initialBooks, title }: LibrarySectionClientProps) {
   const [books, setBooks] = useState(initialBooks)
+  const reorderController = useRef<AbortController | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -44,36 +71,47 @@ export default function LibrarySectionClient({ books: initialBooks, title }: Lib
 
     const oldIndex = books.findIndex(b => b.id === active.id)
     const newIndex = books.findIndex(b => b.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
 
-    const reordered = arrayMove(books, oldIndex, newIndex)
+    const previous = books
+    const reordered = arrayMove(books, oldIndex, newIndex).map((b, idx) => ({
+      ...b,
+      sortOrder: idx,
+    }))
     setBooks(reordered)
 
-    // Persist to server
-    await fetch('/api/user/books/reorder', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookIds: reordered.map(b => b.id) }),
-    })
+    // Cancel any in-flight reorder so concurrent drags don't race on the server.
+    reorderController.current?.abort()
+    const controller = new AbortController()
+    reorderController.current = controller
+
+    const ok = await persistOrder(reordered.map(b => b.id), controller.signal)
+    if (!ok) {
+      setBooks(previous)
+    }
   }, [books])
 
   const handleTogglePin = useCallback(async (bookId: string) => {
-    // Optimistic update
-    setBooks(prev => {
-      const updated = prev.map(b =>
-        b.id === bookId ? { ...b, isPinned: !b.isPinned } : b
-      )
-      // Re-sort: pinned first, then by current order
-      return updated.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1
-        if (!a.isPinned && b.isPinned) return 1
-        return 0
-      })
-    })
+    const previous = books
+    const updated = books
+      .map(b => (b.id === bookId ? { ...b, isPinned: !b.isPinned } : b))
+      .slice()
+      .sort(comparePinnedThenOrder)
+      .map((b, idx) => ({ ...b, sortOrder: idx }))
+    setBooks(updated)
 
-    await fetch(`/api/user/books/${bookId}/pin`, {
-      method: 'PATCH',
-    })
-  }, [])
+    const pinRes = await fetch(`/api/user/books/${bookId}/pin`, { method: 'PATCH' })
+    if (!pinRes.ok) {
+      setBooks(previous)
+      return
+    }
+
+    // Persist new order so the server matches the client view (handles sortOrder=null jump).
+    const orderOk = await persistOrder(updated.map(b => b.id))
+    if (!orderOk) {
+      setBooks(previous)
+    }
+  }, [books])
 
   return (
     <div>
