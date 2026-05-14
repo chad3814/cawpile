@@ -121,7 +121,11 @@ export default function LibrarySectionClient({ books: initialBooks, title }: Lib
 
       <div className="mt-4 text-xs text-muted-foreground">
         Drag to reorder. Click the pin icon to pin books to the top.
-      </div>
+      {books.length > 0 && (
+        <div className="mt-4 text-xs text-muted-foreground">
+          Drag to reorder. Click the pin icon to pin books to the top.
+        </div>
+      )}
     </div>
   )
 }
