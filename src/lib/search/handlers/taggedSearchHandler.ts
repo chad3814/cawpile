@@ -6,6 +6,7 @@ import type { SignedBookSearchResult, SearchProviderResult } from '../types'
 import type { BookSearchResult } from '@/types/book'
 import { IbdbClient, IbdbBook } from '../utils/ibdbClient'
 import { HardcoverClient, HardcoverDocument } from '../utils/hardcoverClient'
+import { CachedAmazonClient, RainforestClient, AmazonProduct } from '../utils/amazonClient'
 import { getBookById as getGoogleBookById, searchBooks as searchGoogleBooks } from '@/lib/googleBooks'
 import { validateAndNormalizeIsbn } from '../utils/isbnValidator'
 import { mergeResults } from '../utils/resultMerger'
@@ -27,7 +28,8 @@ const PROVIDER_NAMES: Record<string, string> = {
   ibdb: 'IBDb',
   hardcover: 'Hardcover',
   google: 'Google Books',
-  isbn: 'ISBN search'
+  isbn: 'ISBN search',
+  amazon: 'Amazon'
 }
 
 /**
@@ -46,6 +48,25 @@ function ibdbBookToSearchResult(book: IbdbBook): BookSearchResult {
     imageUrl: book.imageUrl,
     isbn10: book.isbn10,
     isbn13: book.isbn13
+  }
+}
+
+/**
+ * Convert AmazonProduct to BookSearchResult
+ */
+function amazonProductToSearchResult(product: AmazonProduct): BookSearchResult {
+  return {
+    id: `amazon-${product.asin}`,
+    googleId: '',
+    title: product.title || 'Unknown Title',
+    authors: product.authors || [],
+    description: product.description,
+    publishedDate: product.publishedDate,
+    pageCount: product.pageCount,
+    categories: product.categories || [],
+    imageUrl: product.imageUrl,
+    isbn10: product.isbn10,
+    isbn13: product.isbn13,
   }
 }
 
@@ -74,7 +95,12 @@ function hardcoverDocToSearchResult(doc: HardcoverDocument): BookSearchResult {
 /**
  * Wrap a BookSearchResult as a SignedBookSearchResult with sources
  */
-function wrapAsSignedResult(book: BookSearchResult, source: string, weight: number): SignedBookSearchResult {
+function wrapAsSignedResult(
+  book: BookSearchResult,
+  source: string,
+  weight: number,
+  extra?: { asin?: string; publisher?: string }
+): SignedBookSearchResult {
   return {
     ...book,
     sources: [{
@@ -82,7 +108,8 @@ function wrapAsSignedResult(book: BookSearchResult, source: string, weight: numb
       data: {
         ...book,
         source,
-        sourceWeight: weight
+        sourceWeight: weight,
+        ...(extra ?? {})
       }
     }]
   }
@@ -177,6 +204,45 @@ async function searchGoogleById(googleId: string): Promise<TaggedSearchResponse>
     books: [wrapAsSignedResult(book, 'google', 5)],
     taggedSearch: true,
     provider: 'google'
+  }
+}
+
+/**
+ * Search Amazon by ASIN using a cached Rainforest-backed client.
+ */
+async function searchAmazonByAsin(rawAsin: string): Promise<TaggedSearchResponse> {
+  const asin = rawAsin.trim().toUpperCase()
+  if (!/^[A-Z0-9]{10}$/.test(asin)) {
+    return {
+      books: [],
+      taggedSearch: true,
+      provider: 'amazon',
+      error: `Invalid ASIN: ${rawAsin}. ASIN must be 10 alphanumeric characters.`
+    }
+  }
+
+  const client = new CachedAmazonClient(new RainforestClient())
+  const product = await client.getProductByAsin(asin)
+
+  if (!product) {
+    return {
+      books: [],
+      taggedSearch: true,
+      provider: 'amazon',
+      error: `Book not found with ASIN ${asin} on ${PROVIDER_NAMES.amazon}`
+    }
+  }
+
+  const searchResult = amazonProductToSearchResult(product)
+  return {
+    books: [
+      wrapAsSignedResult(searchResult, 'amazon', 3, {
+        asin: product.asin,
+        publisher: product.publisher
+      })
+    ],
+    taggedSearch: true,
+    provider: 'amazon'
   }
 }
 
@@ -302,6 +368,9 @@ export async function handleTaggedSearch(tag: string, value: string): Promise<Ta
 
     case 'isbn':
       return searchByIsbn(value)
+
+    case 'asin':
+      return searchAmazonByAsin(value)
 
     default:
       return {
