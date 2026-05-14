@@ -4,17 +4,19 @@ import { prisma } from "@/lib/prisma"
 
 /**
  * Get cover image URL from edition provider relations with fallback logic
- * Priority: Hardcover > Google > IBDB
+ * Priority: Hardcover > Google > IBDB > Amazon
  */
 function getEditionCoverUrl(edition: {
   hardcoverBook?: { imageUrl: string | null } | null
   googleBook?: { imageUrl: string | null } | null
   ibdbBook?: { imageUrl: string | null } | null
+  amazonBook?: { imageUrl: string | null } | null
 }): string | undefined {
   return (
     edition.hardcoverBook?.imageUrl ||
     edition.googleBook?.imageUrl ||
     edition.ibdbBook?.imageUrl ||
+    edition.amazonBook?.imageUrl ||
     undefined
   ) ?? undefined
 }
@@ -30,7 +32,10 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
 
   protected async searchInternal(query: string, limit: number): Promise<BookSearchResult[]> {
     try {
-      // Search Books table
+      // Search Books table, eager-loading the first Edition's provider
+      // covers so Book-matched results still get an imageUrl (otherwise any
+      // book without an Edition.title — i.e. most books — renders the
+      // placeholder).
       const booksPromise = prisma.book.findMany({
         where: {
           OR: [
@@ -42,7 +47,19 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
         select: {
           id: true,
           title: true,
-          authors: true
+          authors: true,
+          editions: {
+            take: 1,
+            select: {
+              isbn10: true,
+              isbn13: true,
+              googleBooksId: true,
+              googleBook: { select: { imageUrl: true } },
+              hardcoverBook: { select: { imageUrl: true } },
+              ibdbBook: { select: { imageUrl: true } },
+              amazonBook: { select: { imageUrl: true } }
+            }
+          }
         }
       })
 
@@ -70,6 +87,9 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
           },
           ibdbBook: {
             select: { imageUrl: true }
+          },
+          amazonBook: {
+            select: { imageUrl: true }
           }
         }
       })
@@ -84,19 +104,20 @@ export class LocalDatabaseProvider extends BaseSearchProvider {
       for (const book of books) {
         if (!seenIds.has(book.id)) {
           seenIds.add(book.id)
+          const firstEdition = book.editions[0]
           results.push({
             id: book.id,
-            googleId: book.id, // Use book id as googleId for local results
+            googleId: firstEdition?.googleBooksId || book.id,
             title: book.title,
             authors: book.authors,
             categories: [],
-            imageUrl: undefined,
+            imageUrl: firstEdition ? getEditionCoverUrl(firstEdition) : undefined,
             subtitle: undefined,
             description: undefined,
             publishedDate: undefined,
             pageCount: undefined,
-            isbn10: undefined,
-            isbn13: undefined
+            isbn10: firstEdition?.isbn10 || undefined,
+            isbn13: firstEdition?.isbn13 || undefined
           })
         }
       }
