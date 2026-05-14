@@ -6,6 +6,8 @@
  * PA-API, Keepa, or another provider is a class swap — no caller changes.
  */
 
+import prisma from '@/lib/prisma'
+
 export interface AmazonProduct {
   asin: string
   title: string
@@ -111,5 +113,40 @@ function mapRainforestProduct(p: RainforestProduct): AmazonProduct | null {
     isbn10: p.isbn,
     isbn13: p.isbn_13,
     publisher: p.publisher,
+  }
+}
+
+/**
+ * Wraps any AmazonProductClient with permanent DB caching keyed on ASIN.
+ * Cache hit: return persisted normalized payload, no inner call.
+ * Cache miss: call inner; if non-null, persist and return; if null, do not persist.
+ *
+ * No TTL — cache is permanent. Manual purge will be provided by a follow-up admin tool.
+ */
+export class CachedAmazonClient implements AmazonProductClient {
+  constructor(private readonly inner: AmazonProductClient) {}
+
+  async getProductByAsin(asin: string): Promise<AmazonProduct | null> {
+    const cached = await prisma.amazonAsinCache.findUnique({ where: { asin } })
+    if (cached) {
+      return cached.payload as unknown as AmazonProduct
+    }
+
+    const fresh = await this.inner.getProductByAsin(asin)
+    if (!fresh) {
+      return null
+    }
+
+    try {
+      await prisma.amazonAsinCache.create({
+        data: { asin, payload: fresh as unknown as object },
+      })
+    } catch (error) {
+      // If a concurrent caller persisted the same ASIN first, the unique
+      // constraint will throw — safe to ignore, the row already exists.
+      console.error('Failed to persist AmazonAsinCache:', error)
+    }
+
+    return fresh
   }
 }
