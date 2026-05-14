@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment } from 'react';
+import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -9,6 +10,7 @@ export type DashboardSection = 'books' | 'authors' | 'library' | 'recaps' | 'cha
 interface SubItem {
   anchor: string;
   label: string;
+  href?: string;
 }
 
 interface NavItem {
@@ -24,9 +26,9 @@ export const NAV_ITEMS: NavItem[] = [
     id: 'library',
     label: 'Your Library',
     subItems: [
-      { anchor: 'currently-reading', label: 'Currently Reading' },
-      { anchor: 'tbr', label: 'TBR' },
-      { anchor: 'completed', label: 'Completed' },
+      { anchor: 'currently-reading', label: 'Currently Reading', href: '/dashboard/currently-reading' },
+      { anchor: 'tbr', label: 'TBR', href: '/dashboard/tbr' },
+      { anchor: 'completed', label: 'Completed', href: '/dashboard/completed' },
     ],
   },
   { id: 'recaps', label: 'Recaps' },
@@ -66,18 +68,31 @@ function NavItems({
             <ul className="mt-1 ml-3 space-y-0.5">
               {item.subItems.map((sub) => (
                 <li key={sub.anchor}>
-                  <button
-                    type="button"
-                    onClick={() => onSectionChange(item.id, sub.anchor)}
-                    aria-current={activeAnchor === sub.anchor ? 'location' : undefined}
-                    className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
-                      activeAnchor === sub.anchor
-                        ? 'bg-primary/5 text-primary font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`}
-                  >
-                    {sub.label}
-                  </button>
+                  {sub.href ? (
+                    <Link
+                      href={sub.href}
+                      className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
+                        activeAnchor === sub.anchor
+                          ? 'bg-primary/5 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {sub.label}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onSectionChange(item.id, sub.anchor)}
+                      aria-current={activeAnchor === sub.anchor ? 'location' : undefined}
+                      className={`w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors ${
+                        activeAnchor === sub.anchor
+                          ? 'bg-primary/5 text-primary font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {sub.label}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

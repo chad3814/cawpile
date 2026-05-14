@@ -103,9 +103,11 @@ describe('getProfileTbr', () => {
 
     expect(mockPrisma.userBook.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        orderBy: {
-          createdAt: 'desc'
-        }
+        orderBy: [
+          { isPinned: 'desc' },
+          { sortOrder: { sort: 'asc', nulls: 'last' } },
+          { createdAt: 'desc' },
+        ]
       })
     )
   })
