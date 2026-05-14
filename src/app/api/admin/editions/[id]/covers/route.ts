@@ -35,6 +35,7 @@ export async function PATCH(
         googleBook: true,
         hardcoverBook: true,
         ibdbBook: true,
+        amazonBook: true,
       },
     })
 

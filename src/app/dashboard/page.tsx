@@ -68,7 +68,8 @@ export default async function DashboardPage() {
           book: true,
           googleBook: true,
           hardcoverBook: true,
-          ibdbBook: true
+          ibdbBook: true,
+          amazonBook: true
         }
       },
       cawpileRating: true,

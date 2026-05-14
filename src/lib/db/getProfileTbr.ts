@@ -43,6 +43,11 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
             select: {
               imageUrl: true
             }
+          },
+          amazonBook: {
+            select: {
+              imageUrl: true
+            }
           }
         }
       },
@@ -84,6 +89,9 @@ export async function getProfileTbr(userId: string): Promise<ProfileTbrResult> {
       } : null,
       ibdbBook: book.edition.ibdbBook ? {
         imageUrl: book.edition.ibdbBook.imageUrl
+      } : null,
+      amazonBook: book.edition.amazonBook ? {
+        imageUrl: book.edition.amazonBook.imageUrl
       } : null
     },
     cawpileRating: book.cawpileRating ? {

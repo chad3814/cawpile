@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
       include: {
         edition: {
           include: {
-            googleBook: true
+            googleBook: true,
+            amazonBook: true
           }
         }
       }

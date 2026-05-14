@@ -228,7 +228,8 @@ export async function PATCH(
             book: true,
             googleBook: true,
             hardcoverBook: true,
-            ibdbBook: true
+            ibdbBook: true,
+            amazonBook: true
           }
         },
         cawpileRating: true
@@ -277,7 +278,8 @@ export async function PATCH(
             book: true,
             googleBook: true,
             hardcoverBook: true,
-            ibdbBook: true
+            ibdbBook: true,
+            amazonBook: true
           }
         },
         cawpileRating: true

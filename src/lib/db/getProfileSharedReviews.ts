@@ -31,6 +31,11 @@ export async function getProfileSharedReviews(userId: string): Promise<ProfileSh
                 select: {
                   imageUrl: true
                 }
+              },
+              amazonBook: {
+                select: {
+                  imageUrl: true
+                }
               }
             }
           },
@@ -80,6 +85,9 @@ export async function getProfileSharedReviews(userId: string): Promise<ProfileSh
         } : null,
         ibdbBook: review.userBook.edition.ibdbBook ? {
           imageUrl: review.userBook.edition.ibdbBook.imageUrl
+        } : null,
+        amazonBook: review.userBook.edition.amazonBook ? {
+          imageUrl: review.userBook.edition.amazonBook.imageUrl
         } : null
       },
       cawpileRating: review.userBook.cawpileRating

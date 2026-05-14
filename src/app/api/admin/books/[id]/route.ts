@@ -27,6 +27,7 @@ export async function GET(
             googleBook: true,
             hardcoverBook: true,
             ibdbBook: true,
+            amazonBook: true,
             _count: {
               select: {
                 userBooks: true
@@ -123,6 +124,7 @@ export async function PATCH(
           editions: {
             include: {
               googleBook: true,
+              amazonBook: true,
               _count: {
                 select: {
                   userBooks: true

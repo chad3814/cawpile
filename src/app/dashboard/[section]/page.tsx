@@ -44,6 +44,7 @@ export default async function LibrarySectionPage({
           googleBook: true,
           hardcoverBook: true,
           ibdbBook: true,
+          amazonBook: true,
         },
       },
       cawpileRating: true,

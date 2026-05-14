@@ -26,6 +26,11 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
             select: {
               imageUrl: true
             }
+          },
+          amazonBook: {
+            select: {
+              imageUrl: true
+            }
           }
         }
       },
@@ -67,6 +72,9 @@ export async function getProfileCurrentlyReading(userId: string): Promise<Profil
       } : null,
       ibdbBook: book.edition.ibdbBook ? {
         imageUrl: book.edition.ibdbBook.imageUrl
+      } : null,
+      amazonBook: book.edition.amazonBook ? {
+        imageUrl: book.edition.amazonBook.imageUrl
       } : null
     },
     cawpileRating: book.cawpileRating ? {

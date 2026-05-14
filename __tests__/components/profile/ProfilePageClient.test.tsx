@@ -62,7 +62,8 @@ describe('ProfilePageClient TBR Section', () => {
           pageCount: 300
         },
         hardcoverBook: null,
-        ibdbBook: null
+        ibdbBook: null,
+        amazonBook: null
       },
       cawpileRating: null
     }
