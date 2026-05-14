@@ -67,12 +67,11 @@ export class RainforestClient implements AmazonProductClient {
       `${RAINFOREST_ENDPOINT}?api_key=${encodeURIComponent(this.apiKey)}` +
       `&type=product&amazon_domain=amazon.com&asin=${encodeURIComponent(asin)}`
 
-    try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), RAINFOREST_TIMEOUT_MS)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), RAINFOREST_TIMEOUT_MS)
 
+    try {
       const response = await fetch(url, { signal: controller.signal })
-      clearTimeout(timeout)
 
       if (!response.ok) {
         console.error(`Rainforest API error: ${response.status}`)
@@ -89,6 +88,8 @@ export class RainforestClient implements AmazonProductClient {
     } catch (error) {
       console.error('Rainforest client error:', error)
       return null
+    } finally {
+      clearTimeout(timeout)
     }
   }
 }

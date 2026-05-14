@@ -1,5 +1,5 @@
 /**
- * Tests for AmazonClient (RainforestClient and CachedAmazonClient)
+ * Tests for RainforestClient. CachedAmazonClient tests added in Task 5.
  */
 import { RainforestClient } from '@/lib/search/utils/amazonClient'
 
@@ -130,5 +130,35 @@ describe('RainforestClient.getProductByAsin', () => {
     expect(result?.isbn13).toBeUndefined()
     expect(result?.publisher).toBeUndefined()
     expect(result?.pageCount).toBeUndefined()
+  })
+
+  test('returns null when product is missing asin', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        product: {
+          title: 'No ASIN Title'
+        }
+      })
+    })
+
+    const result = await client.getProductByAsin('B084DWX1PV')
+
+    expect(result).toBeNull()
+  })
+
+  test('returns null when product is missing title', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        product: {
+          asin: 'B084DWX1PV'
+        }
+      })
+    })
+
+    const result = await client.getProductByAsin('B084DWX1PV')
+
+    expect(result).toBeNull()
   })
 })
