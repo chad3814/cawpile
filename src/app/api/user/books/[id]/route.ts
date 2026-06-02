@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
 import { validateBookDates, validateStatusDates } from '@/lib/validateBookDates'
+import { recomputeBookStats } from '@/lib/db/bookStats'
 
 // Valid cover provider values
 const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb', 'amazon']
@@ -107,7 +108,10 @@ export async function PATCH(
         userId: user.id
       },
       include: {
-        cawpileRating: true
+        cawpileRating: true,
+        edition: {
+          select: { bookId: true }
+        }
       }
     })
 
@@ -239,56 +243,49 @@ export async function PATCH(
       })
     }
 
-    // Update the main book record
-    await prisma.userBook.update({
-      where: { id },
-      data: updateData,
-      include: {
-        edition: {
-          include: {
-            book: true,
-            googleBook: true,
-            hardcoverBook: true,
-            ibdbBook: true,
-            amazonBook: true
-          }
-        },
-        cawpileRating: true
+    // Update the main book record and CAWPILE rating, then recompute book stats,
+    // all atomically so denormalized book/global stats stay consistent.
+    await prisma.$transaction(async (tx) => {
+      await tx.userBook.update({
+        where: { id },
+        data: updateData
+      })
+
+      // Handle CAWPILE rating separately
+      if (cawpileRating) {
+        // Allow null values for skipped facets
+        const ratingData = {
+          characters: cawpileRating.characters ?? null,
+          atmosphere: cawpileRating.atmosphere ?? null,
+          writing: cawpileRating.writing ?? null,
+          plot: cawpileRating.plot ?? null,
+          intrigue: cawpileRating.intrigue ?? null,
+          logic: cawpileRating.logic ?? null,
+          enjoyment: cawpileRating.enjoyment ?? null,
+        }
+
+        const average = calculateCawpileAverage(ratingData)
+
+        if (userBook.cawpileRating) {
+          // Update existing rating
+          await tx.cawpileRating.update({
+            where: { id: userBook.cawpileRating.id },
+            data: { ...ratingData, average }
+          })
+        } else {
+          // Create new rating
+          await tx.cawpileRating.create({
+            data: {
+              userBookId: id,
+              ...ratingData,
+              average
+            }
+          })
+        }
       }
+
+      await recomputeBookStats(userBook.edition.bookId, tx)
     })
-
-    // Handle CAWPILE rating separately
-    if (cawpileRating) {
-      // Allow null values for skipped facets
-      const ratingData = {
-        characters: cawpileRating.characters ?? null,
-        atmosphere: cawpileRating.atmosphere ?? null,
-        writing: cawpileRating.writing ?? null,
-        plot: cawpileRating.plot ?? null,
-        intrigue: cawpileRating.intrigue ?? null,
-        logic: cawpileRating.logic ?? null,
-        enjoyment: cawpileRating.enjoyment ?? null,
-      }
-
-      const average = calculateCawpileAverage(ratingData)
-
-      if (userBook.cawpileRating) {
-        // Update existing rating
-        await prisma.cawpileRating.update({
-          where: { id: userBook.cawpileRating.id },
-          data: { ...ratingData, average }
-        })
-      } else {
-        // Create new rating
-        await prisma.cawpileRating.create({
-          data: {
-            userBookId: id,
-            ...ratingData,
-            average
-          }
-        })
-      }
-    }
 
     // Fetch the final updated book with all relations
     const finalBook = await prisma.userBook.findUnique({
@@ -338,6 +335,10 @@ export async function DELETE(
       where: {
         id: id,
         userId: user.id
+      },
+      select: {
+        id: true,
+        edition: { select: { bookId: true } }
       }
     })
 
@@ -348,9 +349,14 @@ export async function DELETE(
       )
     }
 
-    // Delete the userBook record (this will cascade delete related records)
-    await prisma.userBook.delete({
-      where: { id }
+    // Delete the userBook record (this cascade deletes related records) and
+    // recompute book stats atomically so denormalized stats stay consistent.
+    await prisma.$transaction(async (tx) => {
+      await tx.userBook.delete({
+        where: { id }
+      })
+
+      await recomputeBookStats(userBook.edition.bookId, tx)
     })
 
     return NextResponse.json({ success: true, message: 'Book removed from library' })
