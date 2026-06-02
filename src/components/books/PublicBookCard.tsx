@@ -16,6 +16,10 @@ function formatStat(stat: BookStat): string {
       return `${stat.value} ${stat.value === 1 ? 'reader' : 'readers'}`;
     case 'rating':
       return `${stat.value.toFixed(1)} avg`;
+    default: {
+      const _exhaustive: never = stat;
+      return _exhaustive;
+    }
   }
 }
 
@@ -23,13 +27,14 @@ export default function PublicBookCard({ book }: { book: RankedBook }) {
   return (
     <Link
       href={`/b/${book.id}`}
+      aria-label={book.title}
       className="group flex flex-col rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted"
     >
       <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md bg-muted">
         {book.coverUrl ? (
           <Image
             src={book.coverUrl}
-            alt={`Cover of ${book.title}`}
+            alt=""
             fill
             sizes="(max-width: 640px) 50vw, 200px"
             className="object-cover"
@@ -38,6 +43,7 @@ export default function PublicBookCard({ book }: { book: RankedBook }) {
         ) : (
           <div
             data-testid="cover-placeholder"
+            aria-hidden="true"
             className="flex h-full w-full items-center justify-center p-2 text-center text-xs text-muted-foreground"
           >
             {book.title}
