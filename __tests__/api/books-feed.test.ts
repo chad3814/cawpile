@@ -41,4 +41,16 @@ describe('GET /api/books', () => {
     expect(body.books).toHaveLength(24);
     expect(body.hasMore).toBe(true);
   });
+
+  it('clamps an over-limit request to MAX_LIMIT', async () => {
+    (getNewestBooks as jest.Mock).mockResolvedValue([]);
+    await GET(req('http://localhost/api/books?section=newest&limit=999'));
+    expect(getNewestBooks).toHaveBeenCalledWith(49, 0); // 48 + 1
+  });
+
+  it('forwards offset to the fetcher', async () => {
+    (getNewestBooks as jest.Mock).mockResolvedValue([]);
+    await GET(req('http://localhost/api/books?section=newest&offset=24&limit=24'));
+    expect(getNewestBooks).toHaveBeenCalledWith(25, 24);
+  });
 });
