@@ -58,6 +58,12 @@ export default function Header() {
 
             {/* Right side */}
             <div className="flex items-center space-x-4">
+              <Link
+                href="/books"
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Browse
+              </Link>
               {isAuthenticated ? (
                 <>
                   {/* Track Book Button */}
