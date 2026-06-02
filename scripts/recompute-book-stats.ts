@@ -1,5 +1,5 @@
-import prisma from '@/lib/prisma';
-import { NEUTRAL_MEAN } from '@/lib/db/bookStats';
+import prisma from '../src/lib/prisma';
+import { NEUTRAL_MEAN } from '../src/lib/db/bookStats';
 
 /**
  * Recompute every book's denormalized stats and the global stats row from source.
@@ -55,4 +55,6 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
