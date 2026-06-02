@@ -14,7 +14,7 @@ export default function BookSection({ title, slug, books }: BookSectionProps) {
   return (
     <section className="mb-12">
       <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
         <Link href={`/books/${slug}`} className="text-sm font-medium text-primary hover:underline">
           View all &rarr;
         </Link>
