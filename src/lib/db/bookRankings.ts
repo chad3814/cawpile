@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl';
 
@@ -27,22 +28,6 @@ const COVER_EDITION = {
   },
 } as const;
 
-type BookRow = {
-  id: string;
-  title: string;
-  authors: string[];
-  createdAt: Date;
-  readerCount: number;
-  bayesianRating: number;
-  editions: Array<Parameters<typeof getCoverImageUrl>[0]>;
-};
-
-function coverFor(row: BookRow): string | null {
-  const edition = row.editions[0];
-  if (!edition) return null;
-  return getCoverImageUrl(edition) ?? null;
-}
-
 const BASE_SELECT = {
   id: true,
   title: true,
@@ -53,51 +38,45 @@ const BASE_SELECT = {
   editions: COVER_EDITION,
 } as const;
 
+type BookRow = Prisma.BookGetPayload<{ select: typeof BASE_SELECT }>;
+
+function coverFor(row: BookRow): string | null {
+  const edition = row.editions[0];
+  if (!edition) return null;
+  return getCoverImageUrl(edition) ?? null;
+}
+
+function toRankedBook(r: BookRow, stat: BookStat): RankedBook {
+  return { id: r.id, title: r.title, authors: r.authors, coverUrl: coverFor(r), stat };
+}
+
 export async function getNewestBooks(limit: number, offset: number): Promise<RankedBook[]> {
-  const rows = (await prisma.book.findMany({
+  const rows = await prisma.book.findMany({
     orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     take: limit,
     skip: offset,
     select: BASE_SELECT,
-  })) as BookRow[];
-  return rows.map((r) => ({
-    id: r.id,
-    title: r.title,
-    authors: r.authors,
-    coverUrl: coverFor(r),
-    stat: { kind: 'addedAt', value: r.createdAt },
-  }));
+  });
+  return rows.map((r) => toRankedBook(r, { kind: 'addedAt', value: r.createdAt }));
 }
 
 export async function getPopularBooks(limit: number, offset: number): Promise<RankedBook[]> {
-  const rows = (await prisma.book.findMany({
+  const rows = await prisma.book.findMany({
     orderBy: [{ readerCount: 'desc' }, { id: 'asc' }],
     take: limit,
     skip: offset,
     select: BASE_SELECT,
-  })) as BookRow[];
-  return rows.map((r) => ({
-    id: r.id,
-    title: r.title,
-    authors: r.authors,
-    coverUrl: coverFor(r),
-    stat: { kind: 'readers', value: r.readerCount },
-  }));
+  });
+  return rows.map((r) => toRankedBook(r, { kind: 'readers', value: r.readerCount }));
 }
 
 export async function getTopRatedBooks(limit: number, offset: number): Promise<RankedBook[]> {
-  const rows = (await prisma.book.findMany({
+  const rows = await prisma.book.findMany({
     where: { ratingCount: { gt: 0 } },
     orderBy: [{ bayesianRating: 'desc' }, { id: 'asc' }],
     take: limit,
     skip: offset,
     select: BASE_SELECT,
-  })) as BookRow[];
-  return rows.map((r) => ({
-    id: r.id,
-    title: r.title,
-    authors: r.authors,
-    coverUrl: coverFor(r),
-    stat: { kind: 'rating', value: Math.round(r.bayesianRating * 10) / 10 },
-  }));
+  });
+  return rows.map((r) => toRankedBook(r, { kind: 'rating', value: Math.round(r.bayesianRating * 10) / 10 }));
 }
