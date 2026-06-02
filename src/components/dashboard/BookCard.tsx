@@ -606,6 +606,7 @@ export default function BookCard({ book }: BookCardProps) {
         title: displayTitle,
         status: book.status,
         format: book.format,
+        startDate: book.startDate,
         finishDate: book.finishDate,
         acquisitionMethod: book.acquisitionMethod,
         acquisitionOther: book.acquisitionOther,

@@ -14,6 +14,7 @@ import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 import { BookStatus, BookFormat } from '@prisma/client'
 import { AcquisitionMethod, RepresentationValue, BookTrackingData } from '@/types/book'
 import { useRouter } from 'next/navigation'
+import { validateBookDates } from '@/lib/validateBookDates'
 import Image from 'next/image'
 
 interface EditionWithProviders {
@@ -39,6 +40,7 @@ interface EditBookModalProps {
     title: string
     status: BookStatus
     format: BookFormat[]
+    startDate?: Date | null
     finishDate?: Date | null
     acquisitionMethod?: string | null
     acquisitionOther?: string | null
@@ -75,11 +77,13 @@ export default function EditBookModal({
   const [status, setStatus] = useState(book.status)
   const [format, setFormat] = useState<BookFormat[]>(Array.isArray(book.format) ? book.format : [book.format])
   const [dnfReason, setDnfReason] = useState(book.dnfReason || '')
-  const [dnfDate, setDnfDate] = useState(
-    book.finishDate && book.status === BookStatus.DNF
-      ? new Date(book.finishDate).toISOString().split('T')[0]
-      : ''
+  const [startDate, setStartDate] = useState(
+    book.startDate ? new Date(book.startDate).toISOString().split('T')[0] : ''
   )
+  const [finishDate, setFinishDate] = useState(
+    book.finishDate ? new Date(book.finishDate).toISOString().split('T')[0] : ''
+  )
+  const [dateError, setDateError] = useState<string | null>(null)
   const [notes, setNotes] = useState(book.notes || '')
 
   // Tracking fields
@@ -181,16 +185,25 @@ export default function EditBookModal({
     return () => controller.abort();
   }, [activeTab, book.id, book.lgbtqRepresentation, book.disabilityRepresentation, book.authorPoc, book.isNewAuthor])
 
-  // Clear DNF reason and set default date when status changes to DNF
+  // Default the relevant date to today when the status changes to one that
+  // needs it (including the initial mount), and clear the DNF reason when
+  // leaving DNF. Guarding on a status transition means a date the user clears
+  // is not silently re-filled.
+  const prevStatusRef = useRef<BookStatus | null>(null)
   useEffect(() => {
-    if (status === BookStatus.DNF && !dnfDate) {
-      // Default to today's date
-      setDnfDate(new Date().toISOString().split('T')[0])
+    if (prevStatusRef.current === status) return
+    prevStatusRef.current = status
+    const today = new Date().toISOString().split('T')[0]
+    if (status === BookStatus.READING && !startDate) {
+      setStartDate(today)
+    }
+    if ((status === BookStatus.COMPLETED || status === BookStatus.DNF) && !finishDate) {
+      setFinishDate(today)
     }
     if (status !== BookStatus.DNF) {
       setDnfReason('')
     }
-  }, [status, dnfDate])
+  }, [status, startDate, finishDate])
 
   // Get available covers from edition
   const availableCovers: { provider: CoverProvider; imageUrl: string }[] = []
@@ -250,6 +263,22 @@ export default function EditBookModal({
         authorPocDetails: authorPoc === RepresentationValue.Yes ? authorPocDetails : undefined
       }
 
+      const startEnabled = status !== BookStatus.WANT_TO_READ
+      const finishEnabled = status === BookStatus.COMPLETED || status === BookStatus.DNF
+      const startValue = startEnabled ? (startDate || null) : null
+      const finishValue = finishEnabled ? (finishDate || null) : null
+
+      const dateValidationError = validateBookDates({
+        startDate: startValue,
+        finishDate: finishValue,
+      })
+      if (dateValidationError) {
+        setDateError(dateValidationError)
+        setIsSubmitting(false)
+        return
+      }
+      setDateError(null)
+
       const response = await fetch(`/api/user/books/${book.id}`, {
         method: 'PATCH',
         headers: {
@@ -259,7 +288,8 @@ export default function EditBookModal({
           status,
           format,
           dnfReason: status === BookStatus.DNF ? dnfReason : undefined,
-          finishDate: status === BookStatus.DNF && dnfDate ? dnfDate : undefined,
+          startDate: startValue,
+          finishDate: finishValue,
           notes: notes || undefined,
           preferredCoverProvider,
           ...trackingData,
@@ -397,40 +427,59 @@ export default function EditBookModal({
                         </select>
                       </div>
 
-                      {status === BookStatus.DNF && (
-                        <>
-                          <div>
-                            <label htmlFor="dnf-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              When did you stop reading?
-                            </label>
-                            <input
-                              id="dnf-date"
-                              type="date"
-                              value={dnfDate}
-                              onChange={(e) => setDnfDate(e.target.value)}
-                              max={maxDate}
-                              className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                            />
-                          </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Started
+                          </label>
+                          <input
+                            id="start-date"
+                            type="date"
+                            value={startDate}
+                            disabled={status === BookStatus.WANT_TO_READ}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            max={maxDate}
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="finish-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {status === BookStatus.DNF ? 'Stopped reading' : 'Finished'}
+                          </label>
+                          <input
+                            id="finish-date"
+                            type="date"
+                            value={finishDate}
+                            disabled={!(status === BookStatus.COMPLETED || status === BookStatus.DNF)}
+                            onChange={(e) => setFinishDate(e.target.value)}
+                            max={maxDate}
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
 
-                          <div>
-                            <label htmlFor="dnf-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                              DNF Reason (optional)
-                            </label>
-                            <textarea
-                              id="dnf-reason"
-                              value={dnfReason}
-                              onChange={(e) => setDnfReason(e.target.value)}
-                              maxLength={500}
-                              rows={4}
-                              placeholder="Why did you not finish this book?"
-                              className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
-                            />
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              {dnfReason.length}/500 characters
-                            </p>
-                          </div>
-                        </>
+                      {dateError && (
+                        <p className="text-sm text-red-600 dark:text-red-400">{dateError}</p>
+                      )}
+
+                      {status === BookStatus.DNF && (
+                        <div>
+                          <label htmlFor="dnf-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            DNF Reason (optional)
+                          </label>
+                          <textarea
+                            id="dnf-reason"
+                            value={dnfReason}
+                            onChange={(e) => setDnfReason(e.target.value)}
+                            maxLength={500}
+                            rows={4}
+                            placeholder="Why did you not finish this book?"
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-orange-500 focus:ring-orange-500 sm:text-sm"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {dnfReason.length}/500 characters
+                          </p>
+                        </div>
                       )}
 
                       <div>
