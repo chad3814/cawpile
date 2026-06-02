@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import { findOrCreateBook, findOrCreateEditionFromSignedResult } from '@/lib/db/books'
+import { recomputeBookStats } from '@/lib/db/bookStats'
 import prisma from '@/lib/prisma'
 import { BookStatus, BookFormat, Prisma } from '@prisma/client'
 import type { SignedBookSearchResult } from '@/lib/search/types'
@@ -153,34 +154,41 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create user book entry with new tracking fields
-    const userBook = await prisma.userBook.create({
-      data: {
-        userId: user.id,
-        editionId: edition.id,
-        status,
-        format: uniqueFormats,
-        startDate: startDate ? new Date(startDate) : null,
-        finishDate: finishDate ? new Date(finishDate) : null,
-        progress: progress || 0,
-        // New tracking fields
-        acquisitionMethod,
-        acquisitionOther: acquisitionMethod === 'Other' ? acquisitionOther : null,
-        bookClubName,
-        readathonName,
-        isReread: isReread || false
-      },
-      include: {
-        edition: {
-          include: {
-            book: true,
-            googleBook: true,
-            hardcoverBook: true,
-            ibdbBook: true,
-            amazonBook: true
+    // Create user book entry with new tracking fields and recompute book stats
+    // atomically so denormalized book/global stats stay consistent.
+    const userBook = await prisma.$transaction(async (tx) => {
+      const created = await tx.userBook.create({
+        data: {
+          userId: user.id,
+          editionId: edition.id,
+          status,
+          format: uniqueFormats,
+          startDate: startDate ? new Date(startDate) : null,
+          finishDate: finishDate ? new Date(finishDate) : null,
+          progress: progress || 0,
+          // New tracking fields
+          acquisitionMethod,
+          acquisitionOther: acquisitionMethod === 'Other' ? acquisitionOther : null,
+          bookClubName,
+          readathonName,
+          isReread: isReread || false
+        },
+        include: {
+          edition: {
+            include: {
+              book: true,
+              googleBook: true,
+              hardcoverBook: true,
+              ibdbBook: true,
+              amazonBook: true
+            }
           }
         }
-      }
+      })
+
+      await recomputeBookStats(edition.bookId, tx)
+
+      return created
     })
 
     return NextResponse.json({ userBook })
