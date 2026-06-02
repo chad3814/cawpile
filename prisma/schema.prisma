@@ -91,11 +91,18 @@ model Book {
   bookType     BookType  @default(FICTION)
   primaryGenre String?   // For chart categorization
   editions     Edition[]
+  readerCount    Int   @default(0)
+  ratingCount    Int   @default(0)
+  ratingSum      Float @default(0)
+  bayesianRating Float @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   @@unique([title, authors])
   @@index([title])
+  @@index([createdAt])
+  @@index([readerCount])
+  @@index([bayesianRating])
 }
 
 model Edition {
@@ -366,6 +373,14 @@ enum LibrarySortBy {
 enum LibrarySortOrder {
   ASC
   DESC
+}
+
+model GlobalBookStats {
+  id           String   @id @default("global")
+  weightC      Float    @default(10)
+  ratingsCount Int      @default(0)
+  ratingsTotal Float    @default(0)
+  updatedAt    DateTime @updatedAt
 }
 
 // Admin audit log for tracking all admin actions
