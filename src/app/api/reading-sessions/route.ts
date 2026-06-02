@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { recomputeBookStats } from '@/lib/db/bookStats'
 
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -68,30 +69,35 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Update book progress if we have total pages
+    // Update book progress and recompute book stats atomically (a session can
+    // flip the book to COMPLETED, which changes denormalized book/global stats).
     const totalPages = userBook.edition.googleBook?.pageCount
-    if (totalPages && totalPages > 0) {
-      const newProgress = Math.min(100, Math.round((endPage / totalPages) * 100))
-      
-      await prisma.userBook.update({
-        where: { id: userBookId },
-        data: {
-          currentPage: endPage,
-          progress: newProgress,
-          status: newProgress === 100 ? 'COMPLETED' : 'READING',
-          finishDate: newProgress === 100 && !userBook.finishDate ? new Date() : undefined
-        }
-      })
-    } else {
-      // Just update current page
-      await prisma.userBook.update({
-        where: { id: userBookId },
-        data: {
-          currentPage: endPage,
-          status: userBook.status === 'WANT_TO_READ' ? 'READING' : userBook.status
-        }
-      })
-    }
+    await prisma.$transaction(async (tx) => {
+      if (totalPages && totalPages > 0) {
+        const newProgress = Math.min(100, Math.round((endPage / totalPages) * 100))
+
+        await tx.userBook.update({
+          where: { id: userBookId },
+          data: {
+            currentPage: endPage,
+            progress: newProgress,
+            status: newProgress === 100 ? 'COMPLETED' : 'READING',
+            finishDate: newProgress === 100 && !userBook.finishDate ? new Date() : undefined
+          }
+        })
+      } else {
+        // Just update current page
+        await tx.userBook.update({
+          where: { id: userBookId },
+          data: {
+            currentPage: endPage,
+            status: userBook.status === 'WANT_TO_READ' ? 'READING' : userBook.status
+          }
+        })
+      }
+
+      await recomputeBookStats(userBook.edition.bookId, tx)
+    })
 
     return NextResponse.json({ readingSession })
   } catch (error) {
