@@ -306,4 +306,70 @@ describe('PATCH /api/user/books/[id] - DNF Status Changes', () => {
     expect(response.status).toBe(400);
     expect(data.error).toBe('Finish date cannot be before the start date');
   });
+
+  test('rejects COMPLETED with an explicit null finish date (400)', async () => {
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'COMPLETED', finishDate: null }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('A finish date is required for completed books');
+  });
+
+  test('rejects READING with an explicit null start date (400)', async () => {
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'READING', startDate: null }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('A start date is required for books you are reading');
+  });
+
+  test('rejects DNF with an explicit null finish date (400)', async () => {
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'DNF', finishDate: null }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('A stopped-reading date is required for books you did not finish');
+  });
+
+  test('COMPLETED with an absent finish date still auto-sets it (no 400)', async () => {
+    const beforeUpdate = new Date();
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'COMPLETED' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.userBook.finishDate).toBeDefined();
+    const finishDate = new Date(data.userBook.finishDate);
+    const afterUpdate = new Date();
+    expect(finishDate.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+    expect(finishDate.getTime()).toBeLessThanOrEqual(afterUpdate.getTime());
+  }, 15000);
 })
