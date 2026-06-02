@@ -20,7 +20,7 @@ const books: RankedBook[] = [
 describe('BookSection', () => {
   it('renders the title, cards, and a view-all link to the section', () => {
     render(<BookSection title="Popular" slug="popular" books={books} />);
-    expect(screen.getByRole('heading', { name: 'Popular' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Popular', level: 2 })).toBeInTheDocument();
     expect(screen.getByText('One')).toBeInTheDocument();
     expect(screen.getByText('Two')).toBeInTheDocument();
     const viewAll = screen.getByRole('link', { name: /view all/i });
