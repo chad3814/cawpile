@@ -189,6 +189,13 @@ export default function EditBookModal({
   // needs it (including the initial mount), and clear the DNF reason when
   // leaving DNF. Guarding on a status transition means a date the user clears
   // is not silently re-filled.
+  //
+  // Note: `startDate` / `finishDate` are in the dep array to satisfy
+  // react-hooks/exhaustive-deps (they're read in the effect body), so this
+  // effect re-runs on every keystroke in the date inputs. The
+  // `prevStatusRef.current === status` early-return makes those extra runs
+  // no-ops, so it's a perf nit, not a correctness bug — rolling with it for
+  // now rather than stashing the dates in refs to drop them from the deps.
   const prevStatusRef = useRef<BookStatus | null>(null)
   useEffect(() => {
     if (prevStatusRef.current === status) return
