@@ -39,7 +39,6 @@ export default function BooksSectionClient({
       setHasMore(data.hasMore);
     } catch {
       setError(true);
-      setHasMore(false);
     } finally {
       setLoading(false);
     }
@@ -64,19 +63,22 @@ export default function BooksSectionClient({
         ))}
       </div>
 
-      {hasMore && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
+      {hasMore && !error && <div ref={sentinelRef} className="h-10" aria-hidden="true" />}
       {loading && <p className="mt-6 text-center text-sm text-muted-foreground">Loading…</p>}
       {error && (
         <div className="mt-6 text-center">
           <button
-            onClick={loadMore}
+            onClick={() => {
+              setError(false);
+              loadMore();
+            }}
             className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90"
           >
             Retry
           </button>
         </div>
       )}
-      {!hasMore && !loading && books.length > 0 && (
+      {!hasMore && !error && !loading && books.length > 0 && (
         <p className="mt-6 text-center text-sm text-muted-foreground">No more books.</p>
       )}
     </div>
