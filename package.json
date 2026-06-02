@@ -13,6 +13,7 @@
     "test:coverage": "jest --coverage",
     "postinstall": "prisma generate",
     "make-admin": "tsx scripts/fix-admin-user.ts",
+    "recompute-book-stats": "tsx scripts/recompute-book-stats.ts",
     "configure-s3-cors": "tsx scripts/configure-s3-cors.ts"
   },
   "dependencies": {
