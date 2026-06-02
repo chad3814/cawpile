@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
+import { validateBookDates } from '@/lib/validateBookDates'
 
 // Valid cover provider values
 const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb', 'amazon']
@@ -117,6 +118,16 @@ export async function PATCH(
       )
     }
 
+    // Validate start/finish dates against each other and the current date.
+    // Fall back to the stored value for whichever date is not in this request.
+    const toIso = (d: Date | null): string | null => (d ? d.toISOString().split('T')[0] : null)
+    const effectiveStart = startDate !== undefined ? startDate : toIso(userBook.startDate)
+    const effectiveFinish = finishDate !== undefined ? finishDate : toIso(userBook.finishDate)
+    const dateError = validateBookDates({ startDate: effectiveStart, finishDate: effectiveFinish })
+    if (dateError) {
+      return NextResponse.json({ error: dateError }, { status: 400 })
+    }
+
     // Prepare update data
     const updateData: Prisma.UserBookUpdateInput = {}
 
@@ -132,8 +143,8 @@ export async function PATCH(
     if (notes !== undefined) updateData.notes = notes
     if (isFavorite !== undefined) updateData.isFavorite = isFavorite
     if (currentPage !== undefined) updateData.currentPage = currentPage
-    if (startDate !== undefined) updateData.startDate = new Date(startDate)
-    if (finishDate !== undefined) updateData.finishDate = new Date(finishDate)
+    if (startDate !== undefined) updateData.startDate = startDate === null ? null : new Date(startDate)
+    if (finishDate !== undefined) updateData.finishDate = finishDate === null ? null : new Date(finishDate)
 
     // New tracking fields
     if (acquisitionMethod !== undefined) updateData.acquisitionMethod = acquisitionMethod

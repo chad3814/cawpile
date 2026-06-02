@@ -187,4 +187,123 @@ describe('PATCH /api/user/books/[id] - DNF Status Changes', () => {
     // DNF reason should be cleared when changing from DNF
     expect(data.userBook.dnfReason).toBeNull()
   })
+
+  test('explicit null finishDate clears the field (not epoch)', async () => {
+    await prisma.userBook.update({
+      where: { id: testUserBookId },
+      data: { status: BookStatus.COMPLETED, finishDate: new Date('2024-05-01') },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'READING', finishDate: null }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.userBook.finishDate).toBeNull();
+  });
+
+  test('explicit null startDate and finishDate clear both fields', async () => {
+    await prisma.userBook.update({
+      where: { id: testUserBookId },
+      data: {
+        status: BookStatus.COMPLETED,
+        startDate: new Date('2024-04-01'),
+        finishDate: new Date('2024-05-01'),
+      },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'WANT_TO_READ', startDate: null, finishDate: null }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.userBook.startDate).toBeNull();
+    expect(data.userBook.finishDate).toBeNull();
+  });
+
+  test('rejects finish date before start date with 400', async () => {
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ startDate: '2024-03-01', finishDate: '2024-02-01' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Finish date cannot be before the start date');
+  });
+
+  test('rejects a future finish date with 400', async () => {
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ finishDate: future }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Finish date cannot be in the future');
+  });
+
+  test('validates finish against the existing start date when start is not in the body', async () => {
+    await prisma.userBook.update({
+      where: { id: testUserBookId },
+      data: { startDate: new Date('2024-05-01') },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ finishDate: '2024-04-01' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Finish date cannot be before the start date');
+  });
+
+  test('validates start against the existing finish date when finish is not in the body', async () => {
+    await prisma.userBook.update({
+      where: { id: testUserBookId },
+      data: { finishDate: new Date('2024-02-01') },
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/user/books/test', {
+      method: 'PATCH',
+      body: JSON.stringify({ startDate: '2024-06-01' }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const params = Promise.resolve({ id: testUserBookId });
+
+    const response = await PATCH(request, { params });
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.error).toBe('Finish date cannot be before the start date');
+  });
 })
