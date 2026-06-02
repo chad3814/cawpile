@@ -7,10 +7,13 @@ import {
   type RankedBook,
 } from '@/lib/db/bookRankings';
 import BooksSectionClient from '@/components/books/BooksSectionClient';
+import { BOOKS_PAGE_SIZE } from '@/lib/books/constants';
 
 export const revalidate = 300;
 
-const PAGE_SIZE = 24;
+export function generateStaticParams() {
+  return [{ section: 'newest' }, { section: 'popular' }, { section: 'top-rated' }];
+}
 
 const SECTION_MAP: Record<
   string,
@@ -49,9 +52,9 @@ export default async function BooksSectionPage({
     notFound();
   }
 
-  const rows = await config.fetcher(PAGE_SIZE + 1, 0);
-  const hasMore = rows.length > PAGE_SIZE;
-  const initialBooks = rows.slice(0, PAGE_SIZE);
+  const rows = await config.fetcher(BOOKS_PAGE_SIZE + 1, 0);
+  const hasMore = rows.length > BOOKS_PAGE_SIZE;
+  const initialBooks = rows.slice(0, BOOKS_PAGE_SIZE);
 
   return (
     <BooksSectionClient

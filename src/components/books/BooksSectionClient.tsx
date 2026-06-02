@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PublicBookCard from './PublicBookCard';
 import type { RankedBook } from '@/lib/db/bookRankings';
+import { BOOKS_PAGE_SIZE } from '@/lib/books/constants';
 
 interface BooksSectionClientProps {
   section: string;
@@ -10,8 +11,6 @@ interface BooksSectionClientProps {
   initialBooks: RankedBook[];
   initialHasMore: boolean;
 }
-
-const PAGE_SIZE = 24;
 
 export default function BooksSectionClient({
   section,
@@ -31,7 +30,7 @@ export default function BooksSectionClient({
     setError(false);
     try {
       const res = await fetch(
-        `/api/books?section=${section}&offset=${books.length}&limit=${PAGE_SIZE}`
+        `/api/books?section=${section}&offset=${books.length}&limit=${BOOKS_PAGE_SIZE}`
       );
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data: { books: RankedBook[]; hasMore: boolean } = await res.json();
