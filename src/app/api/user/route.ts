@@ -68,10 +68,19 @@ export async function DELETE() {
     })
 
     // Recompute stats for every book the user had tracked/rated, so per-book
-    // and global stats reflect the removed ratings. Each in its own transaction
-    // to avoid one giant transaction for prolific users.
+    // and global stats reflect the removed ratings. Each runs in its own
+    // transaction. The user is already deleted, so a recompute failure here is
+    // non-fatal — log it and continue; the recompute-book-stats backfill job
+    // corrects any residual drift. NOTE: for a user with very many tracked
+    // books this loop issues one transaction per book sequentially and could
+    // approach serverless timeouts; move to a background job if that becomes a
+    // problem.
     for (const bookId of affectedBookIds) {
-      await prisma.$transaction((tx) => recomputeBookStats(bookId, tx))
+      try {
+        await prisma.$transaction((tx) => recomputeBookStats(bookId, tx))
+      } catch (err) {
+        console.error(`Failed to recompute stats for book ${bookId} after account deletion:`, err)
+      }
     }
 
     console.log(`User account deleted: ${userData.email}`)

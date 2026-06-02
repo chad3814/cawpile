@@ -213,9 +213,10 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       await tx.book.delete({ where: { id } })
       if (book.ratingCount !== 0 || book.ratingSum !== 0) {
-        await tx.globalBookStats.update({
+        await tx.globalBookStats.upsert({
           where: { id: 'global' },
-          data: {
+          create: { id: 'global', ratingsCount: 0, ratingsTotal: 0 },
+          update: {
             ratingsCount: { decrement: book.ratingCount },
             ratingsTotal: { decrement: book.ratingSum },
           },
