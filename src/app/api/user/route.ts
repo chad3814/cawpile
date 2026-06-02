@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { deleteAvatar, extractKeyFromUrl } from '@/lib/s3-upload'
+import { recomputeBookStats } from '@/lib/db/bookStats'
 
 /**
  * DELETE /api/user
@@ -52,12 +53,26 @@ export async function DELETE() {
       }
     }
 
+    // Collect affected books BEFORE deletion (cascade will remove the userBooks)
+    const userBooks = await prisma.userBook.findMany({
+      where: { userId: user.id },
+      select: { edition: { select: { bookId: true } } },
+    })
+    const affectedBookIds = [...new Set(userBooks.map((ub) => ub.edition.bookId))]
+
     // Delete the user - cascading deletes will handle related data
     // This includes: Account, Session, UserBook, UserBookClub, UserReadathon, SharedReview
     // UserBook cascade also deletes: CawpileRating, ReadingSession
     await prisma.user.delete({
       where: { id: user.id },
     })
+
+    // Recompute stats for every book the user had tracked/rated, so per-book
+    // and global stats reflect the removed ratings. Each in its own transaction
+    // to avoid one giant transaction for prolific users.
+    for (const bookId of affectedBookIds) {
+      await prisma.$transaction((tx) => recomputeBookStats(bookId, tx))
+    }
 
     console.log(`User account deleted: ${userData.email}`)
 
