@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: 'Browse Books | Cawpile',
   description: 'Discover the newest, most popular, and highest rated books on Cawpile.',
   robots: 'index, follow',
+  openGraph: {
+    title: 'Browse Books | Cawpile',
+    description: 'Discover the newest, most popular, and highest rated books on Cawpile.',
+    type: 'website',
+  },
 };
 
 const PREVIEW_COUNT = 12;
@@ -25,6 +30,9 @@ export default async function BooksPage() {
       <BookSection title="Newest" slug="newest" books={newest} />
       <BookSection title="Most Popular" slug="popular" books={popular} />
       <BookSection title="Top Rated" slug="top-rated" books={topRated} />
+      {newest.length === 0 && popular.length === 0 && topRated.length === 0 && (
+        <p className="text-muted-foreground">No books yet — check back soon.</p>
+      )}
     </div>
   );
 }
