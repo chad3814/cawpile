@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
 import { logFieldChanges, logAdminAction } from '@/lib/audit/logger'
+import { invalidateGlobalBookStatsCache } from '@/lib/db/bookStats'
 import { Prisma } from '@prisma/client'
 
 export async function GET(
@@ -192,6 +193,8 @@ export async function DELETE(
         title: true,
         authors: true,
         bookType: true,
+        ratingCount: true,
+        ratingSum: true,
       }
     })
 
@@ -205,9 +208,22 @@ export async function DELETE(
     // Delete the book - Prisma cascade handles cleanup of:
     // - Editions -> UserBooks -> CawpileRatings, ReadingSessions, SharedReviews
     // - GoogleBook, HardcoverBook, IbdbBook
-    await prisma.book.delete({
-      where: { id }
+    // The book's stored ratingCount/ratingSum is exactly its contribution to the
+    // global stats row (added by recomputeBookStats over time), so subtract it.
+    await prisma.$transaction(async (tx) => {
+      await tx.book.delete({ where: { id } })
+      if (book.ratingCount !== 0 || book.ratingSum !== 0) {
+        await tx.globalBookStats.update({
+          where: { id: 'global' },
+          data: {
+            ratingsCount: { decrement: book.ratingCount },
+            ratingsTotal: { decrement: book.ratingSum },
+          },
+        })
+      }
     })
+
+    invalidateGlobalBookStatsCache()
 
     // Log the deletion
     await logAdminAction(user.id, {
