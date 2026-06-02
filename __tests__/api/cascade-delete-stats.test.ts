@@ -51,6 +51,10 @@ describe('Admin book delete decrements global stats', () => {
 
   afterAll(async () => {
     // Book is already deleted by the test (cascade removed its edition/userBook/rating).
+    // If the test failed before the DELETE ran, clean up defensively (deleteMany is a no-op
+    // if the rows are already gone).
+    await prisma.edition.deleteMany({ where: { id: editionId } })
+    await prisma.book.deleteMany({ where: { id: bookId } })
     await prisma.user.deleteMany({ where: { id: userId } })
   })
 
