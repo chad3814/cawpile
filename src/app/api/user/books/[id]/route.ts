@@ -3,7 +3,7 @@ import { getCurrentUser } from '@/lib/auth-helpers'
 import prisma from '@/lib/prisma'
 import { BookFormat, Prisma } from '@prisma/client'
 import { calculateCawpileAverage } from '@/types/cawpile'
-import { validateBookDates } from '@/lib/validateBookDates'
+import { validateBookDates, validateStatusDates } from '@/lib/validateBookDates'
 
 // Valid cover provider values
 const VALID_COVER_PROVIDERS = ['hardcover', 'google', 'ibdb', 'amazon']
@@ -128,6 +128,14 @@ export async function PATCH(
       return NextResponse.json({ error: dateError }, { status: 400 })
     }
 
+    // A status that implies a date must keep one: reject an explicit null clear
+    // (an absent date is still auto-set below). Use the effective status so the
+    // invariant holds even on a partial PATCH that omits status.
+    const statusDateError = validateStatusDates(status ?? userBook.status, startDate, finishDate)
+    if (statusDateError) {
+      return NextResponse.json({ error: statusDateError }, { status: 400 })
+    }
+
     // Prepare update data
     const updateData: Prisma.UserBookUpdateInput = {}
 
@@ -166,11 +174,13 @@ export async function PATCH(
       updateData.preferredCoverProvider = preferredCoverProvider
     }
 
-    // Handle status changes
-    if (status === 'COMPLETED' && !userBook.finishDate && !finishDate) {
+    // Handle status changes. Auto-set only when the date is absent from the
+    // request (=== undefined); an explicit null was already rejected above for
+    // statuses that require the date, so it is never silently overwritten here.
+    if (status === 'COMPLETED' && !userBook.finishDate && finishDate === undefined) {
       updateData.finishDate = new Date()
     }
-    if (status === 'READING' && !userBook.startDate && !startDate) {
+    if (status === 'READING' && !userBook.startDate && startDate === undefined) {
       updateData.startDate = new Date()
     }
     // Auto-set finishDate when status changes to DNF and no finishDate is provided

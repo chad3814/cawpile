@@ -266,4 +266,33 @@ describe('EditBookModal date editing', () => {
     expect(body.startDate).toBeNull()
     expect(body.finishDate).toBeNull()
   })
+
+  test('clearing the finish date on a Completed book shows an error and does not submit', async () => {
+    const mockFetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ userBook: { id: 'b1' } }),
+    })
+    global.fetch = mockFetch
+
+    await renderModal({
+      id: 'b1',
+      title: 'Test',
+      status: 'COMPLETED',
+      format: ['PAPERBACK'],
+      startDate: new Date('2024-02-01'),
+      finishDate: new Date('2024-03-01'),
+    })
+
+    await act(async () => {
+      fireEvent.change(document.querySelector('#finish-date') as HTMLInputElement, {
+        target: { value: '' },
+      })
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Save Changes/i }))
+    })
+
+    expect(screen.getByText('A finish date is required for completed books')).toBeInTheDocument()
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
 })

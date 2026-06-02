@@ -28,3 +28,30 @@ export function validateBookDates(input: BookDateValidationInput): string | null
   }
   return null;
 }
+
+/**
+ * Validates that a status carries the date it implies. A status's required
+ * date is rejected only when it is explicitly cleared (`null`); an absent
+ * (`undefined`) date is left to the caller to default. Returns an error
+ * message, or null when valid.
+ *
+ * - COMPLETED / DNF require a finish ("stopped reading") date.
+ * - READING requires a start date.
+ * - WANT_TO_READ requires neither.
+ */
+export function validateStatusDates(
+  status: string | null | undefined,
+  startDate: string | null | undefined,
+  finishDate: string | null | undefined,
+): string | null {
+  if (status === 'COMPLETED' && finishDate === null) {
+    return 'A finish date is required for completed books';
+  }
+  if (status === 'DNF' && finishDate === null) {
+    return 'A stopped-reading date is required for books you did not finish';
+  }
+  if (status === 'READING' && startDate === null) {
+    return 'A start date is required for books you are reading';
+  }
+  return null;
+}

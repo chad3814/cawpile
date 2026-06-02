@@ -14,7 +14,7 @@ import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
 import { BookStatus, BookFormat } from '@prisma/client'
 import { AcquisitionMethod, RepresentationValue, BookTrackingData } from '@/types/book'
 import { useRouter } from 'next/navigation'
-import { validateBookDates } from '@/lib/validateBookDates'
+import { validateBookDates, validateStatusDates } from '@/lib/validateBookDates'
 import Image from 'next/image'
 
 interface EditionWithProviders {
@@ -275,10 +275,12 @@ export default function EditBookModal({
       const startValue = startEnabled ? (startDate || null) : null
       const finishValue = finishEnabled ? (finishDate || null) : null
 
-      const dateValidationError = validateBookDates({
-        startDate: startValue,
-        finishDate: finishValue,
-      })
+      const dateValidationError =
+        validateStatusDates(status, startValue, finishValue) ??
+        validateBookDates({
+          startDate: startValue,
+          finishDate: finishValue,
+        })
       if (dateValidationError) {
         setDateError(dateValidationError)
         setIsSubmitting(false)
