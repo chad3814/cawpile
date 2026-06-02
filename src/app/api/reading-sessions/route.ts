@@ -57,22 +57,21 @@ export async function POST(request: NextRequest) {
     // Calculate pages read
     const pagesRead = endPage - startPage + 1
 
-    // Create reading session
-    const readingSession = await prisma.readingSession.create({
-      data: {
-        userBookId,
-        startPage,
-        endPage,
-        pagesRead,
-        duration: duration || null,
-        notes: notes || null
-      }
-    })
-
-    // Update book progress and recompute book stats atomically (a session can
-    // flip the book to COMPLETED, which changes denormalized book/global stats).
+    // Create reading session and update book progress atomically so that if the
+    // progress update rolls back, no orphaned session row is left behind.
     const totalPages = userBook.edition.googleBook?.pageCount
-    await prisma.$transaction(async (tx) => {
+    const readingSession = await prisma.$transaction(async (tx) => {
+      const session = await tx.readingSession.create({
+        data: {
+          userBookId,
+          startPage,
+          endPage,
+          pagesRead,
+          duration: duration || null,
+          notes: notes || null
+        }
+      })
+
       if (totalPages && totalPages > 0) {
         const newProgress = Math.min(100, Math.round((endPage / totalPages) * 100))
 
@@ -97,6 +96,7 @@ export async function POST(request: NextRequest) {
       }
 
       await recomputeBookStats(userBook.edition.bookId, tx)
+      return session
     })
 
     return NextResponse.json({ readingSession })
