@@ -42,6 +42,33 @@ describe('BooksSectionClient', () => {
     expect(screen.getByText('b1')).toBeInTheDocument();
   });
 
+  it('shows Retry on fetch error and recovers when clicked', async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 500 })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ books: [mk('b2')], hasMore: false }) });
+    global.fetch = fetchMock as typeof fetch;
+
+    render(
+      <BooksSectionClient section="popular" title="Popular" initialBooks={[mk('b1')]} initialHasMore={true} />
+    );
+
+    // First intersection → fetch rejects (ok:false) → error state
+    await act(async () => {
+      ioCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+    });
+
+    const retry = await screen.findByRole('button', { name: /retry/i });
+
+    // Click Retry → second fetch succeeds → b2 appended
+    await act(async () => {
+      retry.click();
+    });
+
+    await waitFor(() => expect(screen.getByText('b2')).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('fetches and appends the next page when the sentinel intersects', async () => {
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
