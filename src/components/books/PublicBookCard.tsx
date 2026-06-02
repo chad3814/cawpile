@@ -45,9 +45,7 @@ export default function PublicBookCard({ book }: { book: RankedBook }) {
             data-testid="cover-placeholder"
             aria-hidden="true"
             className="flex h-full w-full items-center justify-center p-2 text-center text-xs text-muted-foreground"
-          >
-            {book.title}
-          </div>
+          />
         )}
       </div>
       <h3 className="mt-2 line-clamp-2 text-sm font-semibold text-card-foreground">
