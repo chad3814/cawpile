@@ -84,4 +84,26 @@ describe('recomputeBookStats', () => {
       data: { readerCount: 1, ratingCount: 0, ratingSum: 0, bayesianRating: NEUTRAL_MEAN },
     });
   });
+
+  it('applies a correct delta when the book already had ratings', async () => {
+    const { tx, globalUpsert } = makeTx({
+      distinctUserIds: ['u1', 'u2'],
+      ratingCount: 3,
+      ratingSum: 25,
+      oldCount: 2,   // previously stored
+      oldSum: 16,
+      global: { weightC: 10, ratingsCount: 3, ratingsTotal: 25 },
+    });
+
+    await recomputeBookStats('book-1', tx);
+
+    expect(globalUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: {
+          ratingsCount: { increment: 1 },  // 3 - 2
+          ratingsTotal: { increment: 9 },  // 25 - 16
+        },
+      })
+    );
+  });
 });
