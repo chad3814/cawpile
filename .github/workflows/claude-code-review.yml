@@ -36,6 +36,10 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Review PRs from the Claude bot, but not other bots (e.g. dependabot).
+          # Matching is case-insensitive and ignores a trailing "[bot]" suffix,
+          # so "claude" matches the claude[bot] actor.
+          allowed_bots: "claude"
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           track_progress: true
