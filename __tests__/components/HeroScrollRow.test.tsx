@@ -1,7 +1,42 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import HeroScrollRow from '@/components/HeroScrollRow'
+import HeroScrollRow, { computePageStep } from '@/components/HeroScrollRow'
+
+describe('computePageStep', () => {
+  // Dashboard cards: w-40 (160px) with gap-4 (16px) => 176px stride.
+  const CARD = 160
+  const STRIDE = 176
+
+  it('steps by a whole number of item strides, never the raw container width', () => {
+    // The reported bug: a ~1010px container paged by 1010px lands mid-item.
+    const step = computePageStep(1010, CARD, STRIDE)
+    expect(step % STRIDE).toBe(0) // every page boundary lands on an item edge
+    expect(step).not.toBe(1010) // not the raw container width that sliced cards
+    expect(step).toBe(5 * STRIDE) // 5 whole cards fit in 1010px (880px)
+  })
+
+  it('keeps every page boundary aligned to an item edge', () => {
+    const step = computePageStep(1010, CARD, STRIDE)
+    for (let page = 0; page <= 4; page++) {
+      expect((page * step) % STRIDE).toBe(0)
+    }
+  })
+
+  it('fits more whole items in a wider container', () => {
+    expect(computePageStep(1200, CARD, STRIDE)).toBe(6 * STRIDE) // 1216px would overflow, 6 fit
+    expect(computePageStep(400, CARD, STRIDE)).toBe(2 * STRIDE)
+  })
+
+  it('always advances by at least one item, even in a narrow container', () => {
+    expect(computePageStep(100, CARD, STRIDE)).toBe(STRIDE)
+  })
+
+  it('falls back to the container width before dimensions are measurable', () => {
+    expect(computePageStep(0, 0, 0)).toBe(0)
+    expect(computePageStep(800, 0, 0)).toBe(800)
+  })
+})
 
 describe('HeroScrollRow', () => {
   it('renders children', () => {
