@@ -78,12 +78,6 @@ export default function DashboardClient({ books }: DashboardClientProps) {
             </span>
           </div>
 
-          {activeSection === 'books' && (
-            <div className="py-16 text-center text-muted-foreground">
-              <p className="text-lg font-medium text-foreground">Books</p>
-              <p className="mt-2 text-sm">Site-wide book info — coming soon.</p>
-            </div>
-          )}
           {activeSection === 'authors' && (
             <div className="py-16 text-center text-muted-foreground">
               <p className="text-lg font-medium text-foreground">Authors</p>
