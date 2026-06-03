@@ -34,7 +34,13 @@ export default function BooksSectionClient({
       );
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       const data: { books: RankedBook[]; hasMore: boolean } = await res.json();
-      setBooks((prev) => [...prev, ...data.books]);
+      // Ranking sort keys shift as users track and rate books, so offset paging can
+      // re-surface an already-shown book. Drop duplicates so a shifted book is never
+      // rendered twice (which would also collide on the React key).
+      setBooks((prev) => {
+        const seen = new Set(prev.map((book) => book.id));
+        return [...prev, ...data.books.filter((book) => !seen.has(book.id))];
+      });
       setHasMore(data.hasMore);
     } catch {
       setError(true);
