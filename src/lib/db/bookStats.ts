@@ -1,4 +1,3 @@
-import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 
 /** Midpoint of the 1–10 CAWPILE scale; used as the mean when no ratings exist. */
@@ -8,14 +7,24 @@ const GLOBAL_ID = 'global';
 
 /**
  * Recompute a single book's denormalized stats from source, inside a transaction.
- * Drift-proof: per-book counters are derived from truth on every call. The global
- * ratings totals are adjusted by an atomic delta so concurrent writes cannot lose
- * updates. The Bayesian rating uses the transaction-authoritative global row.
+ *
+ * The book row is locked with SELECT ... FOR UPDATE before its prior contribution
+ * is read, so concurrent recomputes of the same book serialize: the second waits,
+ * then reads the first's committed totals and applies an exact delta to the global
+ * row. Per-book counters are always derived from source, so they cannot drift.
  */
 export async function recomputeBookStats(
   bookId: string,
   tx: Prisma.TransactionClient
 ): Promise<void> {
+  // Lock the book row first. A concurrent recompute of the same book blocks here
+  // until this transaction commits, so the global delta below is always exact.
+  const prev = await tx.$queryRaw<Array<{ ratingCount: number; ratingSum: number }>>`
+    SELECT "ratingCount", "ratingSum" FROM "Book" WHERE "id" = ${bookId} FOR UPDATE
+  `;
+  const oldCount = prev[0]?.ratingCount ?? 0;
+  const oldSum = prev[0]?.ratingSum ?? 0;
+
   // Distinct users tracking this book across all its editions, any status.
   const distinctUsers = await tx.userBook.findMany({
     where: { edition: { bookId } },
@@ -33,14 +42,6 @@ export async function recomputeBookStats(
   const ratingCount = agg._count._all;
   const ratingSum = agg._sum.average ?? 0;
 
-  // Previously-contributed values, so we can apply an exact global delta.
-  const prev = await tx.book.findUnique({
-    where: { id: bookId },
-    select: { ratingCount: true, ratingSum: true },
-  });
-  const oldCount = prev?.ratingCount ?? 0;
-  const oldSum = prev?.ratingSum ?? 0;
-
   const global = await tx.globalBookStats.upsert({
     where: { id: GLOBAL_ID },
     create: { id: GLOBAL_ID, ratingsCount: ratingCount, ratingsTotal: ratingSum },
@@ -52,6 +53,9 @@ export async function recomputeBookStats(
 
   const mean =
     global.ratingsCount > 0 ? global.ratingsTotal / global.ratingsCount : NEUTRAL_MEAN;
+  // bayesianRating is precomputed from the current global mean and weightC. Changing
+  // GlobalBookStats.weightC therefore requires re-running the recompute-book-stats
+  // backfill to refresh every book's stored rating.
   const bayesianRating =
     (global.weightC * mean + ratingSum) / (global.weightC + ratingCount);
 
@@ -59,42 +63,4 @@ export async function recomputeBookStats(
     where: { id: bookId },
     data: { readerCount, ratingCount, ratingSum, bayesianRating },
   });
-
-  invalidateGlobalBookStatsCache();
-}
-
-// --- Read-side cache for m/C (NOT used by the write path) ---
-
-export interface GlobalBookStatsView {
-  weightC: number;
-  ratingsCount: number;
-  ratingsTotal: number;
-  mean: number;
-}
-
-const CACHE_TTL_MS = 60_000;
-let cache: { value: GlobalBookStatsView; expires: number } | null = null;
-
-export function invalidateGlobalBookStatsCache(): void {
-  cache = null;
-}
-
-/** Cached accessor for the global mean/weight, for read-side consumers. */
-export async function getGlobalBookStats(now = Date.now()): Promise<GlobalBookStatsView> {
-  if (cache && cache.expires > now) return cache.value;
-
-  const row = await prisma.globalBookStats.upsert({
-    where: { id: GLOBAL_ID },
-    create: { id: GLOBAL_ID },
-    update: {},
-  });
-  const mean = row.ratingsCount > 0 ? row.ratingsTotal / row.ratingsCount : NEUTRAL_MEAN;
-  const value: GlobalBookStatsView = {
-    weightC: row.weightC,
-    ratingsCount: row.ratingsCount,
-    ratingsTotal: row.ratingsTotal,
-    mean,
-  };
-  cache = { value, expires: now + CACHE_TTL_MS };
-  return value;
 }
