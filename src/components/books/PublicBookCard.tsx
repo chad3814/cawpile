@@ -9,7 +9,7 @@ function formatStat(stat: BookStat): string {
         month: 'short',
         year: 'numeric',
         timeZone: 'UTC',
-      }).format(stat.value);
+      }).format(new Date(stat.value));
       return `Added ${label}`;
     }
     case 'readers':

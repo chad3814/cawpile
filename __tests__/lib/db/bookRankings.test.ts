@@ -48,7 +48,7 @@ describe('bookRankings', () => {
       title: 'Book One',
       authors: ['Author A'],
       coverUrl: 'https://x/cover.jpg',
-      stat: { kind: 'addedAt', value: new Date('2026-05-01T00:00:00Z') },
+      stat: { kind: 'addedAt', value: '2026-05-01T00:00:00.000Z' },
     });
   });
 
