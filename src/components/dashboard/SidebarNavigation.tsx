@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
+// 'books' is link-only: its nav item navigates to /books, so it is never set as an active section.
 export type DashboardSection = 'books' | 'authors' | 'library' | 'recaps' | 'charts';
 
 interface SubItem {
@@ -16,11 +17,13 @@ interface SubItem {
 interface NavItem {
   id: DashboardSection;
   label: string;
+  /** When set, the item navigates to this route instead of switching sections. */
+  href?: string;
   subItems?: SubItem[];
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'books', label: 'Books' },
+  { id: 'books', label: 'Books', href: '/books' },
   { id: 'authors', label: 'Authors' },
   {
     id: 'library',
@@ -52,18 +55,27 @@ function NavItems({
     <ul className="space-y-1">
       {NAV_ITEMS.map((item) => (
         <li key={item.id}>
-          <button
-            type="button"
-            onClick={() => onSectionChange(item.id)}
-            aria-current={activeSection === item.id ? 'page' : undefined}
-            className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeSection === item.id
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
-          >
-            {item.label}
-          </button>
+          {item.href ? (
+            <Link
+              href={item.href}
+              className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+            >
+              {item.label}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onSectionChange(item.id)}
+              aria-current={activeSection === item.id ? 'page' : undefined}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeSection === item.id
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              {item.label}
+            </button>
+          )}
           {item.subItems && activeSection === item.id && (
             <ul className="mt-1 ml-3 space-y-0.5">
               {item.subItems.map((sub) => (
