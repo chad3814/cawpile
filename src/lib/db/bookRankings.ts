@@ -3,7 +3,11 @@ import prisma from '@/lib/prisma';
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl';
 
 export type BookStat =
-  | { kind: 'addedAt'; value: Date }
+  // `addedAt` is an ISO 8601 string, not a Date: this value crosses both the RSC
+  // boundary (initial render) and the JSON boundary (GET /api/books "load more").
+  // JSON stringifies Dates, so a Date type would be honest only on the first path
+  // and lie on the second. A string serializes identically over both.
+  | { kind: 'addedAt'; value: string }
   | { kind: 'readers'; value: number }
   | { kind: 'rating'; value: number };
 
@@ -57,7 +61,7 @@ export async function getNewestBooks(limit: number, offset: number): Promise<Ran
     skip: offset,
     select: BASE_SELECT,
   });
-  return rows.map((r) => toRankedBook(r, { kind: 'addedAt', value: r.createdAt }));
+  return rows.map((r) => toRankedBook(r, { kind: 'addedAt', value: r.createdAt.toISOString() }));
 }
 
 export async function getPopularBooks(limit: number, offset: number): Promise<RankedBook[]> {

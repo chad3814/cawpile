@@ -46,7 +46,18 @@ describe('PublicBookCard', () => {
   });
 
   it('renders the added-date stat as month + year', () => {
-    render(<PublicBookCard book={base({ kind: 'addedAt', value: new Date('2026-05-15T00:00:00Z') })} />);
+    render(<PublicBookCard book={base({ kind: 'addedAt', value: '2026-05-15T00:00:00.000Z' })} />);
+    expect(screen.getByText(/Added May 2026/)).toBeInTheDocument();
+  });
+
+  it('renders the added-date stat from a JSON-roundtripped value without crashing', () => {
+    // GET /api/books ("load more") returns the stat over JSON, so value arrives as
+    // an ISO string. Formatting it must not throw (regression: a RangeError here
+    // crashed the /books/newest page after the first page loaded).
+    const roundtripped: RankedBook = JSON.parse(
+      JSON.stringify(base({ kind: 'addedAt', value: '2026-05-15T00:00:00.000Z' }))
+    );
+    render(<PublicBookCard book={roundtripped} />);
     expect(screen.getByText(/Added May 2026/)).toBeInTheDocument();
   });
 
