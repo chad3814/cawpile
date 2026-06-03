@@ -2,6 +2,7 @@ import 'server-only';
 import type { Notice } from '@/lib/notices-types';
 import UsernameNotice from '@/components/notices/UsernameNotice';
 import SettingsNotice from '@/components/notices/SettingsNotice';
+import BooksDiscoveryNotice from '@/components/notices/BooksDiscoveryNotice';
 
 export type { Notice, NoticeComponentProps } from '@/lib/notices-types';
 
@@ -18,6 +19,12 @@ export const NOTICES: Notice[] = [
     id: 'settings-profile-2026-04',
     title: 'Customize Your Profile',
     component: SettingsNotice,
+    target: async () => true,
+  },
+  {
+    id: 'books-discovery-2026-06',
+    title: 'Discover Books',
+    component: BooksDiscoveryNotice,
     target: async () => true,
   },
 ];
