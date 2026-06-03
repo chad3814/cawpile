@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     // Create reading session and update book progress atomically so that if the
     // progress update rolls back, no orphaned session row is left behind.
     const totalPages = userBook.edition.googleBook?.pageCount
+    const wasCompleted = userBook.status === 'COMPLETED'
     const readingSession = await prisma.$transaction(async (tx) => {
       const session = await tx.readingSession.create({
         data: {
@@ -72,8 +73,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      let isCompleted = wasCompleted
       if (totalPages && totalPages > 0) {
         const newProgress = Math.min(100, Math.round((endPage / totalPages) * 100))
+        isCompleted = newProgress === 100
 
         await tx.userBook.update({
           where: { id: userBookId },
@@ -95,7 +98,11 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      await recomputeBookStats(userBook.edition.bookId, tx)
+      // Book stats only depend on COMPLETED status, so recompute only when the book
+      // crosses into or out of COMPLETED. Routine progress updates skip it.
+      if (isCompleted !== wasCompleted) {
+        await recomputeBookStats(userBook.edition.bookId, tx)
+      }
       return session
     })
 
