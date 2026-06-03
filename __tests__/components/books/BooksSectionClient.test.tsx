@@ -87,4 +87,25 @@ describe('BooksSectionClient', () => {
     await waitFor(() => expect(screen.getByText('b2')).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledWith('/api/books?section=popular&offset=1&limit=24');
   });
+
+  it('does not render a book twice when a shifted book reappears in the next page', async () => {
+    // b1 is already shown; the next page re-surfaces b1 (rank shift) alongside b2.
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ books: [mk('b1'), mk('b2')], hasMore: false }),
+    });
+    global.fetch = fetchMock as typeof fetch;
+
+    render(
+      <BooksSectionClient section="popular" title="Popular" initialBooks={[mk('b1')]} initialHasMore={true} />
+    );
+
+    await act(async () => {
+      ioCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+    });
+
+    await waitFor(() => expect(screen.getByText('b2')).toBeInTheDocument());
+    // b1 must still appear exactly once despite being returned again.
+    expect(screen.getAllByText('b1')).toHaveLength(1);
+  });
 });
