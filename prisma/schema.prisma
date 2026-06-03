@@ -375,8 +375,12 @@ enum LibrarySortOrder {
   DESC
 }
 
+// Singleton row (id = "global") holding the Bayesian weight and global rating
+// totals used to derive each Book's precomputed bayesianRating.
 model GlobalBookStats {
   id           String   @id @default("global")
+  // Bayesian weight C. Because bayesianRating is precomputed per book, changing
+  // this requires re-running the recompute-book-stats backfill to take effect.
   weightC      Float    @default(10)
   ratingsCount Int      @default(0)
   ratingsTotal Float    @default(0)
