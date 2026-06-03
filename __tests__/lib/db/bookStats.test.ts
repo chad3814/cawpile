@@ -12,7 +12,13 @@ function makeTx(opts: {
 }) {
   const bookUpdate = jest.fn().mockResolvedValue({});
   const globalUpsert = jest.fn().mockResolvedValue(opts.global);
+  // recomputeBookStats reads the prior contribution via a `SELECT ... FOR UPDATE`
+  // raw query that returns an array of rows.
+  const queryRaw = jest
+    .fn()
+    .mockResolvedValue([{ ratingCount: opts.oldCount, ratingSum: opts.oldSum }]);
   const tx = {
+    $queryRaw: queryRaw,
     userBook: {
       findMany: jest.fn().mockResolvedValue(
         opts.distinctUserIds.map((userId) => ({ userId }))
@@ -25,9 +31,6 @@ function makeTx(opts: {
       }),
     },
     book: {
-      findUnique: jest
-        .fn()
-        .mockResolvedValue({ ratingCount: opts.oldCount, ratingSum: opts.oldSum }),
       update: bookUpdate,
     },
     globalBookStats: { upsert: globalUpsert },

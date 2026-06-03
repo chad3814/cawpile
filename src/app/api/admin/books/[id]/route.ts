@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/admin'
 import { logFieldChanges, logAdminAction } from '@/lib/audit/logger'
-import { invalidateGlobalBookStatsCache } from '@/lib/db/bookStats'
 import { Prisma } from '@prisma/client'
 
 export async function GET(
@@ -223,8 +222,6 @@ export async function DELETE(
         })
       }
     })
-
-    invalidateGlobalBookStatsCache()
 
     // Log the deletion
     await logAdminAction(user.id, {
