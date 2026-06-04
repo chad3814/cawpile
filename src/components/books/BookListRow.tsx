@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import StarRating from '@/components/rating/StarRating';
-import { sanitizeHtml } from '@/lib/utils/sanitize';
+import { stripHtmlToText } from '@/lib/utils/sanitize';
 import { formatBookStat } from '@/lib/books/formatBookStat';
 import type { RankedBookDetail } from '@/lib/db/bookRankings';
 
@@ -9,11 +9,20 @@ export default function BookListRow({ book }: { book: RankedBookDetail }) {
   // The rating stat is already shown by the rating block, so only addedAt/readers
   // get a dedicated section-stat line.
   const sectionStat = book.stat.kind === 'rating' ? null : formatBookStat(book.stat);
+  // Render the teaser as plain text: -webkit-line-clamp clamps unreliably over the
+  // block elements (<p>) provider descriptions contain, and plain text drops the
+  // dangerouslySetInnerHTML surface. The full formatted description lives on /b/[id].
+  const descriptionText = book.description ? stripHtmlToText(book.description) : '';
+  // The whole row is one link; name it concisely (title + author) rather than letting
+  // the accessible name collapse to every line of row content.
+  const accessibleName = book.authors.length
+    ? `${book.title} by ${book.authors.join(', ')}`
+    : book.title;
 
   return (
     <Link
       href={`/b/${book.id}`}
-      aria-label={book.title}
+      aria-label={accessibleName}
       className="group flex gap-5 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted"
     >
       <div className="relative aspect-[2/3] w-24 flex-none overflow-hidden rounded-md bg-muted">
@@ -67,11 +76,8 @@ export default function BookListRow({ book }: { book: RankedBookDetail }) {
 
         {sectionStat && <p className="mt-1 text-xs font-medium text-primary">{sectionStat}</p>}
 
-        {book.description && (
-          <div
-            className="mt-2 line-clamp-3 text-sm text-muted-foreground"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(book.description) }}
-          />
+        {descriptionText && (
+          <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{descriptionText}</p>
         )}
       </div>
     </Link>

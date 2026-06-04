@@ -42,6 +42,16 @@ describe('BookListRow', () => {
     expect(screen.getByText('Andy Weir')).toBeInTheDocument();
   });
 
+  it('gives the row link a concise title-and-author accessible name', () => {
+    render(<BookListRow book={book()} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName('Project Hail Mary by Andy Weir');
+  });
+
+  it('falls back to just the title in the accessible name when there are no authors', () => {
+    render(<BookListRow book={book({ authors: [] })} />);
+    expect(screen.getByRole('link')).toHaveAccessibleName('Project Hail Mary');
+  });
+
   it('shows the score and rating count for a rated book', () => {
     render(<BookListRow book={book({ averageRating: 9, ratingCount: 12 })} />);
     expect(screen.getByText('(9.0/10)')).toBeInTheDocument();
@@ -65,11 +75,14 @@ describe('BookListRow', () => {
     expect(screen.queryByText(/avg/)).not.toBeInTheDocument();
   });
 
-  it('renders a sanitized description and omits it when absent', () => {
-    const { rerender } = render(<BookListRow book={book({ description: '<p>A lone astronaut.</p>' })} />);
+  it('renders the description as plain text (HTML stripped) and omits it when absent', () => {
+    const { rerender } = render(
+      <BookListRow book={book({ description: '<p>A lone <b>astronaut</b>.</p>' })} />
+    );
+    // HTML tags are stripped to plain text — no markup leaks into the DOM.
     expect(screen.getByText('A lone astronaut.')).toBeInTheDocument();
     rerender(<BookListRow book={book({ description: null })} />);
-    expect(screen.queryByText('A lone astronaut.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/astronaut/)).not.toBeInTheDocument();
   });
 
   it('shows the cover placeholder when there is no cover', () => {
