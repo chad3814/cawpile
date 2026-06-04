@@ -111,6 +111,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
       status: 'WANT_TO_READ',
       format: [],
     })
+    setSubmitError(null)
     onClose()
   }, [onClose])
 
@@ -145,6 +146,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
+      setSubmitError(null)
     }
   }
 
