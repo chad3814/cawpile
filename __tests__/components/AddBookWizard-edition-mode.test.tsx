@@ -19,7 +19,7 @@ describe('AddBookWizard edition mode', () => {
   })
 
   it('submits editionId (not signedResult) when in edition mode', async () => {
-    const fetchMock = jest.fn((url: string, _init?: RequestInit) => {
+    const fetchMock = jest.fn((url: string) => {
       if (url === '/api/user/books') {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ userBook: {} }) })
       }
@@ -52,9 +52,10 @@ describe('AddBookWizard edition mode', () => {
 
     await waitFor(() => expect(onComplete).toHaveBeenCalled())
 
-    const postCall = fetchMock.mock.calls.find(([url]) => url === '/api/user/books')
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>
+    const postCall = calls.find(([url]) => url === '/api/user/books')
     expect(postCall).toBeDefined()
-    const body = JSON.parse((postCall![1]!.body) as string)
+    const body = JSON.parse(postCall![1].body as string)
     expect(body.editionId).toBe('ed-123')
     expect(body.signedResult).toBeUndefined()
   })
@@ -93,7 +94,7 @@ describe('AddBookWizard edition mode', () => {
   })
 
   it('submits signedResult (not editionId) when in search mode', async () => {
-    const fetchMock = jest.fn((url: string, _init?: RequestInit) => {
+    const fetchMock = jest.fn((url: string) => {
       if (url === '/api/user/books') {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ userBook: {} }) })
       }
@@ -131,9 +132,10 @@ describe('AddBookWizard edition mode', () => {
 
     await waitFor(() => expect(onComplete).toHaveBeenCalled())
 
-    const postCall = fetchMock.mock.calls.find(([url]) => url === '/api/user/books')
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>
+    const postCall = calls.find(([url]) => url === '/api/user/books')
     expect(postCall).toBeDefined()
-    const body = JSON.parse((postCall![1]!.body) as string)
+    const body = JSON.parse(postCall![1].body as string)
     expect(body.signedResult).toBeDefined()
     expect(body.editionId).toBeUndefined()
   })
