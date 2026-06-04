@@ -28,7 +28,7 @@ describe('GET /api/books', () => {
     const res = await GET(req('http://localhost/api/books?section=newest&offset=0&limit=24'));
     const body = await res.json();
     // fetched limit+1 (25) to detect more; only 1 returned → no more
-    expect(getNewestBooks).toHaveBeenCalledWith(25, 0);
+    expect(getNewestBooks).toHaveBeenCalledWith(25, 0, true);
     expect(body.hasMore).toBe(false);
     expect(body.books).toHaveLength(1);
   });
@@ -45,12 +45,12 @@ describe('GET /api/books', () => {
   it('clamps an over-limit request to MAX_LIMIT', async () => {
     (getNewestBooks as jest.Mock).mockResolvedValue([]);
     await GET(req('http://localhost/api/books?section=newest&limit=999'));
-    expect(getNewestBooks).toHaveBeenCalledWith(49, 0); // 48 + 1
+    expect(getNewestBooks).toHaveBeenCalledWith(49, 0, true); // 48 + 1
   });
 
   it('forwards offset to the fetcher', async () => {
     (getNewestBooks as jest.Mock).mockResolvedValue([]);
     await GET(req('http://localhost/api/books?section=newest&offset=24&limit=24'));
-    expect(getNewestBooks).toHaveBeenCalledWith(25, 24);
+    expect(getNewestBooks).toHaveBeenCalledWith(25, 24, true);
   });
 });

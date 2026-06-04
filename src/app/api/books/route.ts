@@ -3,10 +3,13 @@ import {
   getNewestBooks,
   getPopularBooks,
   getTopRatedBooks,
-  type RankedBook,
+  type RankedBookDetail,
 } from '@/lib/db/bookRankings';
 
-const SECTIONS: Record<string, (limit: number, offset: number) => Promise<RankedBook[]>> = {
+const SECTIONS: Record<
+  string,
+  (limit: number, offset: number, detail: true) => Promise<RankedBookDetail[]>
+> = {
   newest: getNewestBooks,
   popular: getPopularBooks,
   'top-rated': getTopRatedBooks,
@@ -29,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Fetch one extra to detect whether more pages exist.
-    const rows = await fetcher(limit + 1, offset);
+    const rows = await fetcher(limit + 1, offset, true);
     const hasMore = rows.length > limit;
     return NextResponse.json({ books: rows.slice(0, limit), hasMore });
   } catch (error) {

@@ -4,7 +4,7 @@ import {
   getNewestBooks,
   getPopularBooks,
   getTopRatedBooks,
-  type RankedBook,
+  type RankedBookDetail,
 } from '@/lib/db/bookRankings';
 import BooksSectionClient from '@/components/books/BooksSectionClient';
 import { BOOKS_PAGE_SIZE } from '@/lib/books/constants';
@@ -17,7 +17,7 @@ export function generateStaticParams() {
 
 const SECTION_MAP: Record<
   string,
-  { title: string; fetcher: (limit: number, offset: number) => Promise<RankedBook[]> }
+  { title: string; fetcher: (limit: number, offset: number, detail: true) => Promise<RankedBookDetail[]> }
 > = {
   newest: { title: 'Newest', fetcher: getNewestBooks },
   popular: { title: 'Most Popular', fetcher: getPopularBooks },
@@ -52,7 +52,7 @@ export default async function BooksSectionPage({
     notFound();
   }
 
-  const rows = await config.fetcher(BOOKS_PAGE_SIZE + 1, 0);
+  const rows = await config.fetcher(BOOKS_PAGE_SIZE + 1, 0, true);
   const hasMore = rows.length > BOOKS_PAGE_SIZE;
   const initialBooks = rows.slice(0, BOOKS_PAGE_SIZE);
 
