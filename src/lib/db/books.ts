@@ -434,11 +434,18 @@ function mapGoogleSource(source: SourceEntry, editionId: string): Prisma.GoogleB
 
 /**
  * Find an existing edition matching a signed search result WITHOUT creating one.
- * Mirrors the matching used by findOrCreateEditionFromSignedResult
- * (googleBooksId / isbn10 / isbn13). Returns null if nothing matches.
+ * Matches by googleBooksId / isbn10 / isbn13, then falls back to the AmazonBook.asin
+ * @unique index for Kindle-only books that carry no ISBN/Google ID. Returns null if
+ * nothing matches.
+ *
+ * When `bookId` is supplied (the create flow), an ASIN match is only accepted if its
+ * edition belongs to that book, so we never link an ASIN edition to the wrong book.
+ * When `bookId` is omitted (read-only callers such as tracking-status), any ASIN match
+ * is accepted.
  */
 export async function findExistingEdition(
   signedResult: SignedBookSearchResult,
+  bookId?: string,
 ): Promise<Edition | null> {
   const whereConditions: Prisma.EditionWhereInput[] = []
 
@@ -454,11 +461,34 @@ export async function findExistingEdition(
     whereConditions.push({ isbn13: signedResult.isbn13 })
   }
 
-  if (whereConditions.length === 0) {
-    return null
+  if (whereConditions.length > 0) {
+    const byIdentifier = await prisma.edition.findFirst({ where: { OR: whereConditions } })
+    if (byIdentifier) {
+      return byIdentifier
+    }
   }
 
-  return prisma.edition.findFirst({ where: { OR: whereConditions } })
+  // Amazon-only fallback: when the source has an ASIN but no ISBN/Google ID
+  // (e.g., Kindle-only books), the identifier lookup misses. AmazonBook.asin is
+  // @unique, so dedupe through that index.
+  const amazonSource = signedResult.sources?.find((s) => s.provider === 'amazon')
+  const asin = (amazonSource?.data as SearchProviderResult | undefined)?.asin
+  if (asin) {
+    const amazonLink = await prisma.amazonBook.findUnique({
+      where: { asin },
+      select: { editionId: true },
+    })
+    if (amazonLink) {
+      const linkedEdition = await prisma.edition.findUnique({
+        where: { id: amazonLink.editionId },
+      })
+      if (linkedEdition && (bookId === undefined || linkedEdition.bookId === bookId)) {
+        return linkedEdition
+      }
+    }
+  }
+
+  return null
 }
 
 /**
@@ -474,29 +504,8 @@ export async function findOrCreateEditionFromSignedResult(
   const googleId = googleSource?.data?.googleId || googleSource?.data?.id || signedResult.googleId
 
   // Try to find an existing edition (no create) using shared matching logic.
-  let existingEdition = await findExistingEdition(signedResult)
-
-  // Amazon-only fallback: when the source has an ASIN but no ISBN/Google ID
-  // (e.g., Kindle-only books), the standard Edition lookup misses. AmazonBook.asin
-  // is @unique, so dedupe through that index to avoid creating orphan Editions.
-  if (!existingEdition) {
-    const amazonSource = signedResult.sources.find(s => s.provider === 'amazon')
-    const asin = (amazonSource?.data as SearchProviderResult | undefined)?.asin
-    if (asin) {
-      const amazonLink = await prisma.amazonBook.findUnique({
-        where: { asin },
-        select: { editionId: true },
-      })
-      if (amazonLink) {
-        const linkedEdition = await prisma.edition.findUnique({
-          where: { id: amazonLink.editionId },
-        })
-        if (linkedEdition && linkedEdition.bookId === bookId) {
-          existingEdition = linkedEdition
-        }
-      }
-    }
-  }
+  // The bookId guard keeps the ASIN fallback from linking to the wrong book.
+  const existingEdition = await findExistingEdition(signedResult, bookId)
 
   if (existingEdition) {
     // Update provider records for existing edition

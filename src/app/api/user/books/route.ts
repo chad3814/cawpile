@@ -217,28 +217,62 @@ export async function POST(request: NextRequest) {
       })
       responseAction = 'updated'
     } else {
-      // create or reread: a fresh row.
-      const readNumber = action.kind === 'reread' ? action.readNumber : 1
-      userBook = await prisma.$transaction(async (tx) => {
-        const created = await tx.userBook.create({
-          data: {
-            userId: user.id,
-            editionId: edition.id,
-            status,
-            startDate: startDate ? new Date(startDate) : null,
-            finishDate: finishDate ? new Date(finishDate) : null,
-            progress: progress || 0,
-            dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
-            readNumber,
-            ...trackingFields,
-          },
-          include: includeEdition,
-        })
-        await recomputeBookStats(edition.bookId, tx)
-        return created
-      })
-      responseAction = action.kind === 'reread' ? 'reread' : 'created'
-      message = action.kind === 'reread' ? 'Added as a re-read' : 'Added to your library'
+      // create or reread: a fresh row. Compute readNumber INSIDE the transaction
+      // (max existing + 1) and retry on a unique-constraint violation, so two
+      // concurrent re-tracks of the same edition (double-submit, two tabs) resolve
+      // cleanly instead of racing on a stale readNumber and 500-ing.
+      const MAX_ATTEMPTS = 3
+      let created: Awaited<ReturnType<typeof prisma.userBook.create>> | undefined
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        try {
+          created = await prisma.$transaction(async (tx) => {
+            const current = await tx.userBook.findFirst({
+              where: { userId: user.id, editionId: edition.id },
+              orderBy: { readNumber: 'desc' },
+              select: { readNumber: true },
+            })
+            const readNumber = current ? current.readNumber + 1 : 1
+            const row = await tx.userBook.create({
+              data: {
+                userId: user.id,
+                editionId: edition.id,
+                status,
+                startDate: startDate ? new Date(startDate) : null,
+                finishDate: finishDate ? new Date(finishDate) : null,
+                progress: progress || 0,
+                dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
+                readNumber,
+                ...trackingFields,
+              },
+              include: includeEdition,
+            })
+            await recomputeBookStats(edition.bookId, tx)
+            return row
+          })
+          break
+        } catch (e) {
+          // P2002 = unique constraint violation on (userId, editionId, readNumber):
+          // another request claimed this readNumber first. Retry with a fresh max.
+          if (
+            e instanceof Prisma.PrismaClientKnownRequestError &&
+            e.code === 'P2002' &&
+            attempt < MAX_ATTEMPTS - 1
+          ) {
+            continue
+          }
+          throw e
+        }
+      }
+
+      if (!created) {
+        // Exhausted retries under sustained contention.
+        return NextResponse.json({ error: 'Failed to add book' }, { status: 409 })
+      }
+
+      userBook = created
+      const wasReread = created.readNumber > 1
+      responseAction = wasReread ? 'reread' : 'created'
+      message = wasReread ? 'Added as a re-read' : 'Added to your library'
     }
 
     return NextResponse.json({ userBook, action: responseAction, message })
