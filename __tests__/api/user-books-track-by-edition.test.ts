@@ -54,18 +54,23 @@ describe('POST /api/user/books — editionId branch', () => {
     mockGetCurrentUser.mockResolvedValue({ id: userId } as Awaited<ReturnType<typeof getCurrentUser>>)
     const res = await POST(postRequest({ editionId, status: 'WANT_TO_READ', format: ['EBOOK'] }))
     expect(res.status).toBe(200)
-    const created = await prisma.userBook.findUnique({
-      where: { userId_editionId: { userId, editionId } },
+    const created = await prisma.userBook.findFirst({
+      where: { userId, editionId },
     })
     expect(created).not.toBeNull()
     expect(created?.status).toBe('WANT_TO_READ')
   })
 
-  it('returns 400 when the edition is already in the library', async () => {
+  it('no-ops when the edition is already in the library at the same status', async () => {
+    // Re-tracking a book at its current live status is now an idempotent no-op
+    // (the old "already in library" 400 was replaced by graceful resolution).
     mockGetCurrentUser.mockResolvedValue({ id: userId } as Awaited<ReturnType<typeof getCurrentUser>>)
     await prisma.userBook.create({ data: { userId, editionId, status: 'WANT_TO_READ', format: ['EBOOK'] } })
     const res = await POST(postRequest({ editionId, status: 'WANT_TO_READ', format: ['EBOOK'] }))
-    expect(res.status).toBe(400)
+    expect(res.status).toBe(200)
+    const json = await res.json()
+    expect(json.action).toBe('noop')
+    expect(await prisma.userBook.count({ where: { userId, editionId } })).toBe(1)
   })
 
   it('returns 404 for an unknown edition id', async () => {

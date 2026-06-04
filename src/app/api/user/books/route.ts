@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-helpers'
 import { findOrCreateBook, findOrCreateEditionFromSignedResult } from '@/lib/db/books'
+import { resolveTrackingAction } from '@/lib/db/resolveTrackingAction'
 import { recomputeBookStats } from '@/lib/db/bookStats'
 import prisma from '@/lib/prisma'
 import { BookStatus, BookFormat, Prisma } from '@prisma/client'
@@ -32,7 +33,8 @@ export async function POST(request: NextRequest) {
       acquisitionOther,
       bookClubName,
       readathonName,
-      isReread
+      isReread,
+      dnfReason
     } = body as {
       signedResult?: SignedBookSearchResult
       editionId?: string
@@ -46,6 +48,7 @@ export async function POST(request: NextRequest) {
       bookClubName?: string
       readathonName?: string
       isReread?: boolean
+      dnfReason?: string
     }
 
     // Require exactly one source: an internal editionId (public page) or a
@@ -119,98 +122,126 @@ export async function POST(request: NextRequest) {
       edition = await findOrCreateEditionFromSignedResult(book.id, result)
     }
 
-    // Check if user already has this book (any readNumber)
-    const existingUserBook = await prisma.userBook.findFirst({
-      where: {
-        userId: user.id,
-        editionId: edition.id
-      }
+    // Find the user's latest read of this edition (highest readNumber), if any.
+    const latest = await prisma.userBook.findFirst({
+      where: { userId: user.id, editionId: edition.id },
+      orderBy: { readNumber: 'desc' },
+      select: { id: true, status: true, readNumber: true, startDate: true },
     })
 
-    if (existingUserBook) {
-      return NextResponse.json(
-        { error: 'Book already in library' },
-        { status: 400 }
-      )
-    }
+    const action = resolveTrackingAction(latest, status)
 
-    // Store book club/readathon names in autocomplete tables if provided
-    if (bookClubName) {
-      await prisma.userBookClub.upsert({
-        where: {
-          userId_name: {
-            userId: user.id,
-            name: bookClubName
-          }
-        },
-        update: {
-          lastUsed: new Date(),
-          usageCount: { increment: 1 }
-        },
-        create: {
-          userId: user.id,
-          name: bookClubName
-        }
-      })
-    }
-
-    if (readathonName) {
-      await prisma.userReadathon.upsert({
-        where: {
-          userId_name: {
-            userId: user.id,
-            name: readathonName
-          }
-        },
-        update: {
-          lastUsed: new Date(),
-          usageCount: { increment: 1 }
-        },
-        create: {
-          userId: user.id,
-          name: readathonName
-        }
-      })
-    }
-
-    // Create user book entry with new tracking fields and recompute book stats
-    // atomically so denormalized book/global stats stay consistent.
-    const userBook = await prisma.$transaction(async (tx) => {
-      const created = await tx.userBook.create({
-        data: {
-          userId: user.id,
-          editionId: edition.id,
-          status,
-          format: uniqueFormats,
-          startDate: startDate ? new Date(startDate) : null,
-          finishDate: finishDate ? new Date(finishDate) : null,
-          progress: progress || 0,
-          // New tracking fields
-          acquisitionMethod,
-          acquisitionOther: acquisitionMethod === 'Other' ? acquisitionOther : null,
-          bookClubName,
-          readathonName,
-          isReread: isReread || false
-        },
+    // A no-op: the book is already in the requested live status. Return it unchanged.
+    if (action.kind === 'noop') {
+      const existing = await prisma.userBook.findUnique({
+        where: { id: action.userBookId },
         include: {
           edition: {
-            include: {
-              book: true,
-              googleBook: true,
-              hardcoverBook: true,
-              ibdbBook: true,
-              amazonBook: true
-            }
-          }
-        }
+            include: { book: true, googleBook: true, hardcoverBook: true, ibdbBook: true, amazonBook: true },
+          },
+        },
       })
+      // In a no-op, the request status equals the existing record's status by definition.
+      const message =
+        status === BookStatus.READING ? 'Already in Currently Reading' : 'Already on your TBR'
+      return NextResponse.json({ userBook: existing, action: 'noop', message })
+    }
 
-      await recomputeBookStats(edition.bookId, tx)
+    // Store book club / readathon autocomplete entries (create/update/reread only).
+    if (bookClubName) {
+      await prisma.userBookClub.upsert({
+        where: { userId_name: { userId: user.id, name: bookClubName } },
+        update: { lastUsed: new Date(), usageCount: { increment: 1 } },
+        create: { userId: user.id, name: bookClubName },
+      })
+    }
+    if (readathonName) {
+      await prisma.userReadathon.upsert({
+        where: { userId_name: { userId: user.id, name: readathonName } },
+        update: { lastUsed: new Date(), usageCount: { increment: 1 } },
+        create: { userId: user.id, name: readathonName },
+      })
+    }
 
-      return created
-    })
+    const includeEdition = {
+      edition: {
+        include: { book: true, googleBook: true, hardcoverBook: true, ibdbBook: true, amazonBook: true },
+      },
+    }
 
-    return NextResponse.json({ userBook })
+    // Shared tracking fields applied to every write.
+    const trackingFields = {
+      format: uniqueFormats,
+      acquisitionMethod,
+      acquisitionOther: acquisitionMethod === 'Other' ? acquisitionOther : null,
+      bookClubName,
+      readathonName,
+      isReread: isReread || false,
+    }
+
+    let userBook
+    let responseAction: 'created' | 'reread' | 'updated'
+    let message: string
+
+    if (action.kind === 'update') {
+      // Build status-specific date/progress changes for an in-place update.
+      const updateData: Prisma.UserBookUpdateInput = { status, ...trackingFields }
+      if (status === BookStatus.READING) {
+        // Preserve an existing startDate (e.g. set while the book was on TBR); otherwise default to now.
+        updateData.startDate = startDate ? new Date(startDate) : (latest!.startDate ?? new Date())
+        message = 'Moved to Currently Reading'
+      } else if (status === BookStatus.WANT_TO_READ) {
+        updateData.startDate = null // back to TBR; progress/currentPage are kept
+        message = 'Moved to Want to Read'
+      } else if (status === BookStatus.COMPLETED) {
+        if (startDate) updateData.startDate = new Date(startDate)
+        updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
+        updateData.progress = 100
+        message = 'Marked as completed'
+      } else {
+        // DNF
+        if (startDate) updateData.startDate = new Date(startDate)
+        updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
+        updateData.dnfReason = dnfReason ?? null
+        message = 'Marked as did not finish'
+      }
+
+      userBook = await prisma.$transaction(async (tx) => {
+        const updated = await tx.userBook.update({
+          where: { id: action.userBookId },
+          data: updateData,
+          include: includeEdition,
+        })
+        await recomputeBookStats(edition.bookId, tx)
+        return updated
+      })
+      responseAction = 'updated'
+    } else {
+      // create or reread: a fresh row.
+      const readNumber = action.kind === 'reread' ? action.readNumber : 1
+      userBook = await prisma.$transaction(async (tx) => {
+        const created = await tx.userBook.create({
+          data: {
+            userId: user.id,
+            editionId: edition.id,
+            status,
+            startDate: startDate ? new Date(startDate) : null,
+            finishDate: finishDate ? new Date(finishDate) : null,
+            progress: progress || 0,
+            dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
+            readNumber,
+            ...trackingFields,
+          },
+          include: includeEdition,
+        })
+        await recomputeBookStats(edition.bookId, tx)
+        return created
+      })
+      responseAction = action.kind === 'reread' ? 'reread' : 'created'
+      message = action.kind === 'reread' ? 'Added as a re-read' : 'Added to your library'
+    }
+
+    return NextResponse.json({ userBook, action: responseAction, message })
   } catch (error) {
     console.error('Error adding book:', error)
     return NextResponse.json(
