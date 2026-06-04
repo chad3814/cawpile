@@ -433,6 +433,35 @@ function mapGoogleSource(source: SourceEntry, editionId: string): Prisma.GoogleB
 }
 
 /**
+ * Find an existing edition matching a signed search result WITHOUT creating one.
+ * Mirrors the matching used by findOrCreateEditionFromSignedResult
+ * (googleBooksId / isbn10 / isbn13). Returns null if nothing matches.
+ */
+export async function findExistingEdition(
+  signedResult: SignedBookSearchResult,
+): Promise<Edition | null> {
+  const whereConditions: Prisma.EditionWhereInput[] = []
+
+  const googleSource = signedResult.sources?.find((s) => s.provider === 'google')
+  const googleId = googleSource?.data?.googleId || googleSource?.data?.id || signedResult.googleId
+  if (googleId) {
+    whereConditions.push({ googleBooksId: googleId })
+  }
+  if (signedResult.isbn10) {
+    whereConditions.push({ isbn10: signedResult.isbn10 })
+  }
+  if (signedResult.isbn13) {
+    whereConditions.push({ isbn13: signedResult.isbn13 })
+  }
+
+  if (whereConditions.length === 0) {
+    return null
+  }
+
+  return prisma.edition.findFirst({ where: { OR: whereConditions } })
+}
+
+/**
  * Create edition and all provider records from a verified signed result
  * This function assumes the signature has already been verified
  */
@@ -440,35 +469,12 @@ export async function findOrCreateEditionFromSignedResult(
   bookId: string,
   signedResult: SignedBookSearchResult
 ): Promise<Edition> {
-  // Build where conditions to find existing edition
-  const whereConditions: Prisma.EditionWhereInput[] = []
-
-  // Check for google source to get googleBooksId
+  // Derive googleId for use in the create path below
   const googleSource = signedResult.sources.find(s => s.provider === 'google')
   const googleId = googleSource?.data?.googleId || googleSource?.data?.id || signedResult.googleId
 
-  if (googleId) {
-    whereConditions.push({ googleBooksId: googleId })
-  }
-
-  if (signedResult.isbn10) {
-    whereConditions.push({ isbn10: signedResult.isbn10 })
-  }
-
-  if (signedResult.isbn13) {
-    whereConditions.push({ isbn13: signedResult.isbn13 })
-  }
-
-  // Try to find existing edition
-  let existingEdition: Edition | null = null
-
-  if (whereConditions.length > 0) {
-    existingEdition = await prisma.edition.findFirst({
-      where: {
-        OR: whereConditions
-      }
-    })
-  }
+  // Try to find an existing edition (no create) using shared matching logic.
+  let existingEdition = await findExistingEdition(signedResult)
 
   // Amazon-only fallback: when the source has an ASIN but no ISBN/Google ID
   // (e.g., Kindle-only books), the standard Edition lookup misses. AmazonBook.asin
