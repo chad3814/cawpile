@@ -18,6 +18,9 @@ interface AddBookWizardProps {
   onClose: () => void
   book: SignedBookSearchResult | null
   onComplete: () => void
+  // Edition mode: track an existing edition (e.g. from the public book page).
+  editionId?: string
+  editionDisplay?: { title: string; authors: string[]; imageUrl?: string | null }
 }
 
 type BookStatus = 'WANT_TO_READ' | 'READING' | 'COMPLETED'
@@ -38,9 +41,10 @@ interface BookFormData {
   isReread?: boolean
 }
 
-export default function AddBookWizard({ isOpen, onClose, book, onComplete }: AddBookWizardProps) {
+export default function AddBookWizard({ isOpen, onClose, book, onComplete, editionId, editionDisplay }: AddBookWizardProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [formData, setFormData] = useState<BookFormData>({
     status: 'WANT_TO_READ',
     format: [],
@@ -145,9 +149,10 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
   }
 
   const handleSubmit = async () => {
-    if (!book) return
+    if (!book && !editionId) return
 
     setIsSubmitting(true)
+    setSubmitError(null)
 
     try {
       // Determine actual status and finishDate
@@ -174,7 +179,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          signedResult: book,
+          ...(editionId ? { editionId } : { signedResult: book }),
           status: actualStatus,
           format: formData.format,
           startDate: formData.startDate,
@@ -190,20 +195,28 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
       })
 
       if (!response.ok) {
-        throw new Error('Failed to add book')
+        const data = await response.json().catch(() => ({}))
+        setSubmitError(data.error || 'Failed to add book')
+        return
       }
 
       onComplete()
       handleClose()
     } catch (error) {
       console.error('Error adding book:', error)
-      // In production, show error toast
+      setSubmitError('Failed to add book')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (!book) return null
+  const display = editionId && editionDisplay
+    ? editionDisplay
+    : book
+      ? { title: book.title, authors: book.authors, imageUrl: book.imageUrl }
+      : null
+
+  if (!display) return null
 
   const minDate = formData.startDate || undefined
   const maxDate = new Date().toISOString().split('T')[0]
@@ -264,10 +277,10 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
 
                 {/* Book Info */}
                 <div className="flex space-x-3 mb-4 pb-4 border-b border-border">
-                  {book.imageUrl && (
+                  {display.imageUrl && (
                     <Image
-                      src={book.imageUrl}
-                      alt={book.title}
+                      src={display.imageUrl}
+                      alt={display.title}
                       width={40}
                       height={60}
                       className="rounded"
@@ -275,13 +288,19 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete }: Add
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-card-foreground truncate">
-                      {book.title}
+                      {display.title}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {book.authors.join(', ')}
+                      {display.authors.join(', ')}
                     </p>
                   </div>
                 </div>
+
+                {submitError && (
+                  <div className="mb-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                    {submitError}
+                  </div>
+                )}
 
                 {/* Step Content */}
                 <div className="mb-6">
