@@ -82,4 +82,63 @@ describe('bookRankings', () => {
     const result = await getNewestBooks(12, 0);
     expect(result[0].coverUrl).toBeNull();
   });
+
+  function detailRow(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'b1',
+      title: 'Book One',
+      authors: ['Author A'],
+      createdAt: new Date('2026-05-01T00:00:00Z'),
+      readerCount: 42,
+      bayesianRating: 8.37,
+      ratingCount: 4,
+      ratingSum: 30,
+      editions: [
+        {
+          defaultCoverProvider: null,
+          customCoverUrl: null,
+          hardcoverBook: { imageUrl: 'https://x/cover.jpg', description: 'HC desc' },
+          googleBook: { imageUrl: null, description: 'Google desc' },
+          ibdbBook: null,
+          amazonBook: null,
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  it('detail mode returns averageRating, ratingCount and description', async () => {
+    (mockPrisma.book.findMany as jest.Mock).mockResolvedValue([detailRow()]);
+    const [book] = await getNewestBooks(12, 0, true);
+    expect(book.averageRating).toBe(7.5); // 30 / 4 = 7.5
+    expect(book.ratingCount).toBe(4);
+    expect(book.description).toBe('Google desc'); // google preferred over hardcover
+  });
+
+  it('detail mode yields null averageRating when there are no ratings', async () => {
+    (mockPrisma.book.findMany as jest.Mock).mockResolvedValue([
+      detailRow({ ratingCount: 0, ratingSum: 0 }),
+    ]);
+    const [book] = await getNewestBooks(12, 0, true);
+    expect(book.averageRating).toBeNull();
+  });
+
+  it('detail mode falls back to a null description when no provider has one', async () => {
+    (mockPrisma.book.findMany as jest.Mock).mockResolvedValue([
+      detailRow({
+        editions: [
+          {
+            defaultCoverProvider: null,
+            customCoverUrl: null,
+            hardcoverBook: { imageUrl: 'https://x/cover.jpg', description: null },
+            googleBook: null,
+            ibdbBook: null,
+            amazonBook: null,
+          },
+        ],
+      }),
+    ]);
+    const [book] = await getNewestBooks(12, 0, true);
+    expect(book.description).toBeNull();
+  });
 });
