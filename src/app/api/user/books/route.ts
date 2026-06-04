@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (editionId && signedResult) {
+      return NextResponse.json(
+        { error: 'Provide either editionId or signedResult, not both' },
+        { status: 400 }
+      )
+    }
+
     // Validate format array
     if (!format || !Array.isArray(format) || format.length === 0) {
       return NextResponse.json(
@@ -96,20 +103,20 @@ export async function POST(request: NextRequest) {
       }
       edition = existingEdition
     } else {
-      // signedResult is guaranteed present here by the check above.
-      if (!verifySignature(signedResult!)) {
+      const result = signedResult as SignedBookSearchResult
+      if (!verifySignature(result)) {
         return NextResponse.json(
           { error: 'Invalid signature - book data may have been tampered with' },
           { status: 400 }
         )
       }
       const book = await findOrCreateBook(
-        signedResult!.title,
-        signedResult!.authors,
+        result.title,
+        result.authors,
         'en', // Default to English, can be enhanced later
-        signedResult!.categories // Pass categories for book type detection
+        result.categories // Pass categories for book type detection
       )
-      edition = await findOrCreateEditionFromSignedResult(book.id, signedResult!)
+      edition = await findOrCreateEditionFromSignedResult(book.id, result)
     }
 
     // Check if user already has this book

@@ -79,4 +79,15 @@ describe('POST /api/user/books — editionId branch', () => {
     const res = await POST(postRequest({ editionId, status: 'WANT_TO_READ', format: ['EBOOK'] }))
     expect(res.status).toBe(401)
   })
+
+  it('returns 400 when both editionId and signedResult are provided', async () => {
+    mockGetCurrentUser.mockResolvedValue({ id: userId } as Awaited<ReturnType<typeof getCurrentUser>>)
+    const res = await POST(postRequest({
+      editionId,
+      signedResult: { title: 'x', authors: ['y'] },
+      status: 'WANT_TO_READ',
+      format: ['EBOOK'],
+    }))
+    expect(res.status).toBe(400)
+  })
 })
