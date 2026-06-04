@@ -60,5 +60,14 @@ describe('TrackBookButton', () => {
     mockUseSession.mockReturnValue({ data: { user: { id: 'u1' } }, status: 'authenticated' })
     render(<TrackBookButton {...props} />)
     expect(screen.getByTestId('wizard-open')).toBeInTheDocument()
+    expect(window.location.search).not.toContain('track')
+  })
+
+  it('does nothing while the session is loading', () => {
+    mockUseSession.mockReturnValue({ data: null, status: 'loading' })
+    render(<TrackBookButton {...props} />)
+    fireEvent.click(screen.getByRole('button', { name: /track book/i }))
+    expect(pushMock).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('wizard-open')).not.toBeInTheDocument()
   })
 })
