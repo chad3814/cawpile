@@ -122,47 +122,6 @@ export async function POST(request: NextRequest) {
       edition = await findOrCreateEditionFromSignedResult(book.id, result)
     }
 
-    // Find the user's latest read of this edition (highest readNumber), if any.
-    const latest = await prisma.userBook.findFirst({
-      where: { userId: user.id, editionId: edition.id },
-      orderBy: { readNumber: 'desc' },
-      select: { id: true, status: true, readNumber: true, startDate: true },
-    })
-
-    const action = resolveTrackingAction(latest, status)
-
-    // A no-op: the book is already in the requested live status. Return it unchanged.
-    if (action.kind === 'noop') {
-      const existing = await prisma.userBook.findUnique({
-        where: { id: action.userBookId },
-        include: {
-          edition: {
-            include: { book: true, googleBook: true, hardcoverBook: true, ibdbBook: true, amazonBook: true },
-          },
-        },
-      })
-      // In a no-op, the request status equals the existing record's status by definition.
-      const message =
-        status === BookStatus.READING ? 'Already in Currently Reading' : 'Already on your TBR'
-      return NextResponse.json({ userBook: existing, action: 'noop', message })
-    }
-
-    // Store book club / readathon autocomplete entries (create/update/reread only).
-    if (bookClubName) {
-      await prisma.userBookClub.upsert({
-        where: { userId_name: { userId: user.id, name: bookClubName } },
-        update: { lastUsed: new Date(), usageCount: { increment: 1 } },
-        create: { userId: user.id, name: bookClubName },
-      })
-    }
-    if (readathonName) {
-      await prisma.userReadathon.upsert({
-        where: { userId_name: { userId: user.id, name: readathonName } },
-        update: { lastUsed: new Date(), usageCount: { increment: 1 } },
-        create: { userId: user.id, name: readathonName },
-      })
-    }
-
     const includeEdition = {
       edition: {
         include: { book: true, googleBook: true, hardcoverBook: true, ibdbBook: true, amazonBook: true },
@@ -179,103 +138,139 @@ export async function POST(request: NextRequest) {
       isReread: isReread || false,
     }
 
-    let userBook
-    let responseAction: 'created' | 'reread' | 'updated'
-    let message: string
-
-    if (action.kind === 'update') {
-      // Build status-specific date/progress changes for an in-place update.
-      const updateData: Prisma.UserBookUpdateInput = { status, ...trackingFields }
-      if (status === BookStatus.READING) {
-        // Preserve an existing startDate (e.g. set while the book was on TBR); otherwise default to now.
-        updateData.startDate = startDate ? new Date(startDate) : (latest!.startDate ?? new Date())
-        message = 'Moved to Currently Reading'
-      } else if (status === BookStatus.WANT_TO_READ) {
-        updateData.startDate = null // back to TBR; progress/currentPage are kept
-        message = 'Moved to Want to Read'
-      } else if (status === BookStatus.COMPLETED) {
-        if (startDate) updateData.startDate = new Date(startDate)
-        updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
-        updateData.progress = 100
-        message = 'Marked as completed'
-      } else {
-        // DNF
-        if (startDate) updateData.startDate = new Date(startDate)
-        updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
-        updateData.dnfReason = dnfReason ?? null
-        message = 'Marked as did not finish'
-      }
-
-      userBook = await prisma.$transaction(async (tx) => {
-        const updated = await tx.userBook.update({
-          where: { id: action.userBookId },
-          data: updateData,
-          include: includeEdition,
+    // Record book club / readathon autocomplete usage. Runs only for writes
+    // (never a no-op) and exactly once, after the write succeeds.
+    const recordAutocomplete = async () => {
+      if (bookClubName) {
+        await prisma.userBookClub.upsert({
+          where: { userId_name: { userId: user.id, name: bookClubName } },
+          update: { lastUsed: new Date(), usageCount: { increment: 1 } },
+          create: { userId: user.id, name: bookClubName },
         })
-        await recomputeBookStats(edition.bookId, tx)
-        return updated
-      })
-      responseAction = 'updated'
-    } else {
-      // create or reread: a fresh row. Compute readNumber INSIDE the transaction
-      // (max existing + 1) and retry on a unique-constraint violation, so two
-      // concurrent re-tracks of the same edition (double-submit, two tabs) resolve
-      // cleanly instead of racing on a stale readNumber and 500-ing.
-      const MAX_ATTEMPTS = 3
-      let created: Awaited<ReturnType<typeof prisma.userBook.create>> | undefined
-      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        try {
-          created = await prisma.$transaction(async (tx) => {
-            const current = await tx.userBook.findFirst({
-              where: { userId: user.id, editionId: edition.id },
-              orderBy: { readNumber: 'desc' },
-              select: { readNumber: true },
-            })
-            const readNumber = current ? current.readNumber + 1 : 1
-            const row = await tx.userBook.create({
-              data: {
-                userId: user.id,
-                editionId: edition.id,
-                status,
-                startDate: startDate ? new Date(startDate) : null,
-                finishDate: finishDate ? new Date(finishDate) : null,
-                progress: progress || 0,
-                dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
-                readNumber,
-                ...trackingFields,
-              },
-              include: includeEdition,
-            })
-            await recomputeBookStats(edition.bookId, tx)
-            return row
-          })
-          break
-        } catch (e) {
-          // P2002 = unique constraint violation on (userId, editionId, readNumber):
-          // another request claimed this readNumber first. Retry with a fresh max.
-          if (
-            e instanceof Prisma.PrismaClientKnownRequestError &&
-            e.code === 'P2002' &&
-            attempt < MAX_ATTEMPTS - 1
-          ) {
-            continue
-          }
-          throw e
-        }
       }
-
-      if (!created) {
-        // Exhausted retries under sustained contention.
-        return NextResponse.json({ error: 'Failed to add book' }, { status: 409 })
+      if (readathonName) {
+        await prisma.userReadathon.upsert({
+          where: { userId_name: { userId: user.id, name: readathonName } },
+          update: { lastUsed: new Date(), usageCount: { increment: 1 } },
+          create: { userId: user.id, name: readathonName },
+        })
       }
-
-      userBook = created
-      const wasReread = created.readNumber > 1
-      responseAction = wasReread ? 'reread' : 'created'
-      message = wasReread ? 'Added as a re-read' : 'Added to your library'
     }
 
-    return NextResponse.json({ userBook, action: responseAction, message })
+    // Resolve the tracking action against the user's latest read and execute it.
+    // On a readNumber unique-constraint race (concurrent re-tracks of the same
+    // edition), re-read `latest` and re-resolve: a row another request just
+    // created may now make this a no-op or in-place update rather than a spurious
+    // extra read.
+    const MAX_ATTEMPTS = 3
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const latest = await prisma.userBook.findFirst({
+        where: { userId: user.id, editionId: edition.id },
+        orderBy: { readNumber: 'desc' },
+        select: { id: true, status: true, readNumber: true, startDate: true },
+      })
+
+      const action = resolveTrackingAction(latest, status)
+
+      // Already in the requested live status: nothing to do, return it unchanged.
+      if (action.kind === 'noop') {
+        const existing = await prisma.userBook.findUnique({
+          where: { id: action.userBookId },
+          include: includeEdition,
+        })
+        // In a no-op, the request status equals the existing record's status.
+        const message =
+          status === BookStatus.READING ? 'Already in Currently Reading' : 'Already on your TBR'
+        return NextResponse.json({ userBook: existing, action: 'noop', message })
+      }
+
+      // Live row in a different status: update it in place.
+      if (action.kind === 'update') {
+        const updateData: Prisma.UserBookUpdateInput = { status, ...trackingFields }
+        let message: string
+        if (status === BookStatus.READING) {
+          // Preserve an existing startDate (e.g. set while on TBR); otherwise default to now.
+          updateData.startDate = startDate ? new Date(startDate) : (latest!.startDate ?? new Date())
+          message = 'Moved to Currently Reading'
+        } else if (status === BookStatus.WANT_TO_READ) {
+          updateData.startDate = null // back to TBR; progress/currentPage are kept
+          message = 'Moved to Want to Read'
+        } else if (status === BookStatus.COMPLETED) {
+          if (startDate) updateData.startDate = new Date(startDate)
+          updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
+          updateData.progress = 100
+          message = 'Marked as completed'
+        } else {
+          // DNF
+          if (startDate) updateData.startDate = new Date(startDate)
+          updateData.finishDate = finishDate ? new Date(finishDate) : new Date()
+          updateData.dnfReason = dnfReason ?? null
+          message = 'Marked as did not finish'
+        }
+
+        const updated = await prisma.$transaction(async (tx) => {
+          const row = await tx.userBook.update({
+            where: { id: action.userBookId },
+            data: updateData,
+            include: includeEdition,
+          })
+          await recomputeBookStats(edition.bookId, tx)
+          return row
+        })
+        await recordAutocomplete()
+        return NextResponse.json({ userBook: updated, action: 'updated', message })
+      }
+
+      // create or reread: a fresh row. Compute readNumber inside the transaction
+      // (max existing + 1) so it can't go stale. A unique-constraint violation
+      // means another request won the race — loop to re-resolve against the now
+      // newer `latest` (which may turn this into a no-op or update).
+      try {
+        const created = await prisma.$transaction(async (tx) => {
+          const current = await tx.userBook.findFirst({
+            where: { userId: user.id, editionId: edition.id },
+            orderBy: { readNumber: 'desc' },
+            select: { readNumber: true },
+          })
+          const readNumber = current ? current.readNumber + 1 : 1
+          const row = await tx.userBook.create({
+            data: {
+              userId: user.id,
+              editionId: edition.id,
+              status,
+              startDate: startDate ? new Date(startDate) : null,
+              finishDate: finishDate ? new Date(finishDate) : null,
+              progress: progress || 0,
+              dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
+              readNumber,
+              ...trackingFields,
+            },
+            include: includeEdition,
+          })
+          await recomputeBookStats(edition.bookId, tx)
+          return row
+        })
+        await recordAutocomplete()
+        const wasReread = created.readNumber > 1
+        return NextResponse.json({
+          userBook: created,
+          action: wasReread ? 'reread' : 'created',
+          message: wasReread ? 'Added as a re-read' : 'Added to your library',
+        })
+      } catch (e) {
+        if (
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === 'P2002' &&
+          attempt < MAX_ATTEMPTS - 1
+        ) {
+          continue
+        }
+        throw e
+      }
+    }
+
+    // Exhausted retries under sustained contention.
+    return NextResponse.json({ error: 'Failed to add book' }, { status: 409 })
   } catch (error) {
     console.error('Error adding book:', error)
     return NextResponse.json(

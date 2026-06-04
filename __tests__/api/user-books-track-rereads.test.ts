@@ -157,4 +157,19 @@ describe('POST /api/user/books - re-reads and duplicate tracking', () => {
     expect(json.action).toBe('created')
     expect(json.userBook.readNumber).toBe(1)
   })
+
+  it('dedupes a concurrent double-submit instead of minting a phantom re-read', async () => {
+    // Two simultaneous "start reading" requests for a fresh edition. The unique
+    // (userId, editionId, readNumber) constraint forces one to lose the race; the
+    // loser must re-resolve against the now-existing READING row rather than mint
+    // read #2. The fix's invariant — never more than one read created — is what we
+    // assert. Bounds (<= 1) rather than exact equality so a rare transient Neon
+    // lock/timeout (which rolls a request back) can't flake this; the regression
+    // it guards against produces TWO reads (created + reread), which still fails.
+    const [a, b] = await Promise.all([post({ status: 'READING' }), post({ status: 'READING' })])
+    const actions = [(await a.json()).action, (await b.json()).action]
+    const rowAdding = actions.filter((x) => x === 'created' || x === 'reread')
+    expect(rowAdding.length).toBeLessThanOrEqual(1)
+    expect(await prisma.userBook.count({ where: { userId, editionId } })).toBeLessThanOrEqual(1)
+  })
 })
