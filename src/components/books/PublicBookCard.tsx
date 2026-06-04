@@ -1,27 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import type { RankedBook, BookStat } from '@/lib/db/bookRankings';
-
-function formatStat(stat: BookStat): string {
-  switch (stat.kind) {
-    case 'addedAt': {
-      const label = new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'UTC',
-      }).format(new Date(stat.value));
-      return `Added ${label}`;
-    }
-    case 'readers':
-      return `${stat.value} ${stat.value === 1 ? 'reader' : 'readers'}`;
-    case 'rating':
-      return `${stat.value.toFixed(1)} avg`;
-    default: {
-      const _exhaustive: never = stat;
-      return _exhaustive;
-    }
-  }
-}
+import type { RankedBook } from '@/lib/db/bookRankings';
+import { formatBookStat } from '@/lib/books/formatBookStat';
 
 export default function PublicBookCard({ book }: { book: RankedBook }) {
   return (
@@ -66,7 +46,7 @@ export default function PublicBookCard({ book }: { book: RankedBook }) {
         {book.title}
       </h3>
       <p className="line-clamp-1 text-xs text-muted-foreground">{book.authors.join(', ')}</p>
-      <p className="mt-1 text-xs font-medium text-primary">{formatStat(book.stat)}</p>
+      <p className="mt-1 text-xs font-medium text-primary">{formatBookStat(book.stat)}</p>
     </Link>
   );
 }
