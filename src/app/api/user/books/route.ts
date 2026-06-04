@@ -119,13 +119,11 @@ export async function POST(request: NextRequest) {
       edition = await findOrCreateEditionFromSignedResult(book.id, result)
     }
 
-    // Check if user already has this book
-    const existingUserBook = await prisma.userBook.findUnique({
+    // Check if user already has this book (any readNumber)
+    const existingUserBook = await prisma.userBook.findFirst({
       where: {
-        userId_editionId: {
-          userId: user.id,
-          editionId: edition.id
-        }
+        userId: user.id,
+        editionId: edition.id
       }
     })
 
