@@ -8,6 +8,7 @@ import { BookType } from '@/types/cawpile';
 import { sanitizeHtml } from '@/lib/utils/sanitize';
 import { getCoverImageUrl } from '@/lib/utils/getCoverImageUrl';
 import { BookPageData, PublicBookReview } from '@/types/book-page';
+import TrackBookButton from '@/components/book/TrackBookButton';
 
 interface BookPageClientProps {
   data: BookPageData;
@@ -129,6 +130,16 @@ export default function BookPageClient({ data }: BookPageClientProps) {
                   </span>
                 ))}
               </p>
+
+              <div className="mb-4">
+                <TrackBookButton
+                  bookId={book.id}
+                  editionId={edition.id}
+                  title={displayTitle}
+                  authors={book.authors}
+                  imageUrl={imageUrl}
+                />
+              </div>
 
               {aggregatedRating && (
                 <div className="flex flex-col gap-2 p-4 bg-muted/50 rounded-lg">
