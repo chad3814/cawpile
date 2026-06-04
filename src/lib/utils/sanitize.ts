@@ -45,16 +45,43 @@ export function sanitizeHtml(html: string | null | undefined): string {
 }
 
 /**
+ * Decodes the common HTML entities found in provider book descriptions into
+ * their literal characters. Numeric (decimal/hex) refs are decoded first, then
+ * the named refs, with `&amp;` decoded last so a single level of encoding is
+ * resolved (e.g. `&amp;lt;` -> `&lt;`, not `<`). Out-of-range numeric refs are
+ * left untouched rather than throwing.
+ */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#(\d+);/g, (match, dec) => {
+      const code = parseInt(dec, 10)
+      return code <= 0x10ffff ? String.fromCodePoint(code) : match
+    })
+    .replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+      const code = parseInt(hex, 16)
+      return code <= 0x10ffff ? String.fromCodePoint(code) : match
+    })
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+}
+
+/**
  * Strips all HTML tags and converts to plain text.
- * Converts line break tags to newlines, then strips remaining tags.
+ * Converts line break tags to newlines, then strips remaining tags, then
+ * decodes HTML entities (`&amp;` -> `&`, `&#39;` -> `'`, etc.) so the result is
+ * display-ready text rather than React-escaped entity markup.
  * Collapses multiple consecutive newlines to a single newline.
  *
  * @param html - Raw HTML string to convert to plain text
- * @returns Plain text string with HTML stripped and line breaks converted
+ * @returns Plain text string with HTML stripped, entities decoded, and line breaks converted
  *
  * @example
- * stripHtmlToText('<b>Bold</b><br/>New line<p>Paragraph</p>')
- * // Returns: 'Bold\nNew line\nParagraph'
+ * stripHtmlToText('<b>Bold</b><br/>New line<p>Rock &amp; roll</p>')
+ * // Returns: 'Bold\nNew line\nRock & roll'
  */
 export function stripHtmlToText(html: string | null | undefined): string {
   if (!html) {
@@ -71,6 +98,10 @@ export function stripHtmlToText(html: string | null | undefined): string {
 
   // Strip all remaining HTML tags
   text = text.replace(/<[^>]*>/g, '')
+
+  // Decode HTML entities into literal characters (done after tag stripping so a
+  // decoded "<"/">" is treated as literal text, not a tag).
+  text = decodeHtmlEntities(text)
 
   // Collapse multiple consecutive newlines to single newline
   text = text.replace(/\n{2,}/g, '\n')
