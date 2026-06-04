@@ -58,3 +58,4 @@ services/video-gen/out/
 services/video-gen/.env*
 services/video-gen/secrets/
 services/video-gen/build/
+.superpowers/
