@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const {
       signedResult,
+      editionId,
       status,
       format,
       startDate,
@@ -33,7 +34,8 @@ export async function POST(request: NextRequest) {
       readathonName,
       isReread
     } = body as {
-      signedResult: SignedBookSearchResult
+      signedResult?: SignedBookSearchResult
+      editionId?: string
       status: BookStatus
       format: BookFormat[]
       startDate?: string
@@ -46,18 +48,11 @@ export async function POST(request: NextRequest) {
       isReread?: boolean
     }
 
-    // Validate signed result is provided
-    if (!signedResult) {
+    // Require exactly one source: an internal editionId (public page) or a
+    // signed search result (search-driven add flow).
+    if (!signedResult && !editionId) {
       return NextResponse.json(
-        { error: 'Signed result is required' },
-        { status: 400 }
-      )
-    }
-
-    // Verify signature before processing
-    if (!verifySignature(signedResult)) {
-      return NextResponse.json(
-        { error: 'Invalid signature - book data may have been tampered with' },
+        { error: 'Either editionId or signedResult is required' },
         { status: 400 }
       )
     }
@@ -84,19 +79,38 @@ export async function POST(request: NextRequest) {
     // Remove duplicates from format array
     const uniqueFormats = Array.from(new Set(format))
 
-    // Extract book data from the verified signed result
-    const bookData = signedResult
+    // Resolve the edition: look up an existing one by id, or verify + create
+    // from the signed search result.
+    let edition: { id: string; bookId: string }
 
-    // Find or create book (now with book type detection)
-    const book = await findOrCreateBook(
-      bookData.title,
-      bookData.authors,
-      'en', // Default to English, can be enhanced later
-      bookData.categories // Pass categories for book type detection
-    )
-
-    // Find or create edition using the verified signed result data
-    const edition = await findOrCreateEditionFromSignedResult(book.id, signedResult)
+    if (editionId) {
+      const existingEdition = await prisma.edition.findUnique({
+        where: { id: editionId },
+        select: { id: true, bookId: true },
+      })
+      if (!existingEdition) {
+        return NextResponse.json(
+          { error: 'Edition not found' },
+          { status: 404 }
+        )
+      }
+      edition = existingEdition
+    } else {
+      // signedResult is guaranteed present here by the check above.
+      if (!verifySignature(signedResult!)) {
+        return NextResponse.json(
+          { error: 'Invalid signature - book data may have been tampered with' },
+          { status: 400 }
+        )
+      }
+      const book = await findOrCreateBook(
+        signedResult!.title,
+        signedResult!.authors,
+        'en', // Default to English, can be enhanced later
+        signedResult!.categories // Pass categories for book type detection
+      )
+      edition = await findOrCreateEditionFromSignedResult(book.id, signedResult!)
+    }
 
     // Check if user already has this book
     const existingUserBook = await prisma.userBook.findUnique({
