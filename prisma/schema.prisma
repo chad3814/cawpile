@@ -238,6 +238,7 @@ model UserBook {
   bookClubName             String?  @db.VarChar(100)
   readathonName            String?  @db.VarChar(100)
   isReread                 Boolean? @default(false)
+  readNumber               Int      @default(1)
   dnfReason                String?  @db.VarChar(500)
   lgbtqRepresentation      String? // Yes, No, Unknown
   lgbtqDetails             String?  @db.VarChar(500)
@@ -262,7 +263,7 @@ model UserBook {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  @@unique([userId, editionId])
+  @@unique([userId, editionId, readNumber])
   @@index([userId, createdAt])
   @@index([userId, status, isPinned, sortOrder])
 }
