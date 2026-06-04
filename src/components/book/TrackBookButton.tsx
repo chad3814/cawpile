@@ -38,6 +38,7 @@ export default function TrackBookButton({
   }, [status, bookId])
 
   const handleClick = () => {
+    if (status === 'loading') return
     if (status === 'authenticated') {
       setIsWizardOpen(true)
       return
@@ -51,11 +52,17 @@ export default function TrackBookButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={added}
+        disabled={added || status === 'loading'}
         className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:cursor-default disabled:opacity-70 focus-ring"
       >
         {added ? 'Added to your library' : 'Track book'}
       </button>
+
+      {added && (
+        <span role="status" className="sr-only">
+          Added to your library
+        </span>
+      )}
 
       <AddBookWizard
         isOpen={isWizardOpen}
