@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import PublicBookCard from './PublicBookCard';
-import type { RankedBook } from '@/lib/db/bookRankings';
+import BookListRow from './BookListRow';
+import type { RankedBookDetail } from '@/lib/db/bookRankings';
 import { BOOKS_PAGE_SIZE } from '@/lib/books/constants';
 
 interface BooksSectionClientProps {
   section: string;
   title: string;
-  initialBooks: RankedBook[];
+  initialBooks: RankedBookDetail[];
   initialHasMore: boolean;
 }
 
@@ -18,7 +18,7 @@ export default function BooksSectionClient({
   initialBooks,
   initialHasMore,
 }: BooksSectionClientProps) {
-  const [books, setBooks] = useState<RankedBook[]>(initialBooks);
+  const [books, setBooks] = useState<RankedBookDetail[]>(initialBooks);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -33,7 +33,7 @@ export default function BooksSectionClient({
         `/api/books?section=${section}&offset=${books.length}&limit=${BOOKS_PAGE_SIZE}`
       );
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      const data: { books: RankedBook[]; hasMore: boolean } = await res.json();
+      const data: { books: RankedBookDetail[]; hasMore: boolean } = await res.json();
       // Ranking sort keys shift as users track and rate books, so offset paging can
       // re-surface an already-shown book. Drop duplicates so a shifted book is never
       // rendered twice (which would also collide on the React key).
@@ -62,9 +62,9 @@ export default function BooksSectionClient({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="mb-6 text-2xl font-bold text-foreground">{title}</h1>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div className="flex flex-col gap-4">
         {books.map((book) => (
-          <PublicBookCard key={book.id} book={book} />
+          <BookListRow key={book.id} book={book} />
         ))}
       </div>
 

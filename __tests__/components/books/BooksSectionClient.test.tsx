@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import BooksSectionClient from '@/components/books/BooksSectionClient';
-import type { RankedBook } from '@/lib/db/bookRankings';
+import type { RankedBookDetail } from '@/lib/db/bookRankings';
 
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -27,8 +27,17 @@ beforeAll(() => {
   global.IntersectionObserver = MockIO;
 });
 
-function mk(id: string): RankedBook {
-  return { id, title: id, authors: ['A'], coverUrl: null, stat: { kind: 'readers', value: 1 } };
+function mk(id: string): RankedBookDetail {
+  return {
+    id,
+    title: id,
+    authors: ['A'],
+    coverUrl: null,
+    stat: { kind: 'readers', value: 1 },
+    averageRating: null,
+    ratingCount: 0,
+    description: null,
+  };
 }
 
 describe('BooksSectionClient', () => {
