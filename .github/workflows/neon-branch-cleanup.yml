@@ -1,0 +1,31 @@
+name: Neon - Cleanup preview branch
+
+# The Vercel-managed Neon integration creates a `preview/<git-branch>` database
+# branch for each preview deployment, but only deletes it when the Vercel
+# deployment is removed (Vercel's default retention is 180 days). That lets
+# preview branches accumulate and hit Neon's branch limit. This job deletes the
+# branch as soon as the PR is closed/merged.
+#
+# Required repository configuration (Settings -> Secrets and variables -> Actions):
+#   - Variable NEON_PROJECT_ID : the Neon project ID (Neon Console -> Project -> Settings)
+#   - Secret   NEON_API_KEY    : a Neon API key (Neon Console -> Account -> API keys)
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-preview-branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Delete the Neon preview branch for this PR
+        # Best-effort: a closed PR that never produced a preview branch (or a
+        # transient API error) should not mark the run as failed.
+        continue-on-error: true
+        uses: neondatabase/delete-branch-action@v3
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: preview/${{ github.head_ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
