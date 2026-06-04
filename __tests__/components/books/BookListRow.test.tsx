@@ -75,12 +75,12 @@ describe('BookListRow', () => {
     expect(screen.queryByText(/avg/)).not.toBeInTheDocument();
   });
 
-  it('renders the description as plain text (HTML stripped) and omits it when absent', () => {
+  it('renders the description as plain text (HTML stripped, entities decoded) and omits it when absent', () => {
     const { rerender } = render(
-      <BookListRow book={book({ description: '<p>A lone <b>astronaut</b>.</p>' })} />
+      <BookListRow book={book({ description: '<p>A lone <b>astronaut</b> &amp; a microbe.</p>' })} />
     );
-    // HTML tags are stripped to plain text — no markup leaks into the DOM.
-    expect(screen.getByText('A lone astronaut.')).toBeInTheDocument();
+    // HTML tags are stripped and entities decoded — no markup or raw entities leak.
+    expect(screen.getByText('A lone astronaut & a microbe.')).toBeInTheDocument();
     rerender(<BookListRow book={book({ description: null })} />);
     expect(screen.queryByText(/astronaut/)).not.toBeInTheDocument();
   });
