@@ -233,15 +233,22 @@ export async function POST(request: NextRequest) {
             select: { readNumber: true },
           })
           const readNumber = current ? current.readNumber + 1 : 1
+          // Terminal-status defaulting mirrors the in-place update path: a
+          // COMPLETED/DNF read defaults finishDate to now when absent, and
+          // COMPLETED forces progress to 100.
+          const isCompleted = status === BookStatus.COMPLETED
+          const isDnf = status === BookStatus.DNF
           const row = await tx.userBook.create({
             data: {
               userId: user.id,
               editionId: edition.id,
               status,
               startDate: startDate ? new Date(startDate) : null,
-              finishDate: finishDate ? new Date(finishDate) : null,
-              progress: progress || 0,
-              dnfReason: status === BookStatus.DNF ? (dnfReason ?? null) : null,
+              finishDate: finishDate
+                ? new Date(finishDate)
+                : (isCompleted || isDnf ? new Date() : null),
+              progress: isCompleted ? 100 : (progress || 0),
+              dnfReason: isDnf ? (dnfReason ?? null) : null,
               readNumber,
               ...trackingFields,
             },
