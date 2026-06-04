@@ -6,7 +6,7 @@
  * The component uses FormatMultiSelect which may render differently in tests vs browser.
  */
 import React from 'react'
-import { render, screen, act } from '@testing-library/react'
+import { render, screen, act, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AddBookWizard from '@/components/modals/AddBookWizard'
 
@@ -27,13 +27,19 @@ jest.mock('next/navigation', () => ({
   }),
 }))
 
-// Mock fetch for autocomplete
-global.fetch = jest.fn(() =>
-  Promise.resolve({
+// Mock fetch for autocomplete and tracking-status
+global.fetch = jest.fn((url: string) => {
+  if (typeof url === 'string' && url.includes('tracking-status')) {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({ status: null, readNumber: 0 }),
+    })
+  }
+  return Promise.resolve({
     ok: true,
     json: () => Promise.resolve([]),
   })
-) as jest.Mock
+}) as jest.Mock
 
 describe('AddBookWizard DNF Date Handling', () => {
   const mockBook = {
@@ -75,6 +81,39 @@ describe('AddBookWizard DNF Date Handling', () => {
     expect(screen.getByLabelText('Want to Read')).toBeInTheDocument()
     expect(screen.getByLabelText('Currently Reading')).toBeInTheDocument()
     expect(screen.getByLabelText('Completed')).toBeInTheDocument()
+  })
+
+  it('checks tracking status on open to detect a re-read', async () => {
+    global.fetch = jest.fn((url: string) => {
+      if (typeof url === 'string' && url.includes('tracking-status')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ status: 'COMPLETED', readNumber: 1 }),
+        } as Response)
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ userBook: {}, action: 'reread', message: 'Added as a re-read' }),
+      } as Response)
+    }) as jest.Mock
+
+    await act(async () => {
+      render(
+        <AddBookWizard
+          isOpen={true}
+          onClose={mockOnClose}
+          book={mockBook}
+          onComplete={mockOnComplete}
+        />
+      )
+    })
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/user/books/tracking-status',
+        expect.objectContaining({ method: 'POST' })
+      )
+    })
   })
 
   test('formData interface supports dnfDate field', () => {

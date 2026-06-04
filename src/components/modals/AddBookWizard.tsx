@@ -12,6 +12,7 @@ import BookClubField from '@/components/forms/BookClubField'
 import ReadathonField from '@/components/forms/ReadathonField'
 import RereadField from '@/components/forms/RereadField'
 import FormatMultiSelect from '@/components/forms/FormatMultiSelect'
+import { ToastContainer, useToast } from '@/components/admin/Toast'
 
 interface AddBookWizardProps {
   isOpen: boolean
@@ -49,6 +50,7 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
     status: 'WANT_TO_READ',
     format: [],
   })
+  const { messages, showToast, removeToast } = useToast()
 
   // Set default finish date when reaching completion step (for COMPLETED)
   useEffect(() => {
@@ -127,6 +129,28 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, handleClose])
 
+  // Detect a re-read: if the user previously finished/DNF'd this book, default isReread on.
+  useEffect(() => {
+    if (!isOpen || !book) return
+    let cancelled = false
+    fetch('/api/user/books/tracking-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ signedResult: book }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { status: string | null } | null) => {
+        if (cancelled || !data) return
+        if (data.status === 'COMPLETED' || data.status === 'DNF') {
+          setFormData((prev) => ({ ...prev, isReread: true }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, book])
+
   const getTotalSteps = () => {
     // Always have 2 steps now - basic info and tracking fields
     if (formData.status === 'WANT_TO_READ') return 2
@@ -202,6 +226,8 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
         return
       }
 
+      const data: { message?: string } = await response.json().catch(() => ({}))
+      showToast('success', data.message || 'Added to your library')
       onComplete()
       handleClose()
     } catch (error) {
@@ -218,14 +244,20 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
       ? { title: book.title, authors: book.authors, imageUrl: book.imageUrl }
       : null
 
-  if (!display) return null
+  // Render the toast container even with no display so success/error feedback
+  // survives the parent clearing the selected book/edition on completion.
+  if (!display) {
+    return <ToastContainer messages={messages} onClose={removeToast} />
+  }
 
   const minDate = formData.startDate || undefined
   const maxDate = new Date().toISOString().split('T')[0]
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
+    <>
+      <ToastContainer messages={messages} onClose={removeToast} />
+      <Transition appear show={isOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleClose}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -509,7 +541,8 @@ export default function AddBookWizard({ isOpen, onClose, book, onComplete, editi
             </Transition.Child>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+        </Dialog>
+      </Transition>
+    </>
   )
 }
