@@ -68,6 +68,7 @@ describe('AddBookWizard edition mode', () => {
     })
     global.fetch = fetchMock as unknown as typeof fetch
 
+    const onComplete = jest.fn()
     await act(async () => {
       render(
         <AddBookWizard
@@ -76,7 +77,7 @@ describe('AddBookWizard edition mode', () => {
           book={null}
           editionId="ed-123"
           editionDisplay={{ title: 'Edition Title', authors: ['Author One'], imageUrl: null }}
-          onComplete={jest.fn()}
+          onComplete={onComplete}
         />
       )
     })
@@ -88,5 +89,52 @@ describe('AddBookWizard edition mode', () => {
     fireEvent.click(screen.getByRole('button', { name: /add book/i }))
 
     await waitFor(() => expect(screen.getByText('Book already in library')).toBeInTheDocument())
+    expect(onComplete).not.toHaveBeenCalled()
+  })
+
+  it('submits signedResult (not editionId) when in search mode', async () => {
+    const fetchMock = jest.fn((url: string, _init?: RequestInit) => {
+      if (url === '/api/user/books') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ userBook: {} }) })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) })
+    })
+    global.fetch = fetchMock as unknown as typeof fetch
+
+    const book = {
+      id: 'b1',
+      title: 'Search Title',
+      authors: ['Search Author'],
+      imageUrl: null,
+      sources: [],
+      signature: 'sig',
+    } as unknown as Parameters<typeof AddBookWizard>[0]['book']
+
+    const onComplete = jest.fn()
+    await act(async () => {
+      render(
+        <AddBookWizard
+          isOpen
+          onClose={jest.fn()}
+          book={book}
+          onComplete={onComplete}
+        />
+      )
+    })
+
+    expect(screen.getByText('Search Title')).toBeInTheDocument()
+    // Step 1: select a format to enable Next, then advance to step 2.
+    fireEvent.click(screen.getByRole('checkbox', { name: /hardcover/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    // Step 2 is the final step for WANT_TO_READ — submit.
+    fireEvent.click(screen.getByRole('button', { name: /add book/i }))
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalled())
+
+    const postCall = fetchMock.mock.calls.find(([url]) => url === '/api/user/books')
+    expect(postCall).toBeDefined()
+    const body = JSON.parse((postCall![1]!.body) as string)
+    expect(body.signedResult).toBeDefined()
+    expect(body.editionId).toBeUndefined()
   })
 })
